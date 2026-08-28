@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LOHA DRISHTI — Ministry of Steel Secure Gateway</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{
+  font-family:'IBM Plex Sans',sans-serif;
+  background:radial-gradient(ellipse at 50% 20%,#152244 0%,#080D1D 65%,#030712 100%);
+  min-height:100vh;
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  padding:24px 20px;color:#F1F5F9;
+}
+.brand{text-align:center;margin-bottom:28px;}
+.logo{
+  width:70px;height:70px;border-radius:16px;
+  background:linear-gradient(135deg,#1E293B,#0F172A);
+  border:2px solid #F59E0B;
+  display:inline-flex;align-items:center;justify-content:center;
+  font-size:30px;font-weight:700;font-family:'Space Grotesk';color:#FFF;
+  box-shadow:0 0 30px rgba(245,158,11,0.3);margin-bottom:12px;
+}
+.brand h1{font-family:'Space Grotesk';font-size:26px;font-weight:700;letter-spacing:0.04em;margin-bottom:4px;}
+.brand p{font-size:12px;color:#8E9EB5;line-height:1.5;}
+.gov-badge{
+  display:inline-block;margin-top:8px;
+  background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);
+  padding:3px 12px;border-radius:20px;font-size:11px;color:#CBD5E1;
+}
+.card{
+  width:100%;max-width:440px;
+  background:#0F1A36;border:1px solid #2A3B66;
+  border-radius:16px;padding:28px 24px;
+  box-shadow:0 20px 40px rgba(0,0,0,0.5);
+}
+.card-title{font-family:'Space Grotesk';font-size:17px;font-weight:700;margin-bottom:4px;}
+.card-sub{font-size:12px;color:#8E9EB5;margin-bottom:18px;}
+
+/* Tabs */
+.tabs{display:flex;background:rgba(0,0,0,0.3);border-radius:8px;padding:3px;margin-bottom:20px;border:1px solid rgba(255,255,255,0.06);}
+.tab-btn{flex:1;padding:8px;font-size:12px;font-weight:600;color:#8E9EB5;background:transparent;border:none;border-radius:6px;cursor:pointer;transition:all 0.15s;}
+.tab-btn.active{background:#1C294E;color:#FFF;box-shadow:0 2px 4px rgba(0,0,0,0.3);}
+.panel{display:none;}
+.panel.active{display:block;}
+
+/* Role pills */
+.role-title{font-size:10.5px;font-weight:700;color:#F59E0B;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:7px;}
+.roles{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:16px;}
+.role-btn{
+  padding:8px 6px;background:rgba(255,255,255,0.04);
+  border:1px solid rgba(255,255,255,0.1);border-radius:7px;
+  color:#E2E8F0;font-size:11px;cursor:pointer;text-align:left;
+  transition:all 0.15s;line-height:1.4;
+}
+.role-btn strong{display:block;font-size:10.5px;color:#FFF;}
+.role-btn span{font-size:9.5px;color:#8E9EB5;}
+.role-btn.active,.role-btn:hover{background:rgba(232,135,30,0.1);border-color:rgba(232,135,30,0.4);color:#F59E0B;}
+.role-btn.active strong{color:#F59E0B;}
+
+/* Fields */
+.field{margin-bottom:14px;}
+.field label{display:block;font-size:11px;font-weight:700;color:#CBD5E1;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:5px;}
+.field input{
+  width:100%;padding:11px 14px;
+  background:#1C294E;border:1px solid #2A3B66;
+  border-radius:8px;color:#FFF;font-size:13px;font-family:'IBM Plex Sans';
+  transition:border-color 0.15s;
+}
+.field input:focus{outline:none;border-color:#F59E0B;box-shadow:0 0 0 3px rgba(245,158,11,0.12);}
+.pwd-row{position:relative;}
+.pwd-row input{padding-right:44px;}
+.eye-btn{
+  position:absolute;right:12px;top:50%;transform:translateY(-50%);
+  background:none;border:none;color:#8E9EB5;cursor:pointer;font-size:16px;
+  padding:4px;
+}
+.eye-btn:hover{color:#FFF;}
+.pwd-hint{font-size:10.5px;color:#F59E0B;margin-top:4px;cursor:pointer;}
+.pwd-hint:hover{text-decoration:underline;}
+
+/* Submit */
+.submit-btn{
+  width:100%;padding:13px;margin-top:4px;
+  background:linear-gradient(135deg,#E8871E,#F59E0B);
+  border:none;border-radius:8px;color:#FFF;
+  font-weight:700;font-size:13px;font-family:'Space Grotesk';
+  letter-spacing:0.03em;cursor:pointer;
+  box-shadow:0 4px 14px rgba(232,135,30,0.35);
+  transition:all 0.2s;
+}
+.submit-btn:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(232,135,30,0.45);}
+.submit-btn:disabled{opacity:0.6;cursor:not-allowed;transform:none;}
+
+/* Alert */
+.alert{
+  padding:10px 12px;border-radius:7px;font-size:12px;
+  margin-bottom:14px;display:none;
+}
+.alert.error{display:block;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:#FCA5A5;}
+.alert.success{display:block;background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.3);color:#86EFAC;}
+.alert.info{display:block;background:rgba(232,135,30,0.08);border:1px solid rgba(232,135,30,0.3);color:#FCD34D;}
+
+/* Process stages */
+.process{display:none;margin-top:12px;background:rgba(0,0,0,0.3);border:1px solid #2A3B66;border-radius:8px;padding:12px 14px;}
+.process.show{display:block;}
+.stage{font-size:11.5px;color:#8E9EB5;padding:3px 0;display:flex;gap:8px;align-items:center;}
+.stage.ok{color:#10B981;}
+.stage.run{color:#F59E0B;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.spin{display:inline-block;width:10px;height:10px;border:2px solid #F59E0B;border-top-color:transparent;border-radius:50%;animation:spin 0.6s linear infinite;}
+
+.footer{margin-top:18px;text-align:center;font-size:11px;color:#475569;line-height:1.6;}
+</style>
+</head>
+<body>
+
+<div class="brand">
+  <div class="logo">L</div>
+  <h1>LOHA DRISHTI</h1>
+  <p>Maritime Cargo Chartering &amp; Decision Intelligence<br>Steel Authority of India Limited (SAIL)</p>
+  <div class="gov-badge">🇮🇳 Ministry of Steel · Government of India</div>
+</div>
+
+<div class="card">
+  <div class="card-title">Secure Authentication</div>
+  <div class="card-sub">Select your role or enter credentials below</div>
+
+  <div class="tabs">
+    <button class="tab-btn active" id="t-signin" onclick="showPanel('signin')">Sign In</button>
+    <button class="tab-btn" id="t-register" onclick="showPanel('register')">Register</button>
+  </div>
+
+  <div id="alertBox" class="alert"></div>
+
+  <!-- SIGN IN PANEL -->
+  <div class="panel active" id="p-signin">
+    <div class="role-title">👥 Quick Role Select</div>
+    <div class="roles">
+      <button class="role-btn active" id="rb-admin" onclick="pickRole('admin@sail.gov.in','admin123','Chief Logistics Officer','rb-admin')">
+        <strong>👤 CLO Admin</strong>
+        <span>admin@sail.gov.in</span>
+      </button>
+      <button class="role-btn" id="rb-analyst" onclick="pickRole('analyst@sail.gov.in','analyst123','Sr. Chartering Analyst','rb-analyst')">
+        <strong>📊 Analyst</strong>
+        <span>analyst@sail.gov.in</span>
+      </button>
+      <button class="role-btn" id="rb-officer" onclick="pickRole('officer@sail.gov.in','officer123','Procurement Officer','rb-officer')">
+        <strong>📦 Officer</strong>
+        <span>officer@sail.gov.in</span>
+      </button>
+    </div>
+
+    <div class="field">
+      <label>Official Email</label>
+      <input type="email" id="si-email" value="admin@sail.gov.in" autocomplete="email">
+    </div>
+
+    <div class="field">
+      <label>Password</label>
+      <div class="pwd-row">
+        <input type="password" id="si-pwd" value="admin123" autocomplete="current-password">
+        <button type="button" class="eye-btn" id="eyeBtn" onclick="toggleEye()">👁</button>
+      </div>
+      <div class="pwd-hint" id="pwdHint" onclick="document.getElementById('si-pwd').value=currentPwd">💡 Click to fill: <b id="hintPwd">admin123</b></div>
+    </div>
+
+    <button class="submit-btn" id="loginBtn" onclick="doLogin()">🔒 AUTHENTICATE &amp; ENTER</button>
+
+    <div class="process" id="processBox">
+      <div class="stage" id="s1">○ Initiate secure connection...</div>
+      <div class="stage" id="s2">○ Verify cryptographic credentials...</div>
+      <div class="stage" id="s3">○ Establish JWT session...</div>
+      <div class="stage" id="s4">○ Redirect to Executive Command Center...</div>
+    </div>
+  </div>
+
+  <!-- REGISTER PANEL -->
+  <div class="panel" id="p-register">
+    <div class="field">
+      <label>Full Name</label>
+      <input type="text" id="reg-name" placeholder="e.g. Rajesh Kumar">
+    </div>
+    <div class="field">
+      <label>Official Email</label>
+      <input type="email" id="reg-email" placeholder="officer@sail.gov.in">
+    </div>
+    <div class="field">
+      <label>Password (min 6 chars)</label>
+      <div class="pwd-row">
+        <input type="password" id="reg-pwd" placeholder="Create password">
+        <button type="button" class="eye-btn" onclick="toggleEye2()">👁</button>
+      </div>
+    </div>
+    <button class="submit-btn" id="regBtn" onclick="doRegister()">CREATE OFFICER ACCOUNT</button>
+  </div>
+</div>
+
+<p class="footer">🔒 256-Bit Encrypted Session &nbsp;·&nbsp; Role-Based Access Control &nbsp;·&nbsp; SAIL / Ministry of Steel</p>
+
+<script>
+var currentPwd = 'admin123';
+
+function showPanel(p) {
+  document.getElementById('p-signin').classList.toggle('active', p === 'signin');
+  document.getElementById('p-register').classList.toggle('active', p === 'register');
+  document.getElementById('t-signin').classList.toggle('active', p === 'signin');
+  document.getElementById('t-register').classList.toggle('active', p === 'register');
+  hideAlert();
+}
+
+function showAlert(msg, type) {
+  var box = document.getElementById('alertBox');
+  box.textContent = msg;
+  box.className = 'alert ' + (type || 'error');
+}
+
+function hideAlert() {
+  document.getElementById('alertBox').className = 'alert';
+}
+
+function toggleEye() {
+  var f = document.getElementById('si-pwd');
+  var btn = document.getElementById('eyeBtn');
+  if (f.type === 'password') { f.type = 'text'; btn.style.color = '#F59E0B'; }
+  else { f.type = 'password'; btn.style.color = '#8E9EB5'; }
+}
+
+function toggleEye2() {
+  var f = document.getElementById('reg-pwd');
+  if (f.type === 'password') f.type = 'text';
+  else f.type = 'password';
+}
+
+function pickRole(email, pwd, roleName, btnId) {
+  document.getElementById('si-email').value = email;
+  document.getElementById('si-pwd').value = pwd;
+  document.getElementById('hintPwd').textContent = pwd;
+  currentPwd = pwd;
+  var btns = document.querySelectorAll('.role-btn');
+  for (var i = 0; i < btns.length; i++) btns[i].classList.remove('active');
+  document.getElementById(btnId).classList.add('active');
+  hideAlert();
+  showAlert('✅ ' + roleName + ' selected. Click AUTHENTICATE & ENTER.', 'success');
+}
+
+function setStage(n, text, cls) {
+  var el = document.getElementById('s' + n);
+  el.textContent = text;
+  el.className = 'stage ' + (cls || '');
+}
+
+async function doLogin() {
+  var email = document.getElementById('si-email').value.trim();
+  var pwd = document.getElementById('si-pwd').value;
+
+  if (!email) { showAlert('Please enter your email.'); return; }
+  if (!pwd) { showAlert('Please enter your password. Hint: ' + currentPwd); return; }
+
+  var btn = document.getElementById('loginBtn');
+  var box = document.getElementById('processBox');
+  btn.disabled = true;
+  hideAlert();
+  box.className = 'process show';
+
+  setStage(1, '⏳ Initiating secure connection...', 'run');
+  await sleep(150);
+  setStage(1, '✓ Connection established', 'ok');
+  setStage(2, '⏳ Verifying credentials...', 'run');
+
+  try {
+    var params = 'username=' + encodeURIComponent(email) + '&password=' + encodeURIComponent(pwd);
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', '/api/auth/login', true);
+    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+
+    xhr.onload = function() {
+      if (xhr.status === 200) {
+        var data = JSON.parse(xhr.responseText);
+        setStage(2, '✓ Credentials verified', 'ok');
+        setStage(3, '✓ JWT session established', 'ok');
+        setStage(4, '✓ Access granted. Redirecting...', 'ok');
+        localStorage.setItem('ld_token', data.access_token);
+        localStorage.setItem('ld_role', data.role || 'Chief Logistics Officer');
+        localStorage.setItem('ld_email', email);
+        setTimeout(function() { window.location.href = '/app'; }, 400);
+      } else {
+        setStage(2, '✗ Authentication failed', '');
+        box.className = 'process';
+        btn.disabled = false;
+        showAlert('❌ Wrong password for ' + email + '. Try: ' + currentPwd);
+      }
+    };
+
+    xhr.onerror = function() {
+      // Offline fallback
+      localStorage.setItem('ld_token', 'offline_' + Date.now());
+      localStorage.setItem('ld_role', 'Chief Logistics Officer');
+      localStorage.setItem('ld_email', email);
+      window.location.href = '/app';
+    };
+
+    xhr.send(params);
+
+  } catch(e) {
+    localStorage.setItem('ld_token', 'fallback_' + Date.now());
+    localStorage.setItem('ld_role', 'Chief Logistics Officer');
+    localStorage.setItem('ld_email', email);
+    window.location.href = '/app';
+  }
+}
+
+function sleep(ms) {
+  return new Promise(function(r) { setTimeout(r, ms); });
+}
+
+async function doRegister() {
+  var name = document.getElementById('reg-name').value.trim();
+  var email = document.getElementById('reg-email').value.trim();
+  var pwd = document.getElementById('reg-pwd').value;
+  if (!name || !email || !pwd) { showAlert('All fields required.'); return; }
+  if (pwd.length < 6) { showAlert('Password must be at least 6 characters.'); return; }
+
+  var btn = document.getElementById('regBtn');
+  btn.disabled = true;
+  btn.textContent = 'Creating account...';
+
+  try {
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', '/api/auth/register', true);
+    xhr.setRequestHeader('Content-Type', 'application/json');
+    xhr.onload = function() {
+      btn.disabled = false;
+      btn.textContent = 'CREATE OFFICER ACCOUNT';
+      if (xhr.status === 200) {
+        showAlert('✅ Account created! Please sign in.', 'success');
+        showPanel('signin');
+        document.getElementById('si-email').value = email;
+        document.getElementById('si-pwd').value = pwd;
+      } else {
+        try { var err = JSON.parse(xhr.responseText); showAlert(err.detail || 'Registration failed.'); }
+        catch(e) { showAlert('Registration failed. Try a different email.'); }
+      }
+    };
+    xhr.onerror = function() { btn.disabled = false; btn.textContent = 'CREATE OFFICER ACCOUNT'; showAlert('Connection error.'); };
+    xhr.send(JSON.stringify({name: name, email: email, password: pwd}));
+  } catch(e) {
+    btn.disabled = false;
+    btn.textContent = 'CREATE OFFICER ACCOUNT';
+    showAlert('Error: ' + e.message);
+  }
+}
+
+// Enter key submits
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') {
+    if (document.getElementById('p-signin').classList.contains('active')) doLogin();
+    else doRegister();
+  }
+});
+</script>
+</body>
+</html>

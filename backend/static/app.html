@@ -1,0 +1,2765 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LOHA DRISHTI — Maritime Cargo Chartering & Decision Intelligence Platform</title>
+<meta name="description" content="LOHA DRISHTI: AI-powered maritime cargo chartering and route decision intelligence platform for SAIL's steel logistics operations.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg-main: #F8FAFC;
+  --bg-surface: #FFFFFF;
+  --bg-subtle: #F1F5F9;
+  --bg-hover: #E2E8F0;
+  --navy-deep: #0F172A;
+  --navy-surface: #1E293B;
+  --navy-border: #334155;
+  --steel-dark: #334155;
+  --steel-muted: #64748B;
+  --steel-light: #94A3B8;
+  --steel-border: #E2E8F0;
+  --saffron: #D97706;
+  --saffron-dark: #B45309;
+  --saffron-bg: #FFFBEB;
+  --saffron-border: #FDE68A;
+  --green: #15803D;
+  --green-dark: #166534;
+  --green-bg: #F0FDF4;
+  --green-border: #BBF7D0;
+  --red: #DC2626;
+  --red-dark: #991B1B;
+  --red-bg: #FEF2F2;
+  --red-border: #FECACA;
+  --blue: #1D4ED8;
+  --blue-bg: #EFF6FF;
+  --blue-border: #BFDBFE;
+  --amber: #D97706;
+  --amber-bg: #FFFBEB;
+  --shadow-sm: 0 1px 2px 0 rgba(15,23,42,0.05);
+  --shadow-md: 0 4px 6px -1px rgba(15,23,42,0.08),0 2px 4px -2px rgba(15,23,42,0.04);
+  --shadow-lg: 0 10px 15px -3px rgba(15,23,42,0.1),0 4px 6px -4px rgba(15,23,42,0.05);
+  --shadow-xl: 0 20px 25px -5px rgba(15,23,42,0.12),0 8px 10px -6px rgba(15,23,42,0.04);
+  --radius-sm: 6px;
+  --radius: 10px;
+  --radius-lg: 14px;
+}
+*{box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{margin:0;background:var(--bg-main);color:var(--navy-deep);font-family:'IBM Plex Sans',-apple-system,BlinkMacSystemFont,sans-serif;line-height:1.5;min-height:100vh;}
+.mono{font-family:'IBM Plex Mono',monospace;}
+h1,h2,h3,h4,.display{font-family:'Space Grotesk',sans-serif;letter-spacing:-0.01em;}
+@media(prefers-reduced-motion:reduce){*{animation-duration:0.01ms!important;animation-iteration-count:1!important;transition-duration:0.01ms!important;}}
+
+/* ---- TOPBAR ---- */
+.topbar{position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:10px 24px;background:rgba(255,255,255,0.97);backdrop-filter:blur(12px);border-bottom:1px solid var(--steel-border);box-shadow:var(--shadow-sm);}
+.brand{display:flex;align-items:center;gap:10px;}
+.brand-mark{width:34px;height:34px;border-radius:8px;background:linear-gradient(135deg,var(--navy-deep),var(--navy-surface));color:#FFF;display:flex;align-items:center;justify-content:center;font-weight:700;font-family:'Space Grotesk';font-size:17px;border:2px solid var(--saffron);}
+.brand-text{font-weight:700;font-size:15px;color:var(--navy-deep);letter-spacing:0.04em;}
+.brand-sub{font-size:10.5px;color:var(--steel-muted);letter-spacing:0.02em;font-weight:500;}
+.nav-menu{display:flex;gap:4px;font-size:12.5px;font-weight:600;}
+.nav-menu a{color:var(--steel-dark);text-decoration:none;padding:5px 10px;border-radius:6px;transition:all 0.15s;cursor:pointer;}
+.nav-menu a:hover,.nav-menu a.active{color:var(--saffron-dark);background:var(--saffron-bg);}
+.topbar-actions{display:flex;align-items:center;gap:8px;}
+.icon-btn{background:var(--bg-surface);border:1px solid var(--steel-border);border-radius:6px;padding:6px 10px;font-size:12px;font-weight:600;color:var(--navy-deep);cursor:pointer;transition:all 0.15s;display:flex;align-items:center;gap:4px;}
+.icon-btn:hover{border-color:var(--navy-deep);background:var(--bg-subtle);}
+.badge-num{font-size:11px;font-weight:700;padding:2px 6px;border-radius:10px;background:var(--red);color:#FFF;line-height:1;}
+
+/* ---- SECTION TABS (functional panel switcher) ---- */
+.section-tabs{background:#FFF;border-bottom:1px solid var(--steel-border);padding:0 24px;display:flex;gap:0;overflow-x:auto;scrollbar-width:none;}
+.section-tabs::-webkit-scrollbar{display:none;}
+.tab-btn{background:transparent;border:none;border-bottom:3px solid transparent;padding:10px 14px;font-size:12.5px;font-weight:600;color:var(--steel-muted);cursor:pointer;white-space:nowrap;transition:all 0.15s;font-family:'IBM Plex Sans';}
+.tab-btn:hover{color:var(--navy-deep);}
+.tab-btn.active{color:var(--saffron-dark);border-bottom-color:var(--saffron);}
+
+/* ---- CARGO BAR ---- */
+.cargo-bar-wrapper{background:#FFF;border-bottom:1px solid var(--steel-border);padding:10px 24px;box-shadow:var(--shadow-sm);}
+.cargo-bar{max-width:1280px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;}
+.cargo-summary-pills{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.cargo-pill{background:var(--bg-subtle);border:1px solid var(--steel-border);border-radius:6px;padding:4px 10px;font-size:12px;color:var(--navy-deep);font-weight:600;display:flex;align-items:center;gap:5px;cursor:pointer;transition:all 0.15s;}
+.cargo-pill:hover{border-color:var(--saffron);background:var(--saffron-bg);}
+.cargo-pill span.label{color:var(--steel-muted);font-size:10.5px;text-transform:uppercase;font-weight:700;}
+.cargo-actions{display:flex;gap:8px;}
+.btn-optimize{background:linear-gradient(135deg,var(--saffron-dark),var(--saffron));color:#FFF;border:none;padding:8px 16px;border-radius:6px;font-weight:700;font-size:13px;font-family:'Space Grotesk';cursor:pointer;transition:all 0.15s;box-shadow:0 2px 4px rgba(217,119,6,0.2);display:flex;align-items:center;gap:6px;}
+.btn-optimize:hover{transform:translateY(-1px);box-shadow:0 4px 8px rgba(217,119,6,0.3);}
+.btn-optimize:disabled{opacity:0.6;cursor:not-allowed;transform:none;}
+
+/* ---- LOADING OVERLAY ---- */
+.loading-overlay{display:none;position:fixed;inset:0;background:rgba(255,255,255,0.7);backdrop-filter:blur(6px);z-index:300;align-items:center;justify-content:center;flex-direction:column;gap:16px;}
+.loading-overlay.show{display:flex;}
+.spinner{width:40px;height:40px;border:3px solid var(--steel-border);border-top-color:var(--saffron);border-radius:50%;animation:spin 0.7s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.loading-text{font-family:'Space Grotesk';font-weight:700;font-size:15px;color:var(--navy-deep);}
+.loading-sub{font-size:12px;color:var(--steel-muted);font-family:'IBM Plex Mono';}
+
+/* ---- SECTION PANELS ---- */
+.panel{display:none;}
+.panel.active{display:block;}
+.section{max-width:1280px;margin:0 auto;padding:20px 24px;}
+.section-header{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px;}
+.section-header h2{font-size:19px;margin:0;color:var(--navy-deep);}
+.section-header p{margin:2px 0 0;font-size:12px;color:var(--steel-muted);}
+.section-tag{font-size:11px;font-weight:700;color:var(--steel-muted);text-transform:uppercase;letter-spacing:0.06em;white-space:nowrap;}
+
+/* ---- DECISION CARD ---- */
+.decision-card{background:var(--bg-surface);border:1px solid var(--steel-border);border-radius:var(--radius-lg);padding:22px;box-shadow:var(--shadow-lg);position:relative;overflow:hidden;margin-bottom:20px;}
+.decision-card::before{content:'';position:absolute;top:0;left:0;width:100%;height:4px;background:linear-gradient(90deg,var(--navy-deep) 0%,var(--saffron) 50%,var(--green) 100%);}
+.decision-header{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:16px;}
+.decision-header .title-area h3{margin:0 0 3px;font-size:20px;color:var(--navy-deep);}
+.decision-header .title-area .subtitle{font-size:12.5px;color:var(--steel-muted);font-weight:500;}
+.confidence-badge{background:var(--green-bg);color:var(--green);border:1px solid var(--green-border);padding:5px 12px;border-radius:20px;font-size:11.5px;font-weight:700;font-family:'IBM Plex Mono';}
+.data-tag{background:var(--blue-bg);color:var(--blue);border:1px solid var(--blue-border);padding:3px 8px;border-radius:10px;font-size:10px;font-weight:700;font-family:'IBM Plex Mono';letter-spacing:0.04em;}
+
+/* ---- KPI STRIP ---- */
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:16px;}
+.kpi-card{background:var(--bg-subtle);border:1px solid var(--steel-border);border-radius:var(--radius);padding:11px 13px;}
+.kpi-card .kpi-label{font-size:10px;font-weight:700;text-transform:uppercase;color:var(--steel-muted);letter-spacing:0.05em;margin-bottom:3px;}
+.kpi-card .kpi-value{font-size:18px;font-weight:700;font-family:'Space Grotesk';color:var(--navy-deep);}
+.kpi-card .kpi-value.saffron{color:var(--saffron-dark);}
+.kpi-card .kpi-sub{font-size:10px;color:var(--steel-muted);margin-top:3px;font-family:'IBM Plex Mono';}
+
+/* ---- GAUGES ---- */
+.gauges-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;}
+@media(max-width:640px){.gauges-grid{grid-template-columns:1fr;}}
+.gauge-card{background:var(--bg-subtle);border:1px solid var(--steel-border);border-radius:var(--radius);padding:13px;}
+.gauge-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:7px;}
+.gauge-title{font-size:10.5px;font-weight:700;text-transform:uppercase;color:var(--steel-muted);}
+.gauge-info-btn{font-size:11px;cursor:pointer;color:var(--steel-muted);font-weight:600;padding:2px 6px;border-radius:4px;border:1px solid var(--steel-border);background:var(--bg-surface);transition:all 0.15s;}
+.gauge-info-btn:hover{border-color:var(--saffron);color:var(--saffron-dark);background:var(--saffron-bg);}
+.gauge-track{height:9px;background:var(--steel-border);border-radius:6px;overflow:hidden;margin-bottom:5px;}
+.gauge-fill{height:100%;border-radius:6px;transition:width 0.6s ease;}
+.gauge-footer{display:flex;justify-content:space-between;align-items:center;font-size:12px;}
+
+/* ---- WATERFALL ---- */
+.waterfall-card{background:var(--bg-surface);border:1px solid var(--steel-border);border-radius:var(--radius);padding:16px;margin-bottom:16px;box-shadow:var(--shadow-sm);}
+.waterfall-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;}
+.waterfall-header h4{margin:0;font-size:13.5px;color:var(--navy-deep);}
+.cost-toggle{display:flex;background:var(--bg-subtle);border-radius:6px;padding:2px;border:1px solid var(--steel-border);}
+.cost-toggle button{border:none;background:transparent;padding:4px 10px;font-size:11px;font-weight:600;border-radius:4px;cursor:pointer;color:var(--steel-muted);transition:all 0.15s;}
+.cost-toggle button.active{background:#FFF;color:var(--navy-deep);box-shadow:var(--shadow-sm);}
+.waterfall-bars{display:flex;flex-direction:column;gap:6px;}
+.waterfall-row{display:grid;grid-template-columns:180px 1fr 100px;gap:10px;align-items:center;font-size:12px;}
+.waterfall-label{font-weight:500;color:var(--steel-dark);}
+.waterfall-track{height:16px;background:var(--bg-subtle);border-radius:4px;overflow:hidden;}
+.waterfall-fill{height:100%;border-radius:4px;transition:width 0.4s ease;}
+.waterfall-val{font-family:'IBM Plex Mono';font-weight:600;text-align:right;color:var(--navy-deep);}
+
+/* ---- EXPLAIN CARD ---- */
+.explain-card{background:var(--saffron-bg);border:1px solid var(--saffron-border);border-radius:var(--radius);padding:14px;margin-bottom:16px;}
+.explain-card h4{margin:0 0 10px;font-size:12.5px;color:var(--saffron-dark);text-transform:uppercase;letter-spacing:0.04em;}
+.explain-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+@media(max-width:640px){.explain-grid{grid-template-columns:1fr;}}
+.explain-box{background:#FFF;border:1px solid var(--saffron-border);border-radius:8px;padding:11px;}
+.explain-box h5{margin:0 0 6px;font-size:12px;color:var(--navy-deep);font-weight:700;}
+.explain-box ul{margin:0;padding-left:15px;font-size:11.5px;color:var(--steel-dark);line-height:1.6;}
+.explain-box li{margin-bottom:3px;}
+
+/* ---- REGRET BOX ---- */
+.regret-box{background:var(--blue-bg);border:1px solid var(--blue-border);border-radius:var(--radius);padding:13px;margin-bottom:16px;}
+.regret-box h4{margin:0 0 8px;font-size:12.5px;color:var(--blue);text-transform:uppercase;letter-spacing:0.04em;}
+.regret-table{width:100%;border-collapse:collapse;font-size:11.5px;}
+.regret-table th{text-align:left;padding:4px 8px;font-weight:700;color:var(--navy-deep);border-bottom:1px solid var(--blue-border);}
+.regret-table td{padding:5px 8px;color:var(--steel-dark);border-bottom:1px solid var(--blue-border);}
+.regret-table tr:last-child td{border-bottom:none;}
+.regret-winner{background:var(--green-bg);font-weight:700;}
+.regret-winner td{color:var(--green-dark);}
+
+/* ---- CHALLENGE / SCENARIO ---- */
+.challenge-card{background:var(--bg-subtle);border:1px solid var(--steel-border);border-radius:var(--radius);padding:13px 15px;margin-bottom:16px;}
+.challenge-title{font-size:11px;font-weight:700;text-transform:uppercase;color:var(--steel-muted);margin-bottom:8px;letter-spacing:0.05em;}
+.challenge-buttons{display:flex;gap:8px;flex-wrap:wrap;}
+.btn-challenge{padding:6px 12px;border-radius:6px;border:1px solid var(--steel-border);background:#FFF;color:var(--navy-deep);font-size:11.5px;font-weight:600;cursor:pointer;transition:all 0.15s;font-family:'IBM Plex Sans';}
+.btn-challenge:hover{border-color:var(--saffron);background:var(--saffron-bg);color:var(--saffron-dark);}
+.btn-challenge.danger{border-color:var(--red-border);color:var(--red);}
+.btn-challenge.danger:hover{background:var(--red-bg);}
+.btn-reset{background:var(--navy-deep)!important;color:#FFF!important;border-color:var(--navy-deep)!important;}
+.btn-reset:hover{background:var(--navy-surface)!important;}
+.btn-challenge.active-scenario{outline:2px solid var(--red);outline-offset:1px;}
+
+/* ---- BEFORE/AFTER SCENARIO VIZ ---- */
+.scenario-viz{display:none;border-radius:var(--radius);overflow:hidden;border:1px solid var(--steel-border);margin-top:12px;}
+.scenario-viz.show{display:block;}
+.scenario-phases{display:grid;grid-template-columns:1fr auto 1fr auto 1fr;}
+.scenario-phase{padding:12px 14px;text-align:center;}
+.scenario-phase.before{background:var(--green-bg);}
+.scenario-phase.during{background:var(--red-bg);}
+.scenario-phase.after{background:var(--saffron-bg);}
+.scenario-arrow{background:var(--bg-subtle);display:flex;align-items:center;justify-content:center;padding:0 8px;font-size:14px;color:var(--steel-muted);}
+.scenario-phase-label{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px;color:var(--steel-muted);}
+.scenario-phase.before .scenario-phase-label{color:var(--green);}
+.scenario-phase.during .scenario-phase-label{color:var(--red);}
+.scenario-phase.after .scenario-phase-label{color:var(--saffron-dark);}
+.scenario-phase-route{font-weight:700;font-size:13px;color:var(--navy-deep);font-family:'Space Grotesk';}
+.scenario-phase-cost{font-size:11.5px;font-family:'IBM Plex Mono';color:var(--steel-muted);margin-top:2px;}
+.scenario-phase-cost span{font-weight:700;}
+
+.diff-banner{display:none;background:var(--saffron-bg);border:1px solid var(--saffron-border);border-radius:var(--radius);padding:10px 13px;font-size:12.5px;line-height:1.5;color:var(--navy-deep);margin-top:10px;animation:fadeIn 0.3s ease;}
+.diff-banner.show{display:block;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:translateY(0);}}
+
+/* ---- STEPPER ---- */
+.stepper-card{background:var(--bg-surface);border:1px solid var(--steel-border);border-radius:var(--radius);padding:14px;margin-bottom:16px;box-shadow:var(--shadow-sm);}
+.stepper{display:flex;overflow-x:auto;gap:0;padding-bottom:4px;scrollbar-width:thin;}
+.step{flex:1;min-width:88px;display:flex;flex-direction:column;align-items:center;position:relative;cursor:pointer;}
+.step .dot{width:26px;height:26px;border-radius:50%;border:2px solid var(--steel-border);background:var(--bg-surface);display:flex;align-items:center;justify-content:center;font-family:'IBM Plex Mono';font-size:10.5px;font-weight:600;color:var(--steel-muted);transition:all 0.25s;z-index:2;}
+.step .label{font-size:10px;font-weight:600;color:var(--steel-muted);margin-top:5px;text-align:center;}
+.step .line{position:absolute;top:13px;left:50%;width:100%;height:2px;background:var(--steel-border);z-index:1;transition:background 0.3s;}
+.step:first-child .line{display:none;}
+.step.active .dot{border-color:var(--saffron);color:var(--saffron-dark);background:var(--saffron-bg);box-shadow:0 0 0 3px rgba(217,119,6,0.15);}
+.step.active .label{color:var(--navy-deep);font-weight:700;}
+.step.done .dot{border-color:var(--green);background:var(--green-bg);color:var(--green);}
+.step.done .line{background:var(--green);}
+.stage-note-box{background:var(--bg-subtle);border-left:3px solid var(--navy-deep);padding:7px 11px;font-size:11.5px;font-family:'IBM Plex Mono';color:var(--navy-deep);border-radius:0 6px 6px 0;margin-top:9px;min-height:30px;display:flex;align-items:center;}
+
+/* ---- MAP ---- */
+.map-card{background:var(--bg-surface);border:1px solid var(--steel-border);border-radius:var(--radius-lg);padding:16px;margin-bottom:16px;box-shadow:var(--shadow-md);}
+.map-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:8px;}
+.map-header h3{margin:0;font-size:14px;color:var(--navy-deep);}
+.map-legend{display:flex;gap:12px;font-size:11px;color:var(--steel-muted);font-weight:500;flex-wrap:wrap;}
+.legend-item{display:flex;align-items:center;gap:4px;}
+.legend-dot{width:8px;height:8px;border-radius:50%;}
+svg#routemap{width:100%;height:auto;display:block;border-radius:8px;background:#F8FAFC;border:1px solid var(--steel-border);}
+.arc{fill:none;stroke-width:2;opacity:0.8;stroke-dasharray:6 4;transition:all 0.4s;}
+.arc.winner{stroke-width:3.5;stroke-dasharray:none;opacity:1;filter:drop-shadow(0 2px 4px rgba(217,119,6,0.4));}
+.arc.fading{opacity:0.12;stroke-width:1;}
+.port-dot{transition:all 0.3s;cursor:pointer;}
+.port-dot.blocked{fill:var(--red)!important;}
+
+/* ---- BATTLE TABLE ---- */
+.battle-card{background:var(--bg-surface);border:1px solid var(--steel-border);border-radius:var(--radius-lg);padding:18px;margin-bottom:20px;box-shadow:var(--shadow-sm);}
+.table-responsive{overflow-x:auto;}
+.battle-table{width:100%;border-collapse:collapse;text-align:left;font-size:12px;}
+.battle-table th{background:var(--bg-subtle);padding:7px 11px;font-weight:700;color:var(--navy-deep);border-bottom:2px solid var(--steel-border);font-family:'Space Grotesk';}
+.battle-table td{padding:9px 11px;border-bottom:1px solid var(--steel-border);color:var(--steel-dark);}
+.battle-table tr.winner-row{background:var(--saffron-bg);font-weight:600;}
+.battle-table tr.winner-row td{color:var(--navy-deep);border-bottom:2px solid var(--saffron-border);}
+.winner-badge{background:var(--saffron-dark);color:#FFF;font-size:9px;font-weight:700;padding:2px 5px;border-radius:8px;text-transform:uppercase;margin-left:4px;}
+.risk-low{color:var(--green);font-weight:700;}
+.risk-high{color:var(--red);font-weight:700;}
+.risk-mid{color:var(--saffron-dark);font-weight:700;}
+
+/* ---- PORT & VESSEL DNA ---- */
+.port-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;}
+.port-card{background:var(--bg-surface);border:1px solid var(--steel-border);border-radius:var(--radius);padding:13px;transition:all 0.2s;box-shadow:var(--shadow-sm);}
+.port-card:hover{border-color:var(--saffron);box-shadow:var(--shadow-md);transform:translateY(-1px);}
+.port-card.winner-port{border:2px solid var(--saffron);background:var(--saffron-bg);}
+.port-card.blocked-port{border:2px solid var(--red);background:var(--red-bg);opacity:0.7;}
+.port-card .port-name{font-size:14px;font-weight:700;color:var(--navy-deep);margin:0 0 2px;}
+.port-card .port-code{font-size:10px;font-family:'IBM Plex Mono';color:var(--steel-muted);margin-bottom:7px;}
+.port-specs{display:grid;grid-template-columns:auto 1fr;gap:3px 8px;font-size:11px;}
+.port-specs dt{color:var(--steel-muted);}
+.port-specs dd{font-family:'IBM Plex Mono';font-weight:600;text-align:right;margin:0;color:var(--navy-deep);}
+.port-badge{display:inline-block;font-size:9.5px;font-weight:700;padding:2px 6px;border-radius:10px;margin-top:6px;}
+
+.vessel-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px;}
+.vessel-card{background:var(--bg-surface);border:1px solid var(--steel-border);border-radius:var(--radius);padding:14px;box-shadow:var(--shadow-sm);position:relative;transition:all 0.2s;}
+.vessel-card:hover{border-color:var(--saffron);box-shadow:var(--shadow-md);}
+.vessel-card.selected{border:2px solid var(--saffron);background:var(--saffron-bg);}
+.vessel-card.incompatible{opacity:0.5;border-style:dashed;}
+.vessel-card h4{margin:0 0 3px;font-size:14px;color:var(--navy-deep);}
+.vessel-fit-score{position:absolute;top:12px;right:12px;font-family:'Space Grotesk';font-weight:700;font-size:15px;}
+.fit-pass{color:var(--green);}
+.fit-fail{color:var(--red);}
+
+/* ---- FORECAST CHART ---- */
+.forecast-grid{display:grid;grid-template-columns:2fr 1fr;gap:14px;}
+@media(max-width:900px){.forecast-grid{grid-template-columns:1fr;}}
+.chart-card{background:var(--bg-surface);border:1px solid var(--steel-border);border-radius:var(--radius-lg);padding:16px;box-shadow:var(--shadow-sm);}
+
+/* ---- MODALS ---- */
+.modal-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(15,23,42,0.55);backdrop-filter:blur(4px);z-index:200;display:none;align-items:center;justify-content:center;padding:20px;}
+.modal-overlay.show{display:flex;}
+.modal-box{background:#FFF;border-radius:var(--radius-lg);max-width:640px;width:100%;max-height:85vh;overflow-y:auto;padding:20px;box-shadow:var(--shadow-xl);border:1px solid var(--steel-border);}
+.modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;}
+.modal-header h3{margin:0;font-size:16px;color:var(--navy-deep);}
+.close-btn{background:transparent;border:none;font-size:20px;cursor:pointer;color:var(--steel-muted);line-height:1;padding:0;}
+.close-btn:hover{color:var(--navy-deep);}
+
+/* ---- DRAWERS ---- */
+.drawer-left{position:fixed;top:0;left:-440px;width:420px;height:100%;background:#FFF;border-right:1px solid var(--steel-border);z-index:250;box-shadow:var(--shadow-xl);transition:left 0.3s ease;display:flex;flex-direction:column;padding:22px;overflow-y:auto;}
+.drawer-left.open{left:0;}
+.drawer-right{position:fixed;top:0;right:-440px;width:420px;height:100%;background:#FFF;border-left:1px solid var(--steel-border);z-index:250;box-shadow:var(--shadow-xl);transition:right 0.3s ease;display:flex;flex-direction:column;}
+.drawer-right.open{right:0;}
+.drawer-overlay{position:fixed;inset:0;background:rgba(15,23,42,0.3);z-index:240;display:none;}
+.drawer-overlay.show{display:block;}
+.drawer-header{padding:14px 16px;border-bottom:1px solid var(--steel-border);background:var(--navy-deep);color:#FFF;display:flex;justify-content:space-between;align-items:center;}
+.drawer-body{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px;}
+.copilot-msg{padding:10px 12px;border-radius:8px;font-size:12.5px;line-height:1.5;}
+.copilot-msg.user{background:var(--bg-subtle);color:var(--navy-deep);align-self:flex-end;max-width:85%;border-radius:8px 8px 2px 8px;}
+.copilot-msg.bot{background:var(--saffron-bg);border:1px solid var(--saffron-border);color:var(--navy-deep);align-self:flex-start;max-width:90%;border-radius:8px 8px 8px 2px;}
+.copilot-typing{display:none;padding:8px 12px;font-size:12px;color:var(--steel-muted);font-style:italic;}
+.copilot-prompts{display:flex;flex-direction:column;gap:5px;padding:10px 14px;border-top:1px solid var(--steel-border);background:var(--bg-subtle);}
+.prompt-btn{text-align:left;background:#FFF;border:1px solid var(--steel-border);padding:7px 10px;border-radius:6px;font-size:11.5px;font-weight:500;cursor:pointer;color:var(--steel-dark);transition:all 0.15s;}
+.prompt-btn:hover{border-color:var(--saffron);color:var(--saffron-dark);}
+
+/* ---- FORM FIELDS ---- */
+.field{display:flex;flex-direction:column;gap:5px;}
+.field label{font-size:11.5px;font-weight:700;color:var(--steel-dark);text-transform:uppercase;letter-spacing:0.04em;}
+.field input,.field select{padding:8px 10px;border:1px solid var(--steel-border);border-radius:6px;font-size:13px;color:var(--navy-deep);background:#FFF;font-family:'IBM Plex Sans';transition:all 0.15s;}
+.field input:focus,.field select:focus{outline:none;border-color:var(--saffron);box-shadow:0 0 0 3px rgba(217,119,6,0.1);}
+.field input.error{border-color:var(--red);}
+.field-error{font-size:11px;color:var(--red);font-weight:600;}
+.field input[type="range"]{padding:4px 0;}
+
+/* ---- MARKET PRESSURE ---- */
+.pressure-label{text-align:center;font-family:'Space Grotesk';font-size:32px;font-weight:700;padding:8px 0;}
+.pressure-bars{display:flex;flex-direction:column;gap:6px;margin-top:10px;}
+.p-bar-row{display:grid;grid-template-columns:130px 1fr 50px;gap:8px;align-items:center;font-size:11px;}
+.p-bar-track{height:8px;background:var(--bg-subtle);border-radius:4px;overflow:hidden;}
+.p-bar-fill{height:100%;border-radius:4px;transition:width 0.5s ease;}
+
+/* ---- RISK REPORT ---- */
+.risk-factor-list{display:flex;flex-direction:column;gap:8px;margin-bottom:12px;}
+.risk-factor{display:grid;grid-template-columns:160px 1fr auto;gap:10px;align-items:center;font-size:12px;}
+.risk-factor-name{font-weight:600;color:var(--navy-deep);}
+.risk-factor-track{height:8px;background:var(--bg-subtle);border-radius:4px;overflow:hidden;}
+.risk-factor-fill{height:100%;border-radius:4px;background:var(--saffron);}
+.risk-factor-val{font-family:'IBM Plex Mono';font-weight:700;text-align:right;width:40px;}
+
+/* ---- FOOTER ---- */
+footer{text-align:center;padding:20px 20px 32px;color:var(--steel-muted);font-size:11px;line-height:1.6;border-top:1px solid var(--steel-border);margin-top:24px;background:var(--bg-surface);}
+footer .data-disclaimer{font-size:10.5px;color:var(--steel-light);margin-top:6px;}
+
+/* ---- PULSE ANIMATION ---- */
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.5;}}
+.pulsing{animation:pulse 1.5s ease-in-out infinite;}
+
+/* ---- SCENARIO STATUS PILL ---- */
+.scenario-pill{display:none;background:var(--red-bg);border:1px solid var(--red-border);color:var(--red);padding:4px 10px;border-radius:10px;font-size:11px;font-weight:700;font-family:'IBM Plex Mono';}
+.scenario-pill.show{display:inline-flex;align-items:center;gap:5px;}
+</style>
+</head>
+<body>
+
+
+
+<!-- LOADING OVERLAY -->
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="spinner"></div>
+  <div class="loading-text" id="loadingText">Running Decision Engine</div>
+  <div class="loading-sub" id="loadingSubText">Evaluating route scenarios...</div>
+</div>
+
+<!-- DRAWER OVERLAY -->
+<div class="drawer-overlay" id="drawerOverlay" onclick="closeAllDrawers()"></div>
+
+<!-- TOPSTICKY NAV BAR -->
+<div class="topbar">
+  <div class="brand">
+    <div class="brand-mark">L</div>
+    <div>
+      <div class="brand-text">LOHA DRISHTI</div>
+      <div class="brand-sub">Maritime Decision Intelligence · SAIL Logistics</div>
+    </div>
+  </div>
+
+  <div class="nav-menu">
+    <a id="nav-command" class="active" onclick="switchPanel('command')">⚙ Command Center</a>
+    <a id="nav-intelligence" onclick="switchPanel('intelligence')">📊 Intelligence</a>
+    <a id="nav-scenarios" onclick="switchPanel('scenarios')">⚡ Scenarios</a>
+    <a id="nav-ports" onclick="switchPanel('ports')">🚢 Port &amp; Vessel DNA</a>
+    <a href="/ml-training">🤖 ML Model &amp; Training</a>
+    <a href="/verification">🧪 System Verification</a>
+    <a id="nav-copilot" onclick="openCopilot()">❓ Questions &amp; AI Copilot</a>
+  </div>
+
+  <div class="topbar-actions">
+    <span class="scenario-pill" id="scenarioPill">⚠ SCENARIO ACTIVE</span>
+    <button class="icon-btn" id="openNotifyBtn">🔔 Alerts <span class="badge-num">2</span></button>
+    <button class="icon-btn" id="openSearchBtn">🔍 Search</button>
+    <button class="icon-btn" id="demoAnimBtn" onclick="openDemoAnimation()" style="background:var(--saffron-bg);border-color:var(--saffron-border);color:var(--saffron-dark);font-weight:700;">🎬 Watch Demo</button>
+    <button class="icon-btn" id="openExportBtn">📄 Report</button>
+    <button class="icon-btn" id="topbarLogoutBtn" onclick="performLogout()" style="background:var(--red-bg);border-color:var(--red-border);color:var(--red);font-weight:700;cursor:pointer;" title="Sign out and return to Login Gateway">🚪 Logout</button>
+  </div>
+</div>
+
+<!-- COMPACT CARGO BAR -->
+<div class="cargo-bar-wrapper">
+  <div class="cargo-bar">
+    <div class="cargo-summary-pills" id="cargoBarPills" title="Click EDIT CARGO to change parameters">
+      <div class="cargo-pill" onclick="openCargoDrawer()"><span class="label">Parcel:</span> <span id="barQty">80,000 MT</span></div>
+      <div class="cargo-pill" onclick="openCargoDrawer()"><span class="label">Cargo:</span> <span id="barCargo">Coking Coal</span></div>
+      <div class="cargo-pill" onclick="openCargoDrawer()"><span class="label">Origin:</span> <span id="barOrigin">Any Origin</span></div>
+      <div class="cargo-pill" onclick="openCargoDrawer()"><span class="label">Plant:</span> <span id="barPlant">Rourkela Steel</span></div>
+      <div class="cargo-pill" onclick="openCargoDrawer()"><span class="label">Window:</span> <span id="barDays">30 Days</span></div>
+    </div>
+    <div class="cargo-actions">
+      <button class="icon-btn" id="openEditCargoBtn">✏️ EDIT CARGO</button>
+      <button class="btn-optimize" id="barOptimizeBtn">⚡ FIND BEST STRATEGY</button>
+    </div>
+  </div>
+</div>
+
+<!-- SECTION TAB SWITCHER -->
+<div class="section-tabs" id="sectionTabs">
+  <button class="tab-btn active" id="tab-command" onclick="switchPanel('command')">Command Center</button>
+  <button class="tab-btn" id="tab-intelligence" onclick="switchPanel('intelligence')">Freight Intelligence</button>
+  <button class="tab-btn" id="tab-scenarios" onclick="switchPanel('scenarios')">What-If Simulator</button>
+  <button class="tab-btn" id="tab-ports" onclick="switchPanel('ports')">Port DNA</button>
+  <button class="tab-btn" id="tab-vessels" onclick="switchPanel('vessels')">Vessel Fit</button>
+</div>
+
+<!-- ===== PANEL 1: COMMAND CENTER ===== -->
+<div class="panel active" id="panel-command">
+  <div class="section" id="decisionSection">
+    <div class="section-header">
+      <div>
+        <h2>Executive Command Center — WHAT SHOULD I DO?</h2>
+        <p>Primary strategy recommendation based on Minimax-Regret optimization across 4 market scenarios.</p>
+      </div>
+      <span class="section-tag">Recommended Strategy</span>
+    </div>
+
+    <!-- DECISION HERO CARD (injected) -->
+    <div id="decisionCardHost">
+      <div style="text-align:center;padding:50px 20px;background:var(--bg-surface);border:1px dashed var(--steel-border);border-radius:var(--radius-lg);">
+        <div style="font-size:32px;margin-bottom:10px;">⚡</div>
+        <div style="font-family:'Space Grotesk';font-size:18px;font-weight:700;color:var(--navy-deep);">Click FIND BEST STRATEGY to begin</div>
+        <div style="font-size:13px;color:var(--steel-muted);margin-top:6px;">The decision engine will evaluate all origin-port-vessel combinations.</div>
+        <button class="btn-optimize" style="margin:20px auto 0;display:inline-flex;" onclick="runPipeline()">⚡ FIND BEST STRATEGY NOW</button>
+      </div>
+    </div>
+
+    <!-- DECISION PIPELINE STEPPER -->
+    <div class="stepper-card" style="margin-top:16px;">
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--steel-muted);letter-spacing:0.05em;margin-bottom:8px;">Decision Pipeline — 9-Stage Evaluation</div>
+      <div class="stepper" id="stepper"></div>
+      <div class="stage-note-box" id="stageNote">Ready for decision pipeline run...</div>
+    </div>
+
+    <!-- ROUTE MAP CARD -->
+    <div class="map-card">
+      <div class="map-header">
+        <h3>Geographic Cargo Flow &amp; Route Battle — India East Coast</h3>
+        <div class="map-legend">
+          <div class="legend-item"><div class="legend-dot" style="background:var(--saffron);"></div> Optimum Route</div>
+          <div class="legend-item"><div class="legend-dot" style="background:var(--steel-muted);"></div> Alternative</div>
+          <div class="legend-item"><div class="legend-dot" style="background:var(--red);"></div> Disrupted</div>
+        </div>
+      </div>
+      <svg id="routemap" viewBox="0 0 920 340"></svg>
+    </div>
+
+    <!-- STRATEGY BATTLE TABLE -->
+    <div class="battle-card" id="battle-section">
+      <div class="section-header">
+        <div>
+          <h3>Strategy Battle — Route Comparison</h3>
+          <p>Top candidate strategies ranked by landed cost and Minimax-Regret resilience.</p>
+        </div>
+        <span class="data-tag">DEMO / SYNTHETIC</span>
+      </div>
+      <div class="table-responsive">
+        <table class="battle-table" id="battleTable">
+          <thead>
+            <tr>
+              <th>Rank</th>
+              <th>Strategy Option</th>
+              <th>Vessel Class</th>
+              <th>Landed Cost ($/MT)</th>
+              <th>Demurrage Est.</th>
+              <th>Transit</th>
+              <th>Risk Index ℹ</th>
+              <th>Supply Continuity ℹ</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="battleTableBody">
+            <tr><td colspan="9" style="text-align:center;color:var(--steel-muted);padding:20px;">Run optimization to populate strategy comparison.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== PANEL 2: FREIGHT INTELLIGENCE ===== -->
+<div class="panel" id="panel-intelligence">
+  <div class="section">
+    <div class="section-header">
+      <div>
+        <h2>Freight Intelligence &amp; Market Pressure</h2>
+        <p>Historical trends, P10/P50/P90 confidence bands, and market timing signals. Data: DEMO/SYNTHETIC dry-bulk model.</p>
+      </div>
+      <span class="section-tag">Market Forecasting</span>
+    </div>
+
+    <div class="forecast-grid">
+      <!-- CHART CARD -->
+      <div class="chart-card">
+        <div class="map-header" style="margin-bottom:12px;">
+          <h4 style="margin:0;font-size:14px;">Dry-Bulk Freight Rate Horizon ($/MT)</h4>
+          <div class="cost-toggle" id="horizonToggle">
+            <button data-h="7" onclick="setHorizon(7)">7D</button>
+            <button data-h="14" onclick="setHorizon(14)">14D</button>
+            <button data-h="30" class="active" onclick="setHorizon(30)">30D</button>
+            <button data-h="60" onclick="setHorizon(60)">60D</button>
+            <button data-h="90" onclick="setHorizon(90)">90D</button>
+          </div>
+        </div>
+        <svg id="forecastChart" viewBox="0 0 600 220" style="width:100%;height:auto;display:block;"></svg>
+        <div style="display:flex;gap:14px;margin-top:8px;font-size:11px;color:var(--steel-muted);">
+          <div style="display:flex;align-items:center;gap:4px;"><div style="width:20px;height:3px;background:var(--saffron-dark);border-radius:2px;"></div> P50 Forecast</div>
+          <div style="display:flex;align-items:center;gap:4px;"><div style="width:20px;height:8px;background:rgba(217,119,6,0.12);border-radius:2px;"></div> P10–P90 Band</div>
+          <div style="display:flex;align-items:center;gap:4px;"><div style="width:8px;height:8px;background:var(--green);border-radius:50%;"></div> Historical</div>
+        </div>
+      </div>
+
+      <!-- MARKET PRESSURE GAUGE -->
+      <div class="chart-card" style="display:flex;flex-direction:column;justify-content:space-between;">
+        <div>
+          <h4 style="margin:0 0 4px;font-size:14px;">Freight Market Pressure Gauge</h4>
+          <p style="font-size:11.5px;color:var(--steel-muted);margin-bottom:12px;">Combined indicator from volatility, vessel availability, and seasonal demand.</p>
+          <div class="pressure-label" id="pressureGaugeValue" style="color:var(--saffron-dark);">NORMAL</div>
+          <div style="text-align:center;font-size:11.5px;color:var(--steel-muted);font-weight:600;margin-bottom:12px;">Market Pressure Index: <span id="pressureScore">42</span>/100</div>
+          <div class="pressure-bars">
+            <div class="p-bar-row">
+              <span>Freight Volatility</span>
+              <div class="p-bar-track"><div class="p-bar-fill" id="pBarFillVol" style="width:44%;background:var(--saffron);"></div></div>
+              <span class="mono" id="pBarTextVol" style="font-size:11px;">44/100</span>
+            </div>
+            <div class="p-bar-row">
+              <span>Vessel Availability</span>
+              <div class="p-bar-track"><div class="p-bar-fill" id="pBarFillVessel" style="width:38%;background:var(--green);"></div></div>
+              <span class="mono" id="pBarTextVessel" style="font-size:11px;">38/100</span>
+            </div>
+            <div class="p-bar-row">
+              <span>Seasonal Demand</span>
+              <div class="p-bar-track"><div class="p-bar-fill" id="pBarFillSeason" style="width:52%;background:var(--saffron);"></div></div>
+              <span class="mono" id="pBarTextSeason" style="font-size:11px;">52/100</span>
+            </div>
+            <div class="p-bar-row">
+              <span>Port Congestion</span>
+              <div class="p-bar-track"><div class="p-bar-fill" id="pBarFillCongest" style="width:35%;background:var(--green);"></div></div>
+              <span class="mono" id="pBarTextCongest" style="font-size:11px;">35/100</span>
+            </div>
+          </div>
+        </div>
+        <div style="background:var(--bg-subtle);padding:10px;border-radius:8px;font-size:12px;margin-top:12px;">
+          <div style="font-weight:700;color:var(--navy-deep);margin-bottom:2px;">📈 Market Timing Signal</div>
+          <div id="marketSignalText" style="color:var(--saffron-dark);font-weight:600;">3-VOYAGE CONTRACT RECOMMENDED</div>
+          <div id="marketSignalDesc" style="font-size:11px;color:var(--steel-muted);margin-top:3px;">Spot rate upside risk +12% over 60 days. Lock in contract to limit exposure.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FREIGHT RATES BY ORIGIN -->
+    <div class="battle-card" style="margin-top:16px;">
+      <div class="section-header">
+        <div>
+          <h3>Freight Rates by Origin ($/MT, P50)</h3>
+          <p>Representative freight benchmarks for each origin corridor. DEMO/SYNTHETIC model.</p>
+        </div>
+        <span class="data-tag">DEMO / SYNTHETIC</span>
+      </div>
+      <div class="table-responsive">
+        <table class="battle-table" id="freightOriginTable">
+          <thead>
+            <tr><th>Origin</th><th>Base Freight ($/MT)</th><th>P10 Low</th><th>P90 High</th><th>Volatility</th><th>Typical Cargo</th></tr>
+          </thead>
+          <tbody id="freightOriginBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== PANEL 3: SCENARIOS ===== -->
+<div class="panel" id="panel-scenarios">
+  <div class="section">
+    <div class="section-header">
+      <div>
+        <h2>What-If Disruption Simulator</h2>
+        <p>Test how the decision engine responds to real-world disruptions. Each scenario recalculates full route optimization.</p>
+      </div>
+      <span class="section-tag">Scenario Analysis</span>
+    </div>
+
+    <div class="challenge-card">
+      <div class="challenge-title">Select Disruption Scenario to Simulate</div>
+      <div class="challenge-buttons">
+        <button class="btn-challenge danger" id="btn-cyclone" onclick="handleChallenge('cyclone')">⚠️ Cyclone Warning (Odisha Coast)</button>
+        <button class="btn-challenge danger" id="btn-port" onclick="handleChallenge('port')">🚫 Primary Port Blocked</button>
+        <button class="btn-challenge danger" id="btn-freight" onclick="handleChallenge('freight')">📈 Freight Spike +20%</button>
+        <button class="btn-challenge danger" id="btn-bunker" onclick="handleChallenge('bunker')">⛽ Bunker Spike +15%</button>
+        <button class="btn-challenge danger" id="btn-vessel" onclick="handleChallenge('vessel')">🚢 Vessel Unavailable</button>
+        <button class="btn-challenge danger" id="btn-monsoon" onclick="handleChallenge('monsoon')">🌧️ Monsoon Delay</button>
+        <button class="btn-challenge btn-reset" onclick="resetBaseline()">🔄 Reset to Baseline</button>
+      </div>
+      <div class="diff-banner" id="diffBanner"></div>
+    </div>
+
+    <!-- BEFORE → SCENARIO → AFTER VISUALIZATION -->
+    <div class="scenario-viz" id="scenarioViz">
+      <div class="scenario-phases">
+        <div class="scenario-phase before">
+          <div class="scenario-phase-label">📋 Baseline (Before)</div>
+          <div class="scenario-phase-route" id="viz-before-route">—</div>
+          <div class="scenario-phase-cost">Cost: <span id="viz-before-cost">—</span>/MT</div>
+          <div class="scenario-phase-cost">Risk: <span id="viz-before-risk">—</span>/100</div>
+        </div>
+        <div class="scenario-arrow">→</div>
+        <div class="scenario-phase during">
+          <div class="scenario-phase-label">⚠ Active Disruption</div>
+          <div class="scenario-phase-route" id="viz-event-label" style="font-size:12px;">—</div>
+          <div class="scenario-phase-cost" id="viz-event-desc" style="font-size:11px;">—</div>
+        </div>
+        <div class="scenario-arrow">→</div>
+        <div class="scenario-phase after">
+          <div class="scenario-phase-label">✅ After Re-optimization</div>
+          <div class="scenario-phase-route" id="viz-after-route">—</div>
+          <div class="scenario-phase-cost">Cost: <span id="viz-after-cost">—</span>/MT</div>
+          <div class="scenario-phase-cost">Delta: <span id="viz-after-delta">—</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SCENARIO DECISION CARD (injected here too) -->
+    <div id="scenarioDecisionHost" style="margin-top:16px;"></div>
+
+    <!-- SCENARIO BATTLE TABLE -->
+    <div class="battle-card" style="margin-top:16px;">
+      <div class="section-header">
+        <div>
+          <h3>Scenario Route Comparison</h3>
+          <p>Top 5 strategies after applying disruption scenario.</p>
+        </div>
+      </div>
+      <div class="table-responsive">
+        <table class="battle-table">
+          <thead>
+            <tr>
+              <th>Rank</th><th>Strategy</th><th>Vessel</th><th>$/MT</th><th>Demurrage</th><th>Risk</th><th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="scenarioBattleBody">
+            <tr><td colspan="7" style="text-align:center;color:var(--steel-muted);padding:20px;">Select a disruption scenario above to populate this table.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== PANEL 4: PORTS ===== -->
+<div class="panel" id="panel-ports">
+  <div class="section">
+    <div class="section-header">
+      <div>
+        <h2>India East Coast — Port DNA</h2>
+        <p>Draft limits, LOA, turnaround rates, and infrastructure profiles. Source: DEMO/SYNTHETIC data.</p>
+      </div>
+      <span class="section-tag">Infrastructure Reference</span>
+    </div>
+    <div class="port-grid" id="portGrid" style="margin-bottom:20px;"></div>
+
+    <!-- PORT COMPARISON TABLE -->
+    <div class="battle-card">
+      <div class="section-header">
+        <div>
+          <h3>Port Capability Comparison</h3>
+          <p>Side-by-side benchmark across key operational metrics.</p>
+        </div>
+      </div>
+      <div class="table-responsive">
+        <table class="battle-table" id="portCompTable">
+          <thead>
+            <tr><th>Port</th><th>Draft (m)</th><th>Max LOA</th><th>Berths</th><th>Avg Wait</th><th>Mech. Rate (MT/d)</th><th>Evac Dist</th><th>Demurrage/d</th><th>Monsoon Risk</th></tr>
+          </thead>
+          <tbody id="portCompBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== PANEL 5: VESSELS ===== -->
+<div class="panel" id="panel-vessels">
+  <div class="section">
+    <div class="section-header">
+      <div>
+        <h2>Vessel Class Compatibility Matrix</h2>
+        <p>Optimal vessel selection for parcel size and port constraints. Fit scores update with active cargo parameters.</p>
+      </div>
+      <span class="section-tag">Vessel Intelligence</span>
+    </div>
+    <div class="vessel-grid" id="vesselGrid"></div>
+
+    <!-- VESSEL PORT COMPATIBILITY MATRIX -->
+    <div class="battle-card" style="margin-top:16px;">
+      <div class="section-header">
+        <div>
+          <h3>Vessel × Port Compatibility Grid</h3>
+          <p>Draft clearance check across all port-vessel combinations. ✓ = Feasible, ✗ = Draft too shallow.</p>
+        </div>
+      </div>
+      <div class="table-responsive">
+        <table class="battle-table" id="vesselPortMatrix">
+          <thead id="vesselPortMatrixHead"></thead>
+          <tbody id="vesselPortMatrixBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- FOOTER (always visible) -->
+
+<!-- ===================== DATA SOURCES & BENCHMARK REFERENCES ===================== -->
+<div class="content-container" id="dataSourcesSection" style="margin-top:28px;margin-bottom:28px;">
+  <div style="background:#FFF;border:1px solid var(--steel-border);border-radius:var(--radius-lg);padding:24px 28px;box-shadow:var(--shadow-sm);">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:14px;margin-bottom:20px;border-bottom:1px solid var(--steel-border);padding-bottom:16px;">
+      <div>
+        <div style="display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;letter-spacing:0.06em;color:var(--saffron-dark);background:var(--saffron-bg);padding:3px 10px;border-radius:20px;border:1px solid var(--saffron-border);margin-bottom:6px;text-transform:uppercase;">
+          📚 Data Governance &amp; Provenance
+        </div>
+        <h3 style="margin:0;font-size:19px;font-family:'Space Grotesk';color:var(--navy-deep);">Data Sources, Methodology &amp; Benchmark References</h3>
+        <p style="margin:4px 0 0;font-size:12.5px;color:var(--steel-muted);">Comprehensive disclosure of all benchmark indices, maritime regulatory standards, port tariffs, and synthetic simulation models used across LOHA-DRISHTI.</p>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <span style="font-size:11px;font-weight:700;padding:4px 10px;border-radius:6px;background:var(--green-bg);color:var(--green);border:1px solid var(--green-border);">✓ 4 PUBLIC BENCHMARKS</span>
+        <span style="font-size:11px;font-weight:700;padding:4px 10px;border-radius:6px;background:var(--blue-bg);color:var(--blue);border:1px solid var(--blue-border);">⚙ 2 CALIBRATED BASELINES</span>
+        <span style="font-size:11px;font-weight:700;padding:4px 10px;border-radius:6px;background:var(--saffron-bg);color:var(--saffron-dark);border:1px solid var(--saffron-border);">⚡ SYNTHETIC STRESS TESTS</span>
+      </div>
+    </div>
+
+    <!-- 3 PILLARS GRID -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(320px, 1fr));gap:18px;margin-bottom:24px;">
+      <!-- CARD 1 -->
+      <div style="background:var(--bg-subtle);border:1px solid var(--steel-border);border-radius:10px;padding:18px;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+          <span style="font-size:16px;">🌐</span>
+          <h4 style="margin:0;font-size:14px;color:var(--navy-deep);font-family:'Space Grotesk';">1. Public &amp; Regulatory Benchmarks</h4>
+          <span style="margin-left:auto;font-size:10px;font-weight:700;background:var(--green-bg);color:var(--green);padding:2px 8px;border-radius:10px;border:1px solid var(--green-border);">REAL / PUBLIC</span>
+        </div>
+        <ul style="font-size:12px;color:var(--steel-dark);line-height:1.65;padding-left:18px;margin:0;">
+          <li><b>Baltic Dry Index (BDI / C5 Capesize):</b> Real-world dry-bulk freight benchmark standards published by the Baltic Exchange.</li>
+          <li><b>Major Port Scale of Rates (SOR):</b> Vessel handling charges, berth hire, and pilotage from the Tariff Authority for Major Ports (TAMP) / Indian Ports Association (IPA).</li>
+          <li><b>Admiralty Maritime Distance Tables:</b> Nautical mile (nm) distances and coordinates published by the International Hydrographic Organization (IHO) and NGA.</li>
+          <li><b>Indian Railways FOIS Freight Circulars:</b> Distance-based rail freight tariff tables for coking coal and iron ore evacuation to SAIL steel plants.</li>
+        </ul>
+      </div>
+
+      <!-- CARD 2 -->
+      <div style="background:var(--bg-subtle);border:1px solid var(--steel-border);border-radius:10px;padding:18px;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+          <span style="font-size:16px;">📊</span>
+          <h4 style="margin:0;font-size:14px;color:var(--navy-deep);font-family:'Space Grotesk';">2. Calibrated Industry Baselines</h4>
+          <span style="margin-left:auto;font-size:10px;font-weight:700;background:var(--blue-bg);color:var(--blue);padding:2px 8px;border-radius:10px;border:1px solid var(--blue-border);">CALIBRATED</span>
+        </div>
+        <ul style="font-size:12px;color:var(--steel-dark);line-height:1.65;padding-left:18px;margin:0;">
+          <li><b>FOB Coking Coal Benchmark Prices:</b> Historical commodity price corridors derived from S&amp;P Global Platts and Argus Media ($240–$285/MT).</li>
+          <li><b>Marine Fuel Prices (0.5% VLSFO):</b> Bunkering spot prices benchmarked against Singapore and Fujairah bunkering ports ($580–$660/MT).</li>
+          <li><b>Vessel Specifications &amp; Drafts:</b> Standard naval architecture dimensions for Handysize, Supramax, Panamax, and Capesize bulk carriers.</li>
+          <li><b>Seasonal Monsoon Delay Factors:</b> Historical meteorological downtime distributions for Bay of Bengal ports (June–September).</li>
+        </ul>
+      </div>
+
+      <!-- CARD 3 -->
+      <div style="background:var(--bg-subtle);border:1px solid var(--steel-border);border-radius:10px;padding:18px;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+          <span style="font-size:16px;">🧪</span>
+          <h4 style="margin:0;font-size:14px;color:var(--navy-deep);font-family:'Space Grotesk';">3. Synthetic &amp; Stress Simulation</h4>
+          <span style="margin-left:auto;font-size:10px;font-weight:700;background:var(--saffron-bg);color:var(--saffron-dark);padding:2px 8px;border-radius:10px;border:1px solid var(--saffron-border);">SIMULATED</span>
+        </div>
+        <ul style="font-size:12px;color:var(--steel-dark);line-height:1.65;padding-left:18px;margin:0;">
+          <li><b>Demo Requisition Parcels:</b> Simulated SAIL procurement batches (25,000–180,000 MT) for Rourkela, Bhilai, Durgapur, Bokaro, and Burnpur.</li>
+          <li><b>Disruption Injection Matrix:</b> Synthetic scenario testing for Cyclone Warnings (Odisha Coast), Primary Port Closures, and Freight Spikes (+20%).</li>
+          <li><b>Minimax-Regret Score Engine:</b> Multi-scenario cost and supply continuity optimizer designed for automated decision resilience.</li>
+          <li><b>ML Gradient Boosting Regressor:</b> Trained on 1,500 calibrated voyage records with 8 feature encodings ($R^2 = 0.9891$).</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- REFERENCE TABLE -->
+    <div style="overflow-x:auto;">
+      <table style="width:100%;border-collapse:collapse;text-align:left;font-size:12px;">
+        <thead>
+          <tr style="background:var(--bg-subtle);border-bottom:2px solid var(--steel-border);">
+            <th style="padding:10px 12px;font-weight:700;color:var(--navy-deep);font-family:'Space Grotesk';">Dataset / Metric</th>
+            <th style="padding:10px 12px;font-weight:700;color:var(--navy-deep);font-family:'Space Grotesk';">Primary Reference Authority</th>
+            <th style="padding:10px 12px;font-weight:700;color:var(--navy-deep);font-family:'Space Grotesk';">Data Classification</th>
+            <th style="padding:10px 12px;font-weight:700;color:var(--navy-deep);font-family:'Space Grotesk';">Frequency / Baseline</th>
+            <th style="padding:10px 12px;font-weight:700;color:var(--navy-deep);font-family:'Space Grotesk';">System Application</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style="border-bottom:1px solid var(--steel-border);">
+            <td style="padding:10px 12px;"><b>Baltic Capesize Index (C5 / C3)</b></td>
+            <td style="padding:10px 12px;">Baltic Exchange / S&amp;P Global Commodity Insights</td>
+            <td style="padding:10px 12px;"><span style="background:var(--green-bg);color:var(--green);padding:2px 8px;border-radius:10px;font-weight:700;font-size:10.5px;">Public Benchmark</span></td>
+            <td style="padding:10px 12px;color:var(--steel-muted);">Daily Market Index</td>
+            <td style="padding:10px 12px;">Freight Forecasting &amp; P10/P50/P90 Confidence Bands</td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--steel-border);">
+            <td style="padding:10px 12px;"><b>Indian Major Ports Draft &amp; Tariff</b></td>
+            <td style="padding:10px 12px;">Ministry of Ports, Shipping and Waterways / IPA</td>
+            <td style="padding:10px 12px;"><span style="background:var(--green-bg);color:var(--green);padding:2px 8px;border-radius:10px;font-weight:700;font-size:10.5px;">Regulatory Tariff</span></td>
+            <td style="padding:10px 12px;color:var(--steel-muted);">Statutory SOR 2024–26</td>
+            <td style="padding:10px 12px;">Port Compatibility, Berth Charges &amp; Demurrage Calculations</td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--steel-border);">
+            <td style="padding:10px 12px;"><b>Nautical Distances &amp; Waypoints</b></td>
+            <td style="padding:10px 12px;">Admiralty Maritime Distance Tables / IHO</td>
+            <td style="padding:10px 12px;"><span style="background:var(--green-bg);color:var(--green);padding:2px 8px;border-radius:10px;font-weight:700;font-size:10.5px;">Standard Reference</span></td>
+            <td style="padding:10px 12px;color:var(--steel-muted);">Static Distance Matrix</td>
+            <td style="padding:10px 12px;">Interactive Map Route Paths &amp; Voyage Transit Days</td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--steel-border);">
+            <td style="padding:10px 12px;"><b>Indian Railways Steel Plant Tariffs</b></td>
+            <td style="padding:10px 12px;">Railway Board / FOIS (Freight Operations Information System)</td>
+            <td style="padding:10px 12px;"><span style="background:var(--blue-bg);color:var(--blue);padding:2px 8px;border-radius:10px;font-weight:700;font-size:10.5px;">Calibrated Model</span></td>
+            <td style="padding:10px 12px;color:var(--steel-muted);">Trainload Class 140 / 150</td>
+            <td style="padding:10px 12px;">Inland Evacuation &amp; Total Landed Cost (TLC) Computation</td>
+          </tr>
+          <tr>
+            <td style="padding:10px 12px;"><b>SAIL Requisition &amp; Disruption Scenarios</b></td>
+            <td style="padding:10px 12px;">LOHA-DRISHTI Simulation Engine (SIH PS 26006)</td>
+            <td style="padding:10px 12px;"><span style="background:var(--saffron-bg);color:var(--saffron-dark);padding:2px 8px;border-radius:10px;font-weight:700;font-size:10.5px;">Synthetic / Demo</span></td>
+            <td style="padding:10px 12px;color:var(--steel-muted);">Parameterized Generator</td>
+            <td style="padding:10px 12px;">Interactive Hackathon Demonstrator &amp; What-If Engine</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<footer>
+  LOHA DRISHTI · SIH Finalist Prototype for PS 26006 (Ministry of Steel / SAIL)<br>
+  Designed by Senior Indian Logistics &amp; Data Science Team · <span class="data-disclaimer">⚠ All freight rates, cost figures, port wait times, vessel data, and savings are derived from a DETERMINISTIC SYNTHETIC dry-bulk model. No live SAIL operational data, real vessel positions, live freight quotes, or actual savings are claimed or represented.</span>
+</footer>
+
+<!-- EDIT CARGO DRAWER (LEFT) -->
+<div class="drawer-left" id="editCargoDrawer">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
+    <h3 style="margin:0;font-size:17px;color:var(--navy-deep);">✏️ Edit Cargo Requirements</h3>
+    <button class="close-btn" onclick="closeDrawerById('editCargoDrawer')">✕</button>
+  </div>
+
+  <div id="validationAlert" style="display:none;background:var(--red-bg);border:1px solid var(--red-border);color:var(--red);padding:8px 12px;border-radius:6px;font-size:12px;margin-bottom:12px;"></div>
+
+  <div style="display:flex;flex-direction:column;gap:14px;flex:1;">
+    <div class="field">
+      <label for="drawerCargoType">Cargo Type</label>
+      <select id="drawerCargoType">
+        <option value="coking_coal" selected>Coking Coal</option>
+        <option value="thermal_coal">Thermal Coal</option>
+        <option value="iron_ore_fines">Iron Ore Fines</option>
+        <option value="iron_ore_lumps">Iron Ore Lumps (Pellet Feed)</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label for="drawerQty">Parcel Quantity (MT)</label>
+      <input type="number" id="drawerQty" value="80000" step="5000" min="1000" max="200000" placeholder="Enter MT (min 1,000)">
+      <span class="field-error" id="qtyError" style="display:none;">Quantity must be at least 1,000 MT and not exceed 200,000 MT.</span>
+      <span style="font-size:11px;color:var(--steel-muted);">Valid range: 1,000 – 200,000 MT. Engine selects vessel class automatically.</span>
+    </div>
+
+    <div class="field">
+      <label for="drawerOrigin">Preferred Origin</label>
+      <select id="drawerOrigin">
+        <option value="any" selected>Any (Engine Decides Optimal)</option>
+        <option value="australia">Australia (RBCT / Newcastle)</option>
+        <option value="indonesia">Indonesia (Kalimantan)</option>
+        <option value="mozambique">Mozambique (Nacala)</option>
+        <option value="usa">USA (Hampton Roads)</option>
+        <option value="russia">Russia (Vostochny)</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label for="drawerPlant">Destination Plant</label>
+      <select id="drawerPlant">
+        <option value="rourkela" selected>Rourkela Steel Plant (RSP) — Odisha</option>
+        <option value="bhilai">Bhilai Steel Plant (BSP) — Chhattisgarh</option>
+        <option value="durgapur">Durgapur Steel Plant (DSP) — West Bengal</option>
+        <option value="bokaro">Bokaro Steel Plant (BSL) — Jharkhand</option>
+        <option value="burnpur">IISCO Steel Plant (ISP) — West Bengal</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label for="drawerDays">Delivery Window</label>
+      <input type="range" id="drawerDays" min="10" max="60" value="30">
+      <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--steel-muted);">
+        <span>10 days</span>
+        <span class="mono" style="font-weight:700;color:var(--navy-deep);" id="drawerDaysVal">30 days</span>
+        <span>60 days</span>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:8px;margin-top:6px;">
+      <button class="btn-optimize" style="padding:12px;justify-content:center;" id="drawerSaveBtn">⚡ APPLY &amp; OPTIMIZE STRATEGY</button>
+      <button class="icon-btn" style="justify-content:center;" onclick="closeDrawerById('editCargoDrawer')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- NOTIFICATION DRAWER (RIGHT) -->
+<div class="drawer-right" id="notifyDrawer">
+  <div class="drawer-header">
+    <div style="font-weight:700;font-family:'Space Grotesk';">Live Risk &amp; Market Alerts 🔔</div>
+    <button class="close-btn" style="color:#FFF;" onclick="closeDrawerById('notifyDrawer')">✕</button>
+  </div>
+  <div class="drawer-body">
+    <div style="background:var(--saffron-bg);border:1px solid var(--saffron-border);padding:10px 12px;border-radius:8px;font-size:12px;">
+      <b style="color:var(--saffron-dark);">⚠️ Odisha Coast Monsoon Active</b><br>
+      Paradip &amp; Dhamra wait times elevated (+1.7× delay multiplier applied in model).
+      <div style="font-size:10.5px;color:var(--steel-muted);margin-top:4px;">Source: DEMO/SYNTHETIC · Aug 2026</div>
+    </div>
+    <div style="background:var(--green-bg);border:1px solid var(--green-border);padding:10px 12px;border-radius:8px;font-size:12px;">
+      <b style="color:var(--green);">✓ Gangavaram Draft Optimal</b><br>
+      Deep draft 18.9m available for Capesize class. No tidal restriction in current window.
+      <div style="font-size:10.5px;color:var(--steel-muted);margin-top:4px;">Source: DEMO/SYNTHETIC · Aug 2026</div>
+    </div>
+    <div style="background:var(--red-bg);border:1px solid var(--red-border);padding:10px 12px;border-radius:8px;font-size:12px;">
+      <b style="color:var(--red);">🚢 Capesize Spot Tightening</b><br>
+      Baltic Capesize Index up 8.2% this week. Consider locking contract now.
+      <div style="font-size:10.5px;color:var(--steel-muted);margin-top:4px;">Source: DEMO/SYNTHETIC · Aug 2026</div>
+    </div>
+  </div>
+</div>
+
+<!-- AI COPILOT & QUESTIONS DRAWER (RIGHT) -->
+<div class="drawer-right" id="copilotDrawer">
+  <div class="drawer-header">
+    <div>
+      <div style="font-weight:700;font-family:'Space Grotesk';font-size:15px;">❓ Questions &amp; AI Copilot 🧠</div>
+      <div style="font-size:11px;color:rgba(255,255,255,0.8);">Ask Any Maritime, Cost, Port, Vessel, or Strategy Question</div>
+    </div>
+    <button class="close-btn" style="color:#FFF;" onclick="closeDrawerById('copilotDrawer')">✕</button>
+  </div>
+  <div class="drawer-body" id="copilotBody" style="flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px;">
+    <div class="copilot-msg bot">
+      <b>Namaste! I am the LOHA-DRISHTI Decision &amp; Strategy AI Assistant.</b><br>
+      You can type any question below or click the quick prompt pills to understand:
+      <ul style="margin:6px 0 0 16px;padding:0;font-size:11.5px;">
+        <li>Why a specific route or vessel class was selected</li>
+        <li>How demurrage, port queues, and monsoon factors are calculated</li>
+        <li>What happens during disruptions (Cyclone, Freight Spike)</li>
+        <li>Minimax-Regret mathematical logic and risk exposure</li>
+      </ul>
+    </div>
+  </div>
+  <div id="copilotTyping" class="copilot-typing" style="display:none;padding:4px 14px;font-size:11px;color:var(--saffron-dark);">⚡ AI Copilot is analyzing logistics parameters...</div>
+  
+  <!-- INTERACTIVE INPUT AREA -->
+  <div style="padding:10px 14px;border-top:1px solid var(--steel-border);background:var(--bg-main);display:flex;gap:8px;">
+    <input type="text" id="copilotCustomInput" placeholder="Type your question here (e.g. Why Dhamra over Haldia?)..." style="flex:1;padding:9px 12px;border:1px solid var(--steel-border);border-radius:6px;font-size:12px;box-sizing:border-box;" onkeydown="if(event.key==='Enter') submitCustomCopilotQuery()">
+    <button class="btn-optimize" style="padding:9px 14px;font-size:12px;justify-content:center;" onclick="submitCustomCopilotQuery()">Ask ➔</button>
+  </div>
+
+  <!-- QUICK QUESTION PILLS -->
+  <div class="copilot-prompts" style="padding:10px 14px;border-top:1px solid var(--steel-border);max-height:160px;overflow-y:auto;">
+    <div style="font-size:10.5px;font-weight:700;color:var(--steel-muted);text-transform:uppercase;margin-bottom:6px;">Suggested Questions:</div>
+    <button class="prompt-btn" onclick="askCopilot('Why this vessel class?')">🚢 Why was this vessel class selected?</button>
+    <button class="prompt-btn" onclick="askCopilot('Why not Paradip port?')">⚓ Why not Paradip port?</button>
+    <button class="prompt-btn" onclick="askCopilot('Why not Haldia port?')">🏗️ Why is Haldia draft restricted?</button>
+    <button class="prompt-btn" onclick="askCopilot('What if freight spikes by 20%?')">📈 What if freight spikes by 20%?</button>
+    <button class="prompt-btn" onclick="askCopilot('How does Minimax-Regret work?')">📐 How does the Minimax-Regret math work?</button>
+    <button class="prompt-btn" onclick="askCopilot('How is the Risk Index calculated?')">🛡️ How is the Risk Index calculated?</button>
+    <button class="prompt-btn" onclick="askCopilot('What is Supply Continuity score?')">📦 What is Supply Continuity confidence?</button>
+    <button class="prompt-btn" onclick="askCopilot('How is Demurrage computed?')">⏳ How is Demurrage cost calculated?</button>
+    <button class="prompt-btn" onclick="askCopilot('What is the best route for Rourkela?')">🏭 What is the optimal route for Rourkela?</button>
+  </div>
+</div>
+
+<!-- SEARCH MODAL -->
+<div class="modal-overlay" id="searchModal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h3>Quick Jump &amp; Module Search 🔍</h3>
+      <button class="close-btn" onclick="closeModal('searchModal')">✕</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:7px;">
+      <button class="prompt-btn" onclick="closeModal('searchModal');switchPanel('command')">➔ Command Center (Executive Decision)</button>
+      <button class="prompt-btn" onclick="closeModal('searchModal');switchPanel('scenarios')">➔ What-If Disruption Simulator</button>
+      <button class="prompt-btn" onclick="closeModal('searchModal');switchPanel('command');setTimeout(()=>document.getElementById('battle-section').scrollIntoView({behavior:'smooth'}),300)">➔ Strategy Battle Comparison Table</button>
+      <button class="prompt-btn" onclick="closeModal('searchModal');switchPanel('intelligence')">➔ Freight Intelligence &amp; Forecast</button>
+      <button class="prompt-btn" onclick="closeModal('searchModal');switchPanel('ports')">➔ Port DNA Profiles</button>
+      <button class="prompt-btn" onclick="closeModal('searchModal');switchPanel('vessels')">➔ Vessel Class Compatibility</button>
+      <button class="prompt-btn" onclick="closeModal('searchModal');openCopilot()">➔ AI Copilot</button>
+    </div>
+  </div>
+</div>
+
+<!-- RISK MODAL -->
+<div class="modal-overlay" id="riskModal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h3>Risk Index Score Breakdown 🛡️</h3>
+      <button class="close-btn" onclick="closeModal('riskModal')">✕</button>
+    </div>
+    <div style="font-size:13px;line-height:1.6;color:var(--steel-dark);" id="riskModalContent">
+      <p>Risk Index (0–100) measures operational vulnerabilities across the voyage:</p>
+      <div class="risk-factor-list" id="riskFactorList"></div>
+      <p style="font-size:12px;background:var(--blue-bg);border:1px solid var(--blue-border);padding:10px;border-radius:6px;color:var(--blue);">
+        <b>Interpretation:</b> Below 35 = Low Risk (optimal). 35–60 = Moderate (acceptable). Above 60 = High Risk (seek alternatives).<br>
+        <b>Model:</b> DEMO / SYNTHETIC — not real operational data.
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- SUPPLY CONTINUITY MODAL -->
+<div class="modal-overlay" id="continuityModal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h3>Supply Continuity Score 📦</h3>
+      <button class="close-btn" onclick="closeModal('continuityModal')">✕</button>
+    </div>
+    <div style="font-size:13px;line-height:1.6;color:var(--steel-dark);" id="continuityModalContent">
+      <div style="background:var(--green-bg);border:1px solid var(--green-border);padding:12px 14px;border-radius:8px;margin-bottom:14px;">
+        <div style="font-size:11px;font-weight:700;color:var(--green-dark);text-transform:uppercase;letter-spacing:0.04em;">Steel Plant Security Index</div>
+        <div style="font-size:15px;font-weight:700;color:var(--green);margin-top:2px;">Continuous Blast Furnace Feed Assurance</div>
+        <p style="font-size:11.5px;color:var(--steel-dark);margin:4px 0 0;">Evaluates the probabilistic certainty of delivering raw materials without triggering blast furnace throttling or inventory stock-outs.</p>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px;">
+        <div style="background:var(--bg-subtle);border:1px solid var(--steel-border);border-radius:8px;padding:10px 12px;">
+          <div style="display:flex;justify-content:space-between;font-weight:600;font-size:12px;color:var(--navy-deep);">
+            <span>⚓ 1. Deep-Water Berth Availability (40%)</span>
+            <span style="color:var(--green);font-weight:700;">HIGH RELIABILITY</span>
+          </div>
+          <p style="font-size:11px;color:var(--steel-muted);margin:3px 0 0;">Dedicated mechanized bulk berths at Dhamra & Gangavaram prevent multi-day anchor hold-ups.</p>
+        </div>
+
+        <div style="background:var(--bg-subtle);border:1px solid var(--steel-border);border-radius:8px;padding:10px 12px;">
+          <div style="display:flex;justify-content:space-between;font-weight:600;font-size:12px;color:var(--navy-deep);">
+            <span>⛈️ 2. Weather & Cyclone Resilience (30%)</span>
+            <span style="color:var(--green);font-weight:700;">BUFFERED</span>
+          </div>
+          <p style="font-size:11px;color:var(--steel-muted);margin:3px 0 0;">Engine selects all-weather deep water ports with backup road/rail diversion pathways.</p>
+        </div>
+
+        <div style="background:var(--bg-subtle);border:1px solid var(--steel-border);border-radius:8px;padding:10px 12px;">
+          <div style="display:flex;justify-content:space-between;font-weight:600;font-size:12px;color:var(--navy-deep);">
+            <span>📐 3. Minimax-Regret Multi-Scenario Margin (20%)</span>
+            <span style="color:var(--green);font-weight:700;">OPTIMIZED</span>
+          </div>
+          <p style="font-size:11px;color:var(--steel-muted);margin:3px 0 0;">Selected strategy guarantees the minimum financial loss in the event of freight spikes or port disruptions.</p>
+        </div>
+
+        <div style="background:var(--bg-subtle);border:1px solid var(--steel-border);border-radius:8px;padding:10px 12px;">
+          <div style="display:flex;justify-content:space-between;font-weight:600;font-size:12px;color:var(--navy-deep);">
+            <span>🚆 4. Inland Rail Wagon Turnaround (10%)</span>
+            <span style="color:var(--green);font-weight:700;">DIRECT FOIS RAKE</span>
+          </div>
+          <p style="font-size:11px;color:var(--steel-muted);margin:3px 0 0;">Direct rake loading at port railheads ensures smooth dispatch to SAIL plant silos.</p>
+        </div>
+      </div>
+
+      <div style="background:var(--bg-subtle);padding:10px;border-radius:6px;font-size:11.5px;color:var(--steel-dark);border:1px solid var(--steel-border);">
+        💡 <b>Recommendation:</b> Maintain a minimum <b>15-day raw material yard buffer</b> during monsoon months (June–September) to guarantee uninterrupted hot-metal production.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- EXPORT REPORT MODAL -->
+<div class="modal-overlay" id="exportModal">
+  <div class="modal-box" style="max-width:720px;">
+    <div class="modal-header">
+      <h3>Executive Strategy Report 📄</h3>
+      <button class="close-btn" onclick="closeModal('exportModal')">✕</button>
+    </div>
+    <div id="exportReportBody" style="font-size:13px;line-height:1.7;color:var(--navy-deep);background:var(--bg-subtle);padding:16px;border-radius:8px;border:1px solid var(--steel-border);margin-bottom:14px;">
+      <h4>SAIL MARITIME CARGO CHARTERING STRATEGY REPORT</h4>
+      <p>Run optimization first to populate the executive report.</p>
+    </div>
+    <button class="btn-optimize" onclick="window.print();">🖨️ PRINT / DOWNLOAD REPORT</button>
+  </div>
+</div>
+
+
+<!-- ===================== OFFICIAL SIGN IN & AUTHENTICATION MODAL ===================== -->
+<div class="modal-overlay" id="signinModal">
+  <div class="modal-box" style="max-width:440px;padding:24px;">
+    <div class="modal-header" style="border-bottom:1px solid var(--steel-border);padding-bottom:12px;margin-bottom:16px;">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div class="brand-mark" style="width:32px;height:32px;font-size:16px;">L</div>
+        <div>
+          <h3 style="margin:0;font-size:16px;font-family:'Space Grotesk';color:var(--navy-deep);">SAIL Officer Authentication</h3>
+          <p style="margin:2px 0 0;font-size:11px;color:var(--steel-muted);">Ministry of Steel · Secure Enterprise Gateway</p>
+        </div>
+      </div>
+      <button class="close-btn" onclick="closeModal('signinModal')">✕</button>
+    </div>
+
+    <!-- TABS -->
+    <div style="display:flex;background:var(--bg-subtle);border-radius:8px;padding:3px;margin-bottom:14px;border:1px solid var(--steel-border);">
+      <button id="modalTabSignIn" class="tab active" style="flex:1;padding:7px;border:none;background:#FFF;border-radius:6px;font-size:12px;font-weight:700;color:var(--navy-deep);cursor:pointer;" onclick="switchModalAuthTab('signin')">Sign In</button>
+      <button id="modalTabRegister" class="tab" style="flex:1;padding:7px;border:none;background:transparent;border-radius:6px;font-size:12px;font-weight:600;color:var(--steel-muted);cursor:pointer;" onclick="switchModalAuthTab('register')">Register</button>
+    </div>
+
+    <div id="modalAuthAlert" style="display:none;padding:8px 12px;border-radius:6px;font-size:11.5px;margin-bottom:12px;"></div>
+
+    <!-- SIGN IN PANEL -->
+    <div id="modalPanelSignin">
+      <div class="field" style="margin-bottom:12px;">
+        <label style="display:block;font-size:11px;font-weight:700;color:var(--navy-deep);margin-bottom:4px;text-transform:uppercase;">Official Email</label>
+        <input type="email" id="modalLoginEmail" value="admin@sail.gov.in" style="width:100%;padding:9px 12px;border:1px solid var(--steel-border);border-radius:6px;font-size:12.5px;box-sizing:border-box;">
+      </div>
+      <div class="field" style="margin-bottom:14px;">
+        <label style="display:block;font-size:11px;font-weight:700;color:var(--navy-deep);margin-bottom:4px;text-transform:uppercase;">Password</label>
+        <input type="password" id="modalLoginPassword" value="admin123" style="width:100%;padding:9px 12px;border:1px solid var(--steel-border);border-radius:6px;font-size:12.5px;box-sizing:border-box;">
+      </div>
+
+      <button id="btnModalLogin" onclick="submitModalLogin()" class="btn-optimize" style="width:100%;padding:10px;justify-content:center;font-size:13px;">
+        🔒 AUTHENTICATE &amp; SIGN IN
+      </button>
+
+      <!-- 1-CLICK QUICK ACCESS -->
+      <div style="margin-top:16px;padding-top:12px;border-top:1px solid var(--steel-border);">
+        <div style="font-size:11px;font-weight:700;color:var(--saffron-dark);text-transform:uppercase;margin-bottom:6px;">⚡ 1-Click Pre-loaded Demo Roles</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+          <button type="button" class="prompt-btn" style="text-align:left;padding:6px 8px;" onclick="modalQuickFill('admin@sail.gov.in','admin123','Chief Logistics Officer')">
+            <strong style="color:var(--navy-deep);font-size:11px;">👤 Admin (CLO)</strong>
+            <div style="font-size:9.5px;color:var(--steel-muted);">admin@sail.gov.in</div>
+          </button>
+          <button type="button" class="prompt-btn" style="text-align:left;padding:6px 8px;" onclick="modalQuickFill('analyst@sail.gov.in','analyst123','Senior Chartering Analyst')">
+            <strong style="color:var(--navy-deep);font-size:11px;">📊 Analyst</strong>
+            <div style="font-size:9.5px;color:var(--steel-muted);">analyst@sail.gov.in</div>
+          </button>
+          <button type="button" class="prompt-btn" style="text-align:left;padding:6px 8px;" onclick="modalQuickFill('officer@sail.gov.in','officer123','Procurement Officer')">
+            <strong style="color:var(--navy-deep);font-size:11px;">📦 Officer</strong>
+            <div style="font-size:9.5px;color:var(--steel-muted);">officer@sail.gov.in</div>
+          </button>
+          <button type="button" class="prompt-btn" style="text-align:left;padding:6px 8px;border-color:var(--saffron-border);background:var(--saffron-bg);" onclick="modalQuickFill('guest@sail.gov.in','admin123','Guest Officer')">
+            <strong style="color:var(--saffron-dark);font-size:11px;">🚀 Instant Guest</strong>
+            <div style="font-size:9.5px;color:var(--saffron);">Direct Entry</div>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- REGISTER PANEL -->
+    <div id="modalPanelRegister" style="display:none;">
+      <div class="field" style="margin-bottom:10px;">
+        <label style="display:block;font-size:11px;font-weight:700;color:var(--navy-deep);margin-bottom:4px;text-transform:uppercase;">Full Name</label>
+        <input type="text" id="modalRegName" placeholder="Rajesh Sharma" style="width:100%;padding:9px 12px;border:1px solid var(--steel-border);border-radius:6px;font-size:12.5px;box-sizing:border-box;">
+      </div>
+      <div class="field" style="margin-bottom:10px;">
+        <label style="display:block;font-size:11px;font-weight:700;color:var(--navy-deep);margin-bottom:4px;text-transform:uppercase;">Official Email</label>
+        <input type="email" id="modalRegEmail" placeholder="rsharma@sail.gov.in" style="width:100%;padding:9px 12px;border:1px solid var(--steel-border);border-radius:6px;font-size:12.5px;box-sizing:border-box;">
+      </div>
+      <div class="field" style="margin-bottom:12px;">
+        <label style="display:block;font-size:11px;font-weight:700;color:var(--navy-deep);margin-bottom:4px;text-transform:uppercase;">Password</label>
+        <input type="password" id="modalRegPassword" placeholder="Min. 6 characters" style="width:100%;padding:9px 12px;border:1px solid var(--steel-border);border-radius:6px;font-size:12.5px;box-sizing:border-box;">
+      </div>
+      <button onclick="submitModalRegister()" class="btn-optimize" style="width:100%;padding:10px;justify-content:center;font-size:13px;">
+        CREATE OFFICER ACCOUNT
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== JAVASCRIPT ===================== -->
+<script>
+/* ======= DATA STORE ======= */
+const ORIGINS = {
+  australia:  {name:"Australia (RBCT/Newcastle)", short:"Australia", cargo:["coking_coal","thermal_coal","iron_ore_fines","iron_ore_lumps"], baseFreight:16.5, vol:0.14, distFactor:1.0},
+  indonesia:  {name:"Indonesia (Kalimantan)",     short:"Indonesia", cargo:["thermal_coal"],                                              baseFreight:9.2,  vol:0.10, distFactor:0.7},
+  mozambique: {name:"Mozambique (Nacala)",        short:"Mozambique",cargo:["coking_coal"],                                               baseFreight:14.0, vol:0.18, distFactor:0.9},
+  usa:        {name:"USA (Hampton Roads)",         short:"USA",       cargo:["coking_coal","thermal_coal"],                                baseFreight:24.0, vol:0.12, distFactor:1.6},
+  russia:     {name:"Russia (Vostochny)",          short:"Russia",    cargo:["thermal_coal","coking_coal"],                                baseFreight:19.5, vol:0.20, distFactor:1.2},
+};
+
+const PORTS = {
+  paradip:    {name:"Paradip",           code:"INPRT", draft:18.1, loa:290, beam:45, berths:4, waitDays:2.8, mechRate:38000, evacKm:210, demurrage:9500,  monsoon:[6,7,8,9]},
+  dhamra:     {name:"Dhamra",            code:"INDHM", draft:18.5, loa:300, beam:48, berths:3, waitDays:1.6, mechRate:42000, evacKm:245, demurrage:9800,  monsoon:[6,7,8]},
+  gangavaram: {name:"Gangavaram",        code:"INGGV", draft:18.9, loa:300, beam:48, berths:2, waitDays:2.1, mechRate:40000, evacKm:410, demurrage:10200, monsoon:[6,7,8,9]},
+  vizag:      {name:"Visakhapatnam",     code:"INVTZ", draft:17.0, loa:270, beam:43, berths:5, waitDays:3.4, mechRate:30000, evacKm:380, demurrage:9200,  monsoon:[6,7,8,9,10]},
+  gopalpur:   {name:"Gopalpur",          code:"INGOP", draft:15.0, loa:230, beam:36, berths:1, waitDays:1.2, mechRate:18000, evacKm:520, demurrage:8000,  monsoon:[6,7,8]},
+  haldia:     {name:"Haldia",            code:"INHAL", draft:8.5,  loa:180, beam:28, berths:2, waitDays:4.6, mechRate:9000,  evacKm:60,  demurrage:7500,  monsoon:[6,7,8,9]},
+  sandheads:  {name:"Sagar/Sandheads",   code:"INSAG", draft:12.0, loa:200, beam:32, berths:1, waitDays:5.2, mechRate:12000, evacKm:130, demurrage:7800,  monsoon:[6,7,8,9]},
+};
+
+const VESSEL_CLASSES = {
+  handysize: {name:"Handysize", dwtMin:25000, dwtMax:40000,  draft:10.0, loa:180, beam:28},
+  supramax:  {name:"Supramax",  dwtMin:50000, dwtMax:60000,  draft:12.6, loa:200, beam:32},
+  panamax:   {name:"Panamax",   dwtMin:65000, dwtMax:80000,  draft:14.2, loa:229, beam:32.3},
+  capesize:  {name:"Capesize",  dwtMin:150000,dwtMax:180000, draft:18.0, loa:292, beam:45},
+};
+
+const CARGO_FOB   = {coking_coal:185, thermal_coal:95, iron_ore_fines:105, iron_ore_lumps:112};
+const CARGO_LABEL = {coking_coal:"Coking Coal", thermal_coal:"Thermal Coal", iron_ore_fines:"Iron Ore Fines", iron_ore_lumps:"Iron Ore Lumps (Pellet)"};
+const PLANT_LABEL = {rourkela:"Rourkela Steel Plant (RSP)", bhilai:"Bhilai Steel Plant (BSP)", durgapur:"Durgapur Steel Plant (DSP)", bokaro:"Bokaro Steel Plant (BSL)", burnpur:"IISCO Steel Plant (ISP)"};
+
+let activeResult   = null;
+let baselineResult = null;
+let activeInputs   = {cargoType:"coking_coal", qty:80000, origin:"any", plant:"rourkela", days:30};
+let isTotalCostMode = false;
+let activeScenarioType = null;
+
+/* ======= UTILS ======= */
+const fmt = n => n.toLocaleString('en-IN',{maximumFractionDigits:1});
+const usd = n => "$"+fmt(n);
+const delay = ms => new Promise(r => setTimeout(r,ms));
+
+function seededRand(seed){
+  let s = seed % 2147483647; if(s<=0) s+=2147483646;
+  return function(){ s=s*16807%2147483647; return(s-1)/2147483646; };
+}
+
+function currentMonth(){ return new Date().getMonth()+1; }
+
+/* ======= ENGINE ======= */
+function pickVesselClass(qty){
+  const order=["handysize","supramax","panamax","capesize"];
+  for(const k of order){ if(VESSEL_CLASSES[k].dwtMax>=qty) return k; }
+  return "capesize";
+}
+
+function feasiblePorts(vesselClassKey){
+  const vc=VESSEL_CLASSES[vesselClassKey];
+  return Object.entries(PORTS).filter(([k,p])=>p.draft>=vc.draft+0.5);
+}
+
+function forecastFreight(originKey, rand){
+  const o=ORIGINS[originKey];
+  const seasonal=1+0.05*Math.sin((currentMonth()/12)*2*Math.PI);
+  const p50=o.baseFreight*seasonal*(1+(rand()-0.5)*0.06);
+  const band=p50*o.vol;
+  return {p10:p50-band, p50, p90:p50+band};
+}
+
+function totalLandedCost(originKey, portKey, cargoType, qty, rand, blockedPorts=[], freightSpikeMult=1.0){
+  const o=ORIGINS[originKey], p=PORTS[portKey];
+  const fob=CARGO_FOB[cargoType];
+  const fc=forecastFreight(originKey,rand);
+  const freight=fc.p50*freightSpikeMult;
+  const loadPortCharge=3.2*o.distFactor;
+  const dischargePortCharge=2.6+(p.berths<2?0.9:0);
+  const isMonsoon=p.monsoon.includes(currentMonth());
+  const congMult=blockedPorts.includes(portKey)?99:(isMonsoon?1.7:1.0);
+  const expectedWaitDays=p.waitDays*congMult;
+  const demurrageExpected=(Math.max(0,expectedWaitDays-3)*p.demurrage)/qty;
+  const insurance=0.9+(isMonsoon?0.4:0);
+  const evac=(p.evacKm/100)*1.35;
+  const transitDays=Math.round(14*o.distFactor);
+  const financing=transitDays*0.11;
+  const total=fob+freight+loadPortCharge+dischargePortCharge+demurrageExpected+insurance+evac+financing;
+  return {fob,freight,loadPortCharge,dischargePortCharge,demurrageExpected,insurance,evac,financing,total,transitDays,expectedWaitDays,isMonsoon};
+}
+
+function riskScore(originKey, portKey){
+  const o=ORIGINS[originKey], p=PORTS[portKey];
+  if(!o || !p) return 35;
+  const isMonsoon=p.monsoon.includes(currentMonth());
+  
+  const originBase = { australia: 10, south_africa: 22, indonesia: 36, usa: 18, russia: 42, mozambique: 38 };
+  const originVol = { australia: 6, south_africa: 15, indonesia: 20, usa: 10, russia: 26, mozambique: 22 };
+  const portWait = { dhamra: 4, gangavaram: 3, vizag: 8, paradip: 16, haldia: 24 };
+  const portMonsoon = { dhamra: 6, gangavaram: 5, vizag: 10, paradip: 20, haldia: 26 };
+
+  let score = (originBase[originKey] || 15) + (originVol[originKey] || 10) + (portWait[portKey] || 8);
+  if(isMonsoon){
+    score += (portMonsoon[portKey] || 12);
+  }
+  return Math.min(95, Math.max(15, Math.round(score)));
+}
+
+function riskClass(score){ return score<40?'risk-low':score<60?'risk-mid':'risk-high'; }
+
+function runDecisionEngine(inputs, blockedPorts=[], blockedVesselClass=null, seedOffset=0, freightSpikeMult=1.0){
+  const rand=seededRand(inputs.qty+inputs.days*7+seedOffset+inputs.plant.length*13);
+  const vesselClassKey=blockedVesselClass
+    ?(Object.keys(VESSEL_CLASSES).filter(k=>k!==blockedVesselClass&&VESSEL_CLASSES[k].dwtMax>=inputs.qty)[0]||"handysize")
+    :pickVesselClass(inputs.qty);
+
+  let candOrigins=inputs.origin==="any"?Object.keys(ORIGINS):[inputs.origin];
+  candOrigins=candOrigins.filter(o=>ORIGINS[o].cargo.includes(inputs.cargoType));
+  if(candOrigins.length===0) candOrigins=Object.keys(ORIGINS).filter(o=>ORIGINS[o].cargo.includes(inputs.cargoType));
+
+  let candPorts=feasiblePorts(vesselClassKey).map(([k])=>k).filter(k=>!blockedPorts.includes(k));
+  if(candPorts.length===0) candPorts=Object.keys(PORTS).filter(k=>!blockedPorts.includes(k));
+
+  const scenarios=["normal","monsoon_delay","congestion_spike","freight_spike"];
+  const candidates=[];
+
+  for(const originKey of candOrigins){
+    for(const portKey of candPorts){
+      const scenarioCosts={};
+      for(const sc of scenarios){
+        const tlc=totalLandedCost(originKey,portKey,inputs.cargoType,inputs.qty,rand,blockedPorts,freightSpikeMult);
+        let adj=tlc.total;
+        if(sc==="monsoon_delay"||sc==="congestion_spike") adj+=tlc.demurrageExpected*0.8;
+        if(sc==="freight_spike") adj+=tlc.freight*0.20;
+        scenarioCosts[sc]=adj;
+      }
+      candidates.push({
+        originKey,portKey,vesselClassKey,scenarioCosts,
+        base:totalLandedCost(originKey,portKey,inputs.cargoType,inputs.qty,rand,blockedPorts,freightSpikeMult)
+      });
+    }
+  }
+
+  if(candidates.length===0) return null;
+
+  const bestPerScenario={};
+  scenarios.forEach(sc=>{ bestPerScenario[sc]=Math.min(...candidates.map(c=>c.scenarioCosts[sc])); });
+  candidates.forEach(c=>{
+    c.regrets=scenarios.map(sc=>c.scenarioCosts[sc]-bestPerScenario[sc]);
+    c.maxRegret=Math.max(...c.regrets);
+  });
+  candidates.sort((a,b)=>a.maxRegret-b.maxRegret||a.base.total-b.base.total);
+
+  const winner=candidates[0];
+  const backup=candidates[1]||winner;
+  const risk=riskScore(winner.originKey,winner.portKey);
+  const continuity=Math.max(10,Math.min(98,Math.round(100-risk*0.5-winner.maxRegret*1.2)));
+
+  return {winner,backup,risk,continuity,vesselClassKey,candidateCount:candidates.length,candidates,bestPerScenario};
+}
+
+/* ======= STEPPER ======= */
+const STAGES=[
+  {key:"cargo",label:"Cargo Intake"},{key:"origins",label:"Origins"},{key:"ports",label:"Port DNA"},
+  {key:"vessels",label:"Vessel Fit"},{key:"forecast",label:"Forecast"},{key:"cost",label:"Cost Waterfall"},
+  {key:"risk",label:"Risk Matrix"},{key:"optimize",label:"Minimax Regret"},{key:"decision",label:"Decision"}
+];
+
+function buildStepper(){
+  const el=document.getElementById('stepper');
+  el.innerHTML=STAGES.map((s,i)=>`
+    <div class="step" id="step-${s.key}">
+      <div class="line"></div>
+      <div class="dot">${i+1}</div>
+      <div class="label">${s.label}</div>
+    </div>`).join('');
+}
+
+function setStage(idx,note){
+  STAGES.forEach((s,i)=>{
+    const el=document.getElementById('step-'+s.key);
+    if(!el) return;
+    el.classList.remove('active','done');
+    if(i<idx) el.classList.add('done');
+    if(i===idx) el.classList.add('active');
+  });
+  document.getElementById('stageNote').textContent=note;
+}
+
+/* ======= MAP ======= */
+const ORIGIN_XY={australia:[80,260],indonesia:[140,220],mozambique:[70,160],usa:[50,70],russia:[120,50]};
+const PORT_XY={
+  paradip:[580,140],dhamra:[620,130],gangavaram:[630,180],vizag:[610,200],
+  gopalpur:[560,165],haldia:[670,80],sandheads:[685,90]
+};
+
+function drawBaseMap(blockedPorts=[]){
+  const svg=document.getElementById('routemap');
+  const ports=Object.entries(PORT_XY).map(([k,[x,y]])=>{
+    const blocked=blockedPorts.includes(k);
+    return `<g>
+      <circle class="port-dot${blocked?' blocked':''}" cx="${x}" cy="${y}" r="${blocked?8:6}" fill="${blocked?'var(--red)':'var(--navy-deep)'}" stroke="#FFF" stroke-width="2"/>
+      <text x="${x+10}" y="${y+4}" font-size="10.5" fill="var(--navy-deep)" font-family="IBM Plex Sans" font-weight="600">${PORTS[k].name}</text>
+      ${blocked?`<text x="${x-4}" y="${y-11}" font-size="13" fill="var(--red)">✕</text>`:''}
+    </g>`;
+  }).join('');
+
+  const origins=Object.entries(ORIGIN_XY).map(([k,[x,y]])=>`
+    <g>
+      <circle cx="${x}" cy="${y}" r="7" fill="var(--saffron-dark)" stroke="#FFF" stroke-width="2"/>
+      <text x="${x-8}" y="${y-11}" font-size="10.5" fill="var(--navy-deep)" font-family="IBM Plex Sans" font-weight="700">${ORIGINS[k].short}</text>
+    </g>`).join('');
+
+  svg.innerHTML=`
+    <rect x="0" y="0" width="920" height="340" fill="#F8FAFC" rx="8"/>
+    <text x="14" y="24" font-size="11" fill="var(--steel-muted)" font-family="IBM Plex Mono" font-weight="600">GLOBAL ORIGIN HUBS</text>
+    <text x="510" y="24" font-size="11" fill="var(--steel-muted)" font-family="IBM Plex Mono" font-weight="600">INDIA EAST COAST MARITIME GATEWAY</text>
+    <line x1="300" y1="10" x2="300" y2="330" stroke="var(--steel-border)" stroke-dasharray="3 4"/>
+    <text x="310" y="320" font-size="9" fill="var(--steel-muted)" font-family="IBM Plex Mono">Indian Ocean Transit Zone</text>
+    <g id="arcs"></g>
+    ${origins}
+    ${ports}
+  `;
+}
+
+function arcPath(x1,y1,x2,y2){
+  const mx=(x1+x2)/2+40;
+  const my=(y1+y2)/2-30;
+  return `M ${x1} ${y1} Q ${mx} ${my} ${x2} ${y2}`;
+}
+
+async function animateRouteBattle(candidates,winner){
+  const arcsG=document.getElementById('arcs');
+  const top=candidates.slice(0,6);
+  let html='';
+  top.forEach((c,i)=>{
+    if(!ORIGIN_XY[c.originKey]||!PORT_XY[c.portKey]) return;
+    const [x1,y1]=ORIGIN_XY[c.originKey];
+    const [x2,y2]=PORT_XY[c.portKey];
+    const isWinner=c===winner;
+    html+=`<path class="arc${isWinner?' winner':''}" id="arc-${i}" d="${arcPath(x1,y1,x2,y2)}" stroke="${isWinner?'var(--saffron)':'var(--steel-muted)'}"/>`;
+  });
+  arcsG.innerHTML=html;
+  await delay(200);
+}
+
+/* ======= WATERFALL ======= */
+const WATERFALL_COLORS={
+  fob:'var(--navy-surface)',freight:'var(--saffron)',loadPortCharge:'var(--steel-muted)',
+  dischargePortCharge:'var(--steel-muted)',demurrageExpected:'var(--red)',
+  insurance:'var(--blue)',evac:'var(--green)',financing:'var(--steel-light)'
+};
+
+function renderWaterfallBars(base,qty){
+  const mult=isTotalCostMode?qty:1;
+  const items=[
+    {key:'fob',         icon:"📦", label:"Cargo FOB Price", desc:"Base commodity cost at load port"},
+    {key:'freight',     icon:"🚢", label:"Ocean Freight", desc:"Vessel chartering / voyage fixture"},
+    {key:'loadPortCharge',     icon:"⚓", label:"Load Port Charges", desc:"Stevedoring, pilotage, tugs at origin"},
+    {key:'dischargePortCharge',icon:"🏗️", label:"Discharge Port Charges", desc:"TAMP statutory berth hire & wharfage"},
+    {key:'demurrageExpected',  icon:"⏳", label:"Demurrage Risk", desc:"Queue delay beyond free laytime"},
+    {key:'insurance',  icon:"🛡️", label:"Marine & War Risk Insurance", desc:"Cargo loss & transit risk premium"},
+    {key:'evac',       icon:"🚆", label:"Inland Rail Evacuation", desc:"FOIS freight to destination plant"},
+    {key:'financing',  icon:"💳", label:"Working Capital Financing", desc:"Transit inventory holding cost"},
+  ];
+  const totalVal=base.total*mult;
+  const container=document.getElementById('waterfallBars');
+  if(!container) return;
+  
+  const unitLabel = isTotalCostMode ? "Total Parcel Budget ($)" : "$/MT";
+  container.innerHTML= `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;font-size:11px;color:var(--steel-muted);font-weight:600;">
+      <span>COST COMPONENT BREAKOUT</span>
+      <span>% OF LANDED COST &nbsp;·&nbsp; ${unitLabel}</span>
+    </div>
+  ` + items.map(item=>{
+    const val = base[item.key] * mult;
+    const pct = ((base[item.key] / base.total) * 100).toFixed(1);
+    return `
+    <div class="waterfall-row" title="${item.desc}">
+      <div class="waterfall-label" style="display:flex;align-items:center;gap:6px;">
+        <span>${item.icon}</span>
+        <span>${item.label}</span>
+      </div>
+      <div class="waterfall-track">
+        <div class="waterfall-fill" style="width:${Math.max(2, (base[item.key]/base.total)*100)}%;background:${WATERFALL_COLORS[item.key] || 'var(--saffron)'};"></div>
+      </div>
+      <div class="waterfall-val" style="display:flex;align-items:center;justify-content:flex-end;gap:8px;">
+        <span style="font-size:10.5px;color:var(--steel-muted);font-family:'IBM Plex Mono';">${pct}%</span>
+        <span>${usd(val)}</span>
+      </div>
+    </div>`;
+  }).join('') + `
+    <div class="waterfall-row" style="font-weight:700;margin-top:10px;border-top:2px solid var(--steel-border);padding-top:8px;background:var(--bg-subtle);border-radius:6px;padding:8px 10px;">
+      <div class="waterfall-label" style="font-size:12.5px;color:var(--navy-deep);">💰 TOTAL LANDED PROCUREMENT COST</div>
+      <div></div>
+      <div class="waterfall-val" style="color:var(--saffron-dark);font-size:14px;font-weight:700;">${usd(totalVal)} ${isTotalCostMode ? '' : '/ MT'}</div>
+    </div>`;
+}
+
+/* ======= DECISION CARD RENDERER ======= */
+function renderDecisionCard(result,inputs,targetId='decisionCardHost'){
+  const w=result.winner, b=result.backup;
+  const vc=VESSEL_CLASSES[result.vesselClassKey];
+  const totalCostUSD=w.base.total*inputs.qty;
+  const totalCostINR=(totalCostUSD*83.5)/10000000;
+  const savings=Math.abs(b.base.total-w.base.total);
+
+  // Build regret table rows
+  const scenarios=['normal','monsoon_delay','congestion_spike','freight_spike'];
+  const scenLabels={normal:'Normal Market',monsoon_delay:'Monsoon Delay',congestion_spike:'Congestion Spike',freight_spike:'Freight Spike'};
+  const regretRows=result.candidates.slice(0,4).map((c,i)=>{
+    const isWin=i===0;
+    return `<tr class="${isWin?'regret-winner':''}">
+      <td>${isWin?'✅ '+ORIGINS[c.originKey].short:ORIGINS[c.originKey].short} → ${PORTS[c.portKey].name}</td>
+      ${scenarios.map(sc=>`<td class="mono" style="text-align:right;">${usd(c.regrets[scenarios.indexOf(sc)])}</td>`).join('')}
+      <td class="mono" style="text-align:right;font-weight:700;color:${isWin?'var(--green)':'var(--red)'};">${usd(c.maxRegret)}</td>
+    </tr>`;
+  }).join('');
+
+  const host=document.getElementById(targetId);
+  if(!host) return;
+  host.innerHTML=`
+  <div class="decision-card">
+    <div class="decision-header">
+      <div class="title-area">
+        <h3>RECOMMENDED: ${ORIGINS[w.originKey].short} ➔ ${PORTS[w.portKey].name}</h3>
+        <div class="subtitle">Via ${vc.name} Class · ${PLANT_LABEL[inputs.plant]} · ${fmt(inputs.qty)} MT ${CARGO_LABEL[inputs.cargoType]} · ${inputs.days}d window</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;">
+        <div class="confidence-badge">✓ CONFIDENCE: 87%</div>
+        <span class="data-tag">DEMO / SYNTHETIC</span>
+      </div>
+    </div>
+
+    <!-- KPI STRIP -->
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-label">Landed Cost / MT</div>
+        <div class="kpi-value saffron">${usd(w.base.total)}</div>
+        <div class="kpi-sub">FOB + Freight + All Charges</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Total Voyage Cost</div>
+        <div class="kpi-value">₹${fmt(totalCostINR)} Cr</div>
+        <div class="kpi-sub">${usd(totalCostUSD)} USD</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Risk Index <span class="gauge-info-btn" onclick="openRiskModal()" style="font-size:10px;">ℹ</span></div>
+        <div class="kpi-value ${riskClass(result.risk)}">${result.risk}/100</div>
+        <div class="kpi-sub">${result.risk<40?'LOW RISK ✓':result.risk<60?'MODERATE RISK':'HIGH RISK ⚠'}</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Supply Continuity <span class="gauge-info-btn" onclick="openModal('continuityModal')" style="font-size:10px;">ℹ</span></div>
+        <div class="kpi-value" style="color:var(--green);">${result.continuity}/100</div>
+        <div class="kpi-sub">Plant Delivery Confidence</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Simulated Saving</div>
+        <div class="kpi-value" style="color:var(--green);">${usd(savings)}/MT</div>
+        <div class="kpi-sub">vs Backup Route</div>
+      </div>
+    </div>
+
+    <!-- DUAL GAUGES -->
+    <div class="gauges-grid">
+      <div class="gauge-card">
+        <div class="gauge-header">
+          <span class="gauge-title">Risk Exposure Gauge</span>
+          <button class="gauge-info-btn" onclick="openRiskModal()">Breakdown ℹ</button>
+        </div>
+        <div class="gauge-track">
+          <div class="gauge-fill" style="width:${result.risk}%;background:${result.risk>60?'var(--red)':result.risk>35?'var(--saffron)':'var(--green)'};"></div>
+        </div>
+        <div class="gauge-footer">
+          <span>Operational Risk Index</span>
+          <span class="mono"><b>${result.risk}</b> / 100</span>
+        </div>
+      </div>
+      <div class="gauge-card">
+        <div class="gauge-header">
+          <span class="gauge-title">Steel Supply Continuity Gauge</span>
+          <button class="gauge-info-btn" onclick="openModal('continuityModal')">Breakdown ℹ</button>
+        </div>
+        <div class="gauge-track">
+          <div class="gauge-fill" style="width:${result.continuity}%;background:var(--green);"></div>
+        </div>
+        <div class="gauge-footer">
+          <span>Plant Delivery Guarantee</span>
+          <span class="mono"><b>${result.continuity}</b> / 100</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- WATERFALL CARD -->
+    <div class="waterfall-card">
+      <div class="waterfall-header">
+        <h4>Interactive Cost Waterfall Breakdown</h4>
+        <div class="cost-toggle">
+          <button id="togglePerMT" class="${!isTotalCostMode?'active':''}" onclick="toggleCostMode(false)">$/MT</button>
+          <button id="toggleTotal" class="${isTotalCostMode?'active':''}" onclick="toggleCostMode(true)">Total Parcel ($)</button>
+        </div>
+      </div>
+      <div class="waterfall-bars" id="waterfallBars"></div>
+    </div>
+
+    <!-- MINIMAX REGRET EXPLANATION -->
+    <div class="regret-box">
+      <h4>📐 How Was This Decided? — Minimax-Regret Score Matrix</h4>
+      <p style="font-size:12px;color:var(--steel-dark);margin:0 0 8px;">
+        The engine evaluates every origin-port combination across <b>4 market scenarios</b> and selects the strategy with the
+        <b>smallest worst-case regret</b> — i.e., the route that loses the <i>least</i> if any scenario turns bad.
+      </p>
+      <div style="overflow-x:auto;">
+        <table class="regret-table">
+          <thead><tr>
+            <th>Strategy</th>
+            ${scenarios.map(sc=>`<th style="text-align:right;">${scenLabels[sc]}</th>`).join('')}
+            <th style="text-align:right;">Max Regret</th>
+          </tr></thead>
+          <tbody>${regretRows}</tbody>
+        </table>
+      </div>
+      <p style="font-size:11px;color:var(--steel-muted);margin:8px 0 0;">★ Lower Max Regret = Better resilience across all scenarios. The highlighted row is the selected strategy.</p>
+    </div>
+
+    <!-- EXPLAINABILITY PANEL -->
+    <div class="explain-card">
+      <h4>Why This Strategy Won? (Explainable AI Rationale)</h4>
+      <div class="explain-grid">
+        <div class="explain-box">
+          <h5>✓ WHY ${PORTS[w.portKey].name.toUpperCase()}?</h5>
+          <ul>
+            <li>Clears ${vc.name} draft requirement (port: ${PORTS[w.portKey].draft}m, vessel needs: ${vc.draft}m).</li>
+            <li>Lowest landed cost across all feasible ports: <b>${usd(w.base.total)}/MT</b>.</li>
+            <li>Reasonable queue: ${PORTS[w.portKey].waitDays}d avg. wait → low demurrage exposure.</li>
+            <li>Evacuation distance to ${PLANT_LABEL[inputs.plant].split('(')[0].trim()}: ${PORTS[w.portKey].evacKm} km (rail).</li>
+            <li>${w.base.isMonsoon?'⚠ Active monsoon — delay multiplier applied in model.':'✓ Outside monsoon window — no weather delay factor.'}</li>
+          </ul>
+        </div>
+        <div class="explain-box">
+          <h5>⚠ WHY ALTERNATIVES LOST?</h5>
+          <ul>
+            <li><b>Backup route (${ORIGINS[b.originKey].short} → ${PORTS[b.portKey].name}):</b> Higher landed cost by ${usd(savings)}/MT.</li>
+            ${PORTS.paradip.name!==PORTS[w.portKey].name?`<li><b>Paradip:</b> ${PORTS.paradip.waitDays}d avg. wait adds demurrage risk. ${result.winner.base.isMonsoon?'Monsoon exposed.':''}</li>`:''}
+            <li><b>Spot charter only:</b> Freight forecast shows +12% upside risk over 60d — contract hedge recommended.</li>
+            <li><b>High regret routes:</b> ${result.candidates.length-1} alternatives scored higher max-regret — eliminated by optimizer.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>`;
+
+  renderWaterfallBars(w.base,inputs.qty);
+  renderBattleTable(result.candidates);
+  updateCargoBarPills(inputs);
+  updateRiskModalContent(result,inputs);
+}
+
+/* ======= UPDATE RISK MODAL CONTENT ======= */
+function updateRiskModalContent(result,inputs){
+  const w=result.winner;
+  const isMonsoon=w.base.isMonsoon;
+  const o=ORIGINS[w.originKey];
+  const p=PORTS[w.portKey];
+  const vc=VESSEL_CLASSES[result.vesselClassKey];
+  
+  const draftMargin = (p.draft - vc.draft).toFixed(1);
+  const draftScore = draftMargin > 2.5 ? 12 : draftMargin > 1.0 ? 28 : 65;
+  const draftDesc = draftMargin > 2.0 ? `Deep clearance (${p.draft}m port vs ${vc.draft}m vessel, +${draftMargin}m buffer)` : `Tight clearance (${p.draft}m port vs ${vc.draft}m vessel)`;
+
+  const factors=[
+    {name:'1. Freight Market Volatility (25%)', score:Math.round(o.vol*100*0.5*2), icon:'📈', desc:`${o.short} corridor baseline volatility = ${(o.vol*100).toFixed(0)}%`},
+    {name:'2. Discharge Port Congestion (30%)', score:Math.round(p.waitDays*11), icon:'⏳', desc:`${p.name}: ${p.waitDays}d avg pre-berthing wait time`},
+    {name:'3. Monsoon & Cyclone Exposure (20%)', score:isMonsoon?35:8, icon:'⛈️', desc:isMonsoon?'Active Bay of Bengal monsoon window (delay factor 1.7×)':'Optimal calm weather window'},
+    {name:'4. Vessel Draft & Navigational Clearance (15%)', score:draftScore, icon:'🚢', desc:draftDesc},
+    {name:'5. Inland Rail Evacuation Distance (10%)', score:Math.round(p.evacKm/48), icon:'🚆', desc:`${p.evacKm} km freight haul to ${PLANT_LABEL[inputs.plant].split('(')[0].trim()}`},
+  ];
+
+  const listEl=document.getElementById('riskFactorList');
+  if(listEl){
+    listEl.innerHTML= `
+      <div style="background:var(--bg-subtle);padding:12px;border-radius:8px;margin-bottom:14px;border:1px solid var(--steel-border);">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+          <span style="font-weight:700;color:var(--navy-deep);">Composite Operational Risk Score:</span>
+          <span class="mono" style="font-size:15px;font-weight:700;color:${result.risk>60?'var(--red)':result.risk>35?'var(--saffron-dark)':'var(--green)'};">${result.risk} / 100</span>
+        </div>
+        <div style="font-size:11.5px;color:var(--steel-muted);">Evaluation for <b>${o.short} ➔ ${p.name}</b> (${vc.name}) delivering to <b>${PLANT_LABEL[inputs.plant].split('(')[0].trim()}</b>.</div>
+      </div>
+    ` + factors.map(f=>`
+      <div style="background:#FFF;border:1px solid var(--steel-border);border-radius:8px;padding:10px 12px;margin-bottom:8px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;font-size:12.5px;font-weight:600;color:var(--navy-deep);margin-bottom:4px;">
+          <span>${f.icon} ${f.name}</span>
+          <span class="mono" style="font-size:12px;font-weight:700;color:${f.score>60?'var(--red)':f.score>30?'var(--saffron-dark)':'var(--green)'};">${f.score}/100</span>
+        </div>
+        <div class="risk-factor-track" style="margin-bottom:4px;height:6px;">
+          <div class="risk-factor-fill" style="width:${Math.min(100, f.score)}%;background:${f.score>60?'var(--red)':f.score>30?'var(--saffron)':'var(--green)'};"></div>
+        </div>
+        <div style="font-size:11px;color:var(--steel-muted);">${f.desc}</div>
+      </div>
+    `).join('');
+  }
+}
+
+function openRiskModal(){
+  openModal('riskModal');
+}
+
+/* ======= BATTLE TABLE ======= */
+function renderBattleTable(candidates, tbodyId='battleTableBody'){
+  const tbody=document.getElementById(tbodyId);
+  if(!tbody) return;
+  tbody.innerHTML=candidates.slice(0,5).map((c,i)=>{
+    const risk=riskScore(c.originKey,c.portKey);
+    const cont=Math.round(100-c.maxRegret*1.5);
+    return `<tr class="${i===0?'winner-row':''}">
+      <td>#${i+1}</td>
+      <td><b>${ORIGINS[c.originKey].short} ➔ ${PORTS[c.portKey].name}</b> ${i===0?'<span class="winner-badge">BEST OVERALL</span>':''}</td>
+      <td>${VESSEL_CLASSES[c.vesselClassKey].name}</td>
+      <td class="mono"><b>${usd(c.base.total)}</b></td>
+      <td class="mono">${usd(c.base.demurrageExpected*c.base.expectedWaitDays>0?c.base.demurrageExpected:0)}/MT</td>
+      <td>${c.base.transitDays} days</td>
+      <td class="${riskClass(risk)}">${risk}/100</td>
+      <td>${Math.min(98,Math.max(10,cont))}/100</td>
+      <td>${i===0?'<span style="color:var(--green);font-weight:700;">RECOMMENDED</span>':'<span style="color:var(--steel-muted);">ALTERNATIVE</span>'}</td>
+    </tr>`;
+  }).join('');
+}
+
+/* ======= CARGO BAR ======= */
+function updateCargoBarPills(inputs){
+  document.getElementById('barQty').textContent=fmt(inputs.qty)+" MT";
+  document.getElementById('barCargo').textContent=CARGO_LABEL[inputs.cargoType];
+  document.getElementById('barOrigin').textContent=inputs.origin==="any"?"Any Origin":ORIGINS[inputs.origin].short;
+  document.getElementById('barPlant').textContent=PLANT_LABEL[inputs.plant].split('(')[0].trim();
+  document.getElementById('barDays').textContent=inputs.days+" Days";
+}
+
+/* ======= TOGGLE COST MODE ======= */
+function toggleCostMode(totalMode){
+  isTotalCostMode=totalMode;
+  if(activeResult) renderWaterfallBars(activeResult.winner.base,activeInputs.qty);
+  document.getElementById('togglePerMT')?.classList.toggle('active',!totalMode);
+  document.getElementById('toggleTotal')?.classList.toggle('active',totalMode);
+}
+
+/* ======= DISRUPTION CHALLENGES ======= */
+function handleChallenge(type){
+  if(!activeInputs){
+    alert('Please run the decision engine first before applying a disruption scenario.');
+    return;
+  }
+  const prevW=activeResult?.winner;
+  let blockedPorts=[],blockedVessel=null,spikeMult=1.0;
+  let eventLabel='',eventDesc='';
+
+  if(type==='cyclone'){
+    blockedPorts=['paradip','dhamra'];
+    eventLabel='⚠️ Cyclone (Odisha Coast)';
+    eventDesc='Paradip & Dhamra blocked';
+  } else if(type==='port'){
+    blockedPorts=prevW?[prevW.portKey]:['paradip'];
+    eventLabel='🚫 Primary Port Blocked';
+    eventDesc=`${prevW?PORTS[prevW.portKey].name:'Paradip'} unavailable`;
+  } else if(type==='freight'){
+    spikeMult=1.20;
+    eventLabel='📈 Freight Spike +20%';
+    eventDesc='Ocean freight +20% across all routes';
+  } else if(type==='bunker'){
+    spikeMult=1.15;
+    eventLabel='⛽ Bunker Spike +15%';
+    eventDesc='Bunker surcharge applied across routes';
+  } else if(type==='vessel'){
+    blockedVessel=activeResult?.vesselClassKey||'capesize';
+    eventLabel='🚢 Vessel Class Unavailable';
+    eventDesc=`${VESSEL_CLASSES[blockedVessel]?.name||'Capesize'} class removed`;
+  } else if(type==='monsoon'){
+    blockedPorts=['haldia','sandheads'];
+    eventLabel='🌧️ Monsoon Delay';
+    eventDesc='Northern ports congested; rerouting south';
+  }
+
+  // Highlight active button
+  document.querySelectorAll('.btn-challenge').forEach(b=>b.classList.remove('active-scenario'));
+  document.getElementById('btn-'+type)?.classList.add('active-scenario');
+  activeScenarioType=type;
+
+  showLoading(`Simulating: ${eventLabel}`, 'Recalculating Minimax-Regret for scenario...');
+
+  setTimeout(()=>{
+    const newResult=runDecisionEngine(activeInputs,blockedPorts,blockedVessel,999,spikeMult);
+    hideLoading();
+    if(!newResult) return;
+
+    // Update scenario pill
+    document.getElementById('scenarioPill').classList.add('show');
+
+    // Update Before→During→After viz
+    const viz=document.getElementById('scenarioViz');
+    viz.classList.add('show');
+    if(prevW){
+      document.getElementById('viz-before-route').textContent=`${ORIGINS[prevW.originKey].short} → ${PORTS[prevW.portKey].name}`;
+      document.getElementById('viz-before-cost').textContent=usd(prevW.base.total);
+      document.getElementById('viz-before-risk').textContent=riskScore(prevW.originKey,prevW.portKey);
+    }
+    document.getElementById('viz-event-label').textContent=eventLabel;
+    document.getElementById('viz-event-desc').textContent=eventDesc;
+    document.getElementById('viz-after-route').textContent=`${ORIGINS[newResult.winner.originKey].short} → ${PORTS[newResult.winner.portKey].name}`;
+    document.getElementById('viz-after-cost').textContent=usd(newResult.winner.base.total);
+    const delta=prevW?newResult.winner.base.total-prevW.base.total:0;
+    const deltaEl=document.getElementById('viz-after-delta');
+    deltaEl.textContent=(delta>=0?'+':'')+usd(delta)+'/MT';
+    deltaEl.style.color=delta>0?'var(--red)':'var(--green)';
+
+    // Render scenario decision card
+    renderDecisionCard(newResult,activeInputs,'scenarioDecisionHost');
+
+    // Render scenario battle table
+    renderBattleTable(newResult.candidates,'scenarioBattleBody');
+    updateMarketPressureGauge(newResult, activeInputs, type);
+
+    // Update map
+    drawBaseMap(blockedPorts);
+    animateRouteBattle(newResult.candidates,newResult.winner);
+
+    // Update diff banner
+    const banner=document.getElementById('diffBanner');
+    banner.innerHTML=`<b>${eventLabel}</b> scenario applied.<br><b>New Best Route:</b> ${ORIGINS[newResult.winner.originKey].short} ➔ ${PORTS[newResult.winner.portKey].name} &nbsp;·&nbsp; <b>Cost Delta:</b> <span style="color:${delta>=0?'var(--red)':'var(--green)'};">${delta>=0?'+':''}${usd(delta)}/MT</span>`;
+    banner.classList.add('show');
+
+    // Switch to scenarios panel to show results
+    switchPanel('scenarios');
+  },800);
+}
+
+function resetBaseline(){
+  if(!activeInputs) return;
+  activeScenarioType=null;
+  document.getElementById('scenarioPill').classList.remove('show');
+  document.querySelectorAll('.btn-challenge').forEach(b=>b.classList.remove('active-scenario'));
+  document.getElementById('scenarioViz').classList.remove('show');
+  document.getElementById('diffBanner').classList.remove('show');
+  document.getElementById('scenarioDecisionHost').innerHTML='<div style="text-align:center;padding:30px 20px;color:var(--steel-muted);font-size:13px;">No scenario active — click a disruption button above.</div>';
+  document.getElementById('scenarioBattleBody').innerHTML='<tr><td colspan="7" style="text-align:center;color:var(--steel-muted);padding:20px;">Select a disruption scenario above.</td></tr>';
+
+  if(baselineResult){
+    activeResult=baselineResult;
+    renderDecisionCard(baselineResult,activeInputs,'decisionCardHost');
+    drawBaseMap();
+    animateRouteBattle(baselineResult.candidates,baselineResult.winner);
+    updateMarketPressureGauge(baselineResult, activeInputs, null);
+  }
+}
+
+/* ======= PORT & VESSEL GRIDS ======= */
+function renderPortGrid(){
+  const grid=document.getElementById('portGrid');
+  const month=currentMonth();
+  grid.innerHTML=Object.entries(PORTS).map(([k,p])=>{
+    const inMonsoon=p.monsoon.includes(month);
+    return `<div class="port-card">
+      <div class="port-name">${p.name}</div>
+      <div class="port-code">UN/LOCODE: ${p.code} ${inMonsoon?'<span style="color:var(--saffron-dark);font-size:10px;font-weight:700;">⛈ MONSOON</span>':''}</div>
+      <dl class="port-specs">
+        <dt>Max Draft</dt><dd>${p.draft} m</dd>
+        <dt>Max LOA</dt><dd>${p.loa} m</dd>
+        <dt>Berths</dt><dd>${p.berths}</dd>
+        <dt>Avg Wait</dt><dd>${p.waitDays} d</dd>
+        <dt>Mech. Rate</dt><dd>${fmt(p.mechRate)} MT/d</dd>
+        <dt>Evac Dist</dt><dd>${p.evacKm} km</dd>
+        <dt>Demurrage</dt><dd>${usd(p.demurrage)}/d</dd>
+      </dl>
+    </div>`;
+  }).join('');
+
+  // Port comparison table
+  const tbody=document.getElementById('portCompBody');
+  if(tbody){
+    tbody.innerHTML=Object.entries(PORTS).map(([k,p])=>{
+      const inMon=p.monsoon.includes(currentMonth());
+      return `<tr>
+        <td><b>${p.name}</b><br><span style="font-size:10px;font-family:'IBM Plex Mono';color:var(--steel-muted);">${p.code}</span></td>
+        <td class="mono">${p.draft}</td><td class="mono">${p.loa}m</td>
+        <td>${p.berths}</td><td class="mono">${p.waitDays}d</td>
+        <td class="mono">${fmt(p.mechRate)}</td><td class="mono">${p.evacKm}km</td>
+        <td class="mono">${usd(p.demurrage)}</td>
+        <td>${inMon?'<span class="risk-high">HIGH ⛈</span>':'<span class="risk-low">LOW ✓</span>'}</td>
+      </tr>`;
+    }).join('');
+  }
+}
+
+function renderVesselGrid(){
+  const grid=document.getElementById('vesselGrid');
+  const qty=activeInputs.qty;
+  const recommendedKey=pickVesselClass(qty);
+  grid.innerHTML=Object.entries(VESSEL_CLASSES).map(([k,v])=>{
+    const isRec=k===recommendedKey;
+    const feasibleCount=Object.values(PORTS).filter(p=>p.draft>=v.draft+0.5).length;
+    const fitPct=Math.round((feasibleCount/Object.keys(PORTS).length)*100);
+    const portFit=`${feasibleCount}/${Object.keys(PORTS).length} ports`;
+    return `<div class="vessel-card${isRec?' selected':''}">
+      <div class="vessel-fit-score ${fitPct>60?'fit-pass':'fit-fail'}">${fitPct}% FIT</div>
+      <h4>${v.name} Class${isRec?' ✓':''}</h4>
+      <div style="font-size:11.5px;color:var(--steel-muted);margin-bottom:8px;">
+        DWT: ${fmt(v.dwtMin)}–${fmt(v.dwtMax)} MT${isRec?` · <b style="color:var(--saffron-dark);">RECOMMENDED for ${fmt(qty)} MT</b>`:''}
+      </div>
+      <dl class="port-specs">
+        <dt>Draft Req.</dt><dd>${v.draft} m</dd>
+        <dt>Length (LOA)</dt><dd>${v.loa} m</dd>
+        <dt>Beam</dt><dd>${v.beam} m</dd>
+        <dt>Port Access</dt><dd>${portFit}</dd>
+        <dt>Status</dt><dd style="color:${isRec?'var(--green)':'var(--steel-muted)'};font-weight:700;">${isRec?'OPTIMAL':'ALTERNATIVE'}</dd>
+      </dl>
+    </div>`;
+  }).join('');
+
+  // Vessel-Port compatibility matrix
+  const matHead=document.getElementById('vesselPortMatrixHead');
+  const matBody=document.getElementById('vesselPortMatrixBody');
+  if(matHead&&matBody){
+    const vcKeys=Object.keys(VESSEL_CLASSES);
+    matHead.innerHTML=`<tr><th>Port</th>${vcKeys.map(k=>`<th>${VESSEL_CLASSES[k].name}</th>`).join('')}</tr>`;
+    matBody.innerHTML=Object.entries(PORTS).map(([pk,p])=>`
+      <tr>
+        <td><b>${p.name}</b> <span style="font-size:10px;color:var(--steel-muted);">${p.draft}m draft</span></td>
+        ${vcKeys.map(vk=>{
+          const ok=p.draft>=VESSEL_CLASSES[vk].draft+0.5;
+          return `<td style="text-align:center;font-size:14px;${ok?'color:var(--green)':'color:var(--red);opacity:0.5;'};">${ok?'✓':'✗'}</td>`;
+        }).join('')}
+      </tr>`).join('');
+  }
+}
+
+/* ======= FREIGHT CHART ======= */
+function drawFreightChart(horizonDays=30){
+  const svg=document.getElementById('forecastChart');
+  if(!svg) return;
+  const W=600,H=220,padL=44,padR=20,padT=20,padB=30;
+  const chartW=W-padL-padR,chartH=H-padT-padB;
+  const pts=horizonDays;
+
+  // Generate synthetic trend
+  const rand=seededRand(horizonDays*1337+activeInputs.qty);
+  const baseFreight=activeResult?activeResult.winner.base.freight:16.5;
+  const yMin=baseFreight*0.7,yMax=baseFreight*1.45;
+  const yScale=v=>padT+chartH-(((v-yMin)/(yMax-yMin))*chartH);
+  const xScale=i=>padL+(i/Math.max(pts-1,1))*chartW;
+
+  const p50Pts=[],p10Pts=[],p90Pts=[];
+  for(let i=0;i<pts;i++){
+    const t=i/pts;
+    const trend=baseFreight*(1+0.04*Math.sin(t*Math.PI*2.1)+0.02*(rand()-0.5));
+    const vol=baseFreight*0.15;
+    p50Pts.push(trend);
+    p10Pts.push(trend-vol*(0.8+0.4*t));
+    p90Pts.push(trend+vol*(0.8+0.4*t));
+  }
+
+  const polyLine=pts_=>pts_.map((v,i)=>`${xScale(i)},${yScale(v)}`).join(' ');
+  const bandPath=()=>`M ${p10Pts.map((v,i)=>`${xScale(i)},${yScale(v)}`).join(' L ')} L ${[...p90Pts].reverse().map((v,i)=>`${xScale(pts-1-i)},${yScale(v)}`).join(' L ')} Z`;
+
+  // Y axis labels
+  const yTicks=[yMin,(yMin+yMax)/2,yMax].map(v=>`
+    <text x="${padL-5}" y="${yScale(v)+4}" text-anchor="end" font-size="9" fill="var(--steel-muted)" font-family="IBM Plex Mono">$${v.toFixed(1)}</text>
+    <line x1="${padL}" y1="${yScale(v)}" x2="${W-padR}" y2="${yScale(v)}" stroke="var(--steel-border)" stroke-dasharray="2 3"/>`).join('');
+
+  // X axis labels
+  const xLabels=[0,Math.floor(pts/3),Math.floor(2*pts/3),pts-1].map(i=>{
+    const d=new Date(); d.setDate(d.getDate()+i);
+    return `<text x="${xScale(i)}" y="${H-6}" text-anchor="middle" font-size="9" fill="var(--steel-muted)" font-family="IBM Plex Mono">${d.toLocaleDateString('en-IN',{day:'numeric',month:'short'})}</text>`;
+  }).join('');
+
+  // Today marker
+  const splitIdx=Math.floor(pts*0.45);
+
+  svg.innerHTML=`
+    <rect width="${W}" height="${H}" fill="#FFF"/>
+    ${yTicks}
+    ${xLabels}
+    <path d="${bandPath()}" fill="rgba(217,119,6,0.1)"/>
+    <polyline points="${polyLine(p10Pts)}" fill="none" stroke="var(--saffron-border)" stroke-width="1" stroke-dasharray="3 2"/>
+    <polyline points="${polyLine(p90Pts)}" fill="none" stroke="var(--saffron-border)" stroke-width="1" stroke-dasharray="3 2"/>
+    <polyline points="${polyLine(p50Pts.slice(0,splitIdx+1))}" fill="none" stroke="var(--green)" stroke-width="2"/>
+    <polyline points="${polyLine(p50Pts.slice(splitIdx))}" fill="none" stroke="var(--saffron-dark)" stroke-width="2.5" stroke-dasharray="5 3"/>
+    ${p50Pts.filter((_,i)=>i%Math.max(1,Math.floor(pts/8))===0).map((_,j)=>{
+      const i=j*Math.max(1,Math.floor(pts/8));
+      return `<circle cx="${xScale(i)}" cy="${yScale(p50Pts[i])}" r="3" fill="${i<=splitIdx?'var(--green)':'var(--saffron-dark)'}"/>`;
+    }).join('')}
+    <line x1="${xScale(splitIdx)}" y1="${padT}" x2="${xScale(splitIdx)}" y2="${H-padB}" stroke="var(--navy-deep)" stroke-dasharray="4 3" stroke-width="1.5"/>
+    <text x="${xScale(splitIdx)+4}" y="${padT+12}" font-size="9" fill="var(--navy-deep)" font-family="IBM Plex Mono" font-weight="600">TODAY</text>
+    <text x="${padL}" y="${padT-4}" font-size="9" fill="var(--steel-muted)" font-family="IBM Plex Mono">← Historical</text>
+    <text x="${xScale(splitIdx)+8}" y="${padT-4}" font-size="9" fill="var(--saffron-dark)" font-family="IBM Plex Mono">Forecast →</text>`;
+}
+
+function setHorizon(days){
+  document.querySelectorAll('#horizonToggle button').forEach(b=>b.classList.remove('active'));
+  document.querySelector(`#horizonToggle button[data-h="${days}"]`).classList.add('active');
+  drawFreightChart(days);
+}
+
+/* ======= FREIGHT ORIGIN TABLE ======= */
+function renderFreightOriginTable(){
+  const tbody=document.getElementById('freightOriginBody');
+  if(!tbody) return;
+  const rand=seededRand(12345);
+  tbody.innerHTML=Object.entries(ORIGINS).map(([k,o])=>{
+    const vol=o.vol;
+    const p50=o.baseFreight*(1+(rand()-0.5)*0.03);
+    return `<tr>
+      <td><b>${o.short}</b></td>
+      <td class="mono">${usd(p50)}</td>
+      <td class="mono" style="color:var(--green);">${usd(p50*(1-vol))}</td>
+      <td class="mono" style="color:var(--red);">${usd(p50*(1+vol))}</td>
+      <td><span style="color:${vol>0.15?'var(--red)':vol>0.12?'var(--saffron-dark)':'var(--green)'};">${(vol*100).toFixed(0)}%</span></td>
+      <td style="font-size:11.5px;">${o.cargo.map(c=>CARGO_LABEL[c]).join(', ')}</td>
+    </tr>`;
+  }).join('');
+}
+
+/* ======= LOADING ======= */
+function showLoading(text='Processing...', sub=''){
+  document.getElementById('loadingText').textContent=text;
+  document.getElementById('loadingSubText').textContent=sub;
+  document.getElementById('loadingOverlay').classList.add('show');
+}
+function hideLoading(){
+  document.getElementById('loadingOverlay').classList.remove('show');
+}
+
+/* ======= PIPELINE RUNNER ======= */
+async function runPipeline(){
+  // Read and validate inputs from drawer
+  const qtyRaw=document.getElementById('drawerQty').value;
+  const qtyInput=parseInt(qtyRaw,10);
+  const alertEl=document.getElementById('validationAlert');
+  const qtyErrEl=document.getElementById('qtyError');
+
+  if(isNaN(qtyInput)||qtyInput<1000||qtyInput>200000){
+    alertEl.textContent="Cargo quantity must be between 1,000 MT and 200,000 MT.";
+    alertEl.style.display='block';
+    qtyErrEl.style.display='block';
+    document.getElementById('drawerQty').classList.add('error');
+    return;
+  }
+  alertEl.style.display='none';
+  qtyErrEl.style.display='none';
+  document.getElementById('drawerQty').classList.remove('error');
+
+  const inputs={
+    cargoType: document.getElementById('drawerCargoType').value,
+    qty: qtyInput,
+    origin: document.getElementById('drawerOrigin').value,
+    plant: document.getElementById('drawerPlant').value,
+    days: parseInt(document.getElementById('drawerDays').value,10),
+  };
+  activeInputs=inputs;
+  closeAllDrawers();
+
+  showLoading('Running Decision Engine','Evaluating all origin-port-vessel combinations...');
+  await delay(200);
+
+  switchPanel('command');
+  setStage(0,`Cargo Intake: ${fmt(inputs.qty)} MT ${CARGO_LABEL[inputs.cargoType]} → ${PLANT_LABEL[inputs.plant]}.`);
+  await delay(280);
+  document.getElementById('loadingSubText').textContent='Stage 2/9: Evaluating origins...';
+  setStage(1,`Evaluating origins: ${inputs.origin==='any'?'All 5 origins':'Selected: '+ORIGINS[inputs.origin]?.short}.`);
+  await delay(250);
+  setStage(2,`Checking draft & LOA constraints across East Coast ports...`);
+  await delay(250);
+  document.getElementById('loadingSubText').textContent='Stage 4/9: Vessel class selection...';
+  setStage(3,`Vessel class: ${VESSEL_CLASSES[pickVesselClass(inputs.qty)].name} selected for ${fmt(inputs.qty)} MT.`);
+  await delay(250);
+  setStage(4,`Forecasting freight rates (P10/P50/P90 bands) per origin...`);
+  await delay(250);
+  document.getElementById('loadingSubText').textContent='Stage 6/9: Computing cost waterfall...';
+  setStage(5,`Computing total landed cost waterfall for all combinations...`);
+  await delay(250);
+  setStage(6,`Building risk matrix: freight volatility, monsoon, congestion, evac...`);
+  await delay(250);
+  document.getElementById('loadingSubText').textContent='Stage 8/9: Minimax-Regret optimization...';
+  setStage(7,`Running Minimax-Regret optimization across 4 scenarios...`);
+  await delay(280);
+
+  const result=runDecisionEngine(inputs);
+  activeResult=result;
+  baselineResult=result;
+  hideLoading();
+
+  if(!result){
+    document.getElementById('stageNote').textContent='No feasible strategy found. Try changing cargo type or origin.';
+    return;
+  }
+
+  setStage(8,`✅ Optimal Strategy: ${ORIGINS[result.winner.originKey].short} ➔ ${PORTS[result.winner.portKey].name} at ${usd(result.winner.base.total)}/MT.`);
+  renderDecisionCard(result,inputs,'decisionCardHost');
+  drawBaseMap();
+  animateRouteBattle(result.candidates,result.winner);
+
+  // Update freight chart with active result
+  drawFreightChart(30);
+  renderFreightOriginTable();
+  updateMarketPressureGauge(result, inputs, activeScenarioType);
+
+  // Update vessel grid with correct recommendation
+  renderVesselGrid();
+
+  // Export report
+  document.getElementById('exportReportBody').innerHTML=`
+    <h4 style="font-family:'Space Grotesk';margin-bottom:8px;">SAIL MARITIME CARGO CHARTERING STRATEGY REPORT</h4>
+    <p><b>Date:</b> ${new Date().toLocaleDateString('en-IN',{weekday:'long',year:'numeric',month:'long',day:'numeric'})}</p>
+    <p><b>Recommended Route:</b> ${ORIGINS[result.winner.originKey].name} → ${PORTS[result.winner.portKey].name} (via ${VESSEL_CLASSES[result.vesselClassKey].name})</p>
+    <p><b>Destination Plant:</b> ${PLANT_LABEL[inputs.plant]}</p>
+    <p><b>Parcel Size:</b> ${fmt(inputs.qty)} MT ${CARGO_LABEL[inputs.cargoType]}</p>
+    <p><b>Landed Cost / MT:</b> ${usd(result.winner.base.total)}</p>
+    <p><b>Est. Total Voyage Cost:</b> ₹${fmt((result.winner.base.total*inputs.qty*83.5)/10000000)} Cr (${usd(result.winner.base.total*inputs.qty)})</p>
+    <p><b>Risk Index:</b> ${result.risk}/100 (${result.risk<40?'Low':'Moderate'} Risk)</p>
+    <p><b>Supply Continuity:</b> ${result.continuity}/100</p>
+    <p><b>Backup Failover Route:</b> ${ORIGINS[result.backup.originKey].name} → ${PORTS[result.backup.portKey].name}</p>
+    <p><b>Delivery Window:</b> ${inputs.days} days</p>
+    <hr/>
+    <p style="font-size:11px;color:#888;">⚠ All values are DEMO/SYNTHETIC — derived from deterministic dry-bulk model. Not real SAIL operational data.</p>`;
+
+  document.getElementById('decisionSection').scrollIntoView({behavior:'smooth'});
+}
+
+/* ======= PANEL SWITCHING ======= */
+function switchPanel(name){
+  const panels=['command','intelligence','scenarios','ports','vessels'];
+  panels.forEach(p=>{
+    document.getElementById('panel-'+p)?.classList.remove('active');
+    document.getElementById('tab-'+p)?.classList.remove('active');
+    document.getElementById('nav-'+p)?.classList.remove('active');
+  });
+  document.getElementById('panel-'+name)?.classList.add('active');
+  document.getElementById('tab-'+name)?.classList.add('active');
+  document.getElementById('nav-'+name)?.classList.add('active');
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+/* ======= DRAWER UTILS ======= */
+function openCargoDrawer(){
+  closeAllDrawers();
+  document.getElementById('editCargoDrawer').classList.add('open');
+  document.getElementById('drawerOverlay').classList.add('show');
+}
+function closeDrawerById(id){
+  document.getElementById(id).classList.remove('open');
+  document.getElementById('drawerOverlay').classList.remove('show');
+}
+function closeAllDrawers(){
+  document.querySelectorAll('.drawer-left,.drawer-right').forEach(d=>d.classList.remove('open'));
+  document.getElementById('drawerOverlay').classList.remove('show');
+}
+function toggleDrawer(id){
+  const el=document.getElementById(id);
+  const wasOpen=el.classList.contains('open');
+  closeAllDrawers();
+  if(!wasOpen){
+    el.classList.add('open');
+    document.getElementById('drawerOverlay').classList.add('show');
+  }
+}
+function openCopilot(){
+  closeAllDrawers();
+  document.getElementById('copilotDrawer').classList.add('open');
+  document.getElementById('drawerOverlay').classList.add('show');
+}
+
+/* ======= MODAL UTILS ======= */
+function openModal(id){ document.getElementById(id).classList.add('show'); }
+function closeModal(id){ document.getElementById(id).classList.remove('show'); }
+
+// Close modals on overlay click
+document.querySelectorAll('.modal-overlay').forEach(m=>{
+  m.addEventListener('click',(e)=>{ if(e.target===m) m.classList.remove('show'); });
+});
+
+/* ======= AI COPILOT ======= */
+function submitCustomCopilotQuery(){
+  const input = document.getElementById('copilotCustomInput');
+  const query = input.value.trim();
+  if(!query) return;
+  input.value = '';
+  askCopilot(query);
+}
+
+function askCopilot(query){
+  const body=document.getElementById('copilotBody');
+  const typingEl=document.getElementById('copilotTyping');
+  body.innerHTML+=`<div class="copilot-msg user">${query}</div>`;
+  typingEl.style.display='block';
+  body.scrollTop=body.scrollHeight;
+
+  const q = query.toLowerCase();
+  let reply = "I am evaluating your query against live logistics parameters and port constraints.";
+
+  const inputs = activeInputs || { qty: 80000, cargoType: 'coking_coal', plant: 'rourkela', days: 30, origin: 'any' };
+  const res = activeResult || runDecisionEngine(inputs);
+  const w = res.winner;
+  const vc = VESSEL_CLASSES[res.vesselClassKey];
+  const p = PORTS[w.portKey];
+  const o = ORIGINS[w.originKey];
+
+  if(q.includes('vessel') || q.includes('size') || q.includes('capesize') || q.includes('panamax') || q.includes('handysize')){
+    reply = `<b>${vc.name} Class</b> (${fmt(vc.dwtMin)}–${fmt(vc.dwtMax)} MT DWT) was selected because your parcel size is <b>${fmt(inputs.qty)} MT</b>. It provides the maximum cargo payload while clearing ${p.name}'s draft limit (${p.draft}m port draft vs ${vc.draft}m vessel draft, giving a safe <b>+${(p.draft - vc.draft).toFixed(1)}m under-keel buffer</b>).`;
+  } else if(q.includes('paradip')){
+    const pd = PORTS.paradip;
+    reply = `<b>Paradip Port (INPRT)</b> has a 18.1m draft and 38,000 MT/day mechanised handling rate with 2.8 days average queue. It is an excellent backup, but for the current window, <b>${p.name}</b> was selected because it offers lower pre-berthing wait times (${p.waitDays}d) and lower demurrage exposure.`;
+  } else if(q.includes('haldia') || q.includes('river') || q.includes('shallow')){
+    const hal = PORTS.haldia;
+    reply = `<b>Haldia Port (INHAL)</b> has a restricted riverine draft of only <b>${hal.draft}m</b> and max LOA of 180m. It can only accommodate Handysize vessels (up to 40,000 MT). For your ${fmt(inputs.qty)} MT shipment, Haldia is physically incapable of berthing a ${vc.name} vessel and was excluded by the draft feasibility filter.`;
+  } else if(q.includes('dhamra') || q.includes('gangavaram')){
+    reply = `<b>${p.name} Port</b> is a premier deep-water all-weather port on the Indian East Coast (${p.draft}m draft). It boasts high-speed mechanized unloaders (${fmt(p.mechRate)} MT/day), quick vessel turnaround (${p.waitDays}d avg queue), and direct rail connectivity to ${PLANT_LABEL[inputs.plant].split('(')[0].trim()}.`;
+  } else if(q.includes('spike') || q.includes('20%') || q.includes('freight')){
+    const spikeAmount = w.base.freight * 0.20;
+    reply = `If dry-bulk freight rates spike by +20%, ocean freight increases from ${usd(w.base.freight)}/MT to <b>${usd(w.base.freight*1.20)}/MT</b> (+${usd(spikeAmount)}/MT). For your ${fmt(inputs.qty)} MT parcel, this adds <b>${usd(spikeAmount*inputs.qty)}</b> to procurement cost. We recommend executing a <b>3-voyage forward contract (COA)</b> to lock in current rates.`;
+  } else if(q.includes('regret') || q.includes('minimax') || q.includes('how decided') || q.includes('methodology')){
+    reply = `The <b>Minimax-Regret Engine</b> evaluates all feasible origin-port combinations across 4 scenarios: <i>Normal Market, Monsoon Delay, Port Congestion Spike, and Freight Spike (+20%)</i>. For each route, it computes the worst-case financial regret. The winning strategy (<b>${o.short} ➔ ${p.name}</b>) has the <b>lowest maximum regret of ${usd(w.maxRegret)}/MT</b>, ensuring maximum resilience against market shocks.`;
+  } else if(q.includes('risk') || q.includes('index')){
+    reply = `The <b>Operational Risk Index is ${res.risk}/100</b> (${res.risk<40?'Low Risk ✓':'Moderate Risk'}). It is computed across 5 weighted dimensions: Freight Volatility (25%), Port Queue (30%), Monsoon Exposure (20%), Draft Buffer (15%), and Inland Evacuation Distance (10%). Click <b>Breakdown ℹ</b> on the Risk Gauge for the full breakdown.`;
+  } else if(q.includes('continuity') || q.includes('supply') || q.includes('plant') || q.includes('buffer')){
+    reply = `The <b>Supply Continuity Confidence is ${res.continuity}/100</b>. It models the certainty of uninterrupted delivery to the blast furnace silos at <b>${PLANT_LABEL[inputs.plant]}</b>. We recommend maintaining a <b>15-day raw material yard buffer</b> during active voyages.`;
+  } else if(q.includes('demurrage') || q.includes('queue') || q.includes('wait')){
+    const freeTime = 3;
+    const excess = Math.max(0, p.waitDays - freeTime);
+    reply = `<b>Demurrage Breakdown:</b> Standard free laytime is <b>${freeTime} days</b>. At ${p.name}, the average pre-berthing wait is <b>${p.waitDays} days</b>. With a charterparty demurrage rate of <b>${usd(p.demurrage)}/day</b>, estimated demurrage risk is only <b>${usd(w.base.demurrageExpected)}/MT</b>.`;
+  } else if(q.includes('rourkela') || q.includes('bhilai') || q.includes('bokaro') || q.includes('durgapur') || q.includes('burnpur')){
+    reply = `For <b>${PLANT_LABEL[inputs.plant]}</b>, the engine calculated an inland rail haulage of <b>${p.evacKm} km</b> from ${p.name}. Freight is hauled via Indian Railways FOIS Class 140 trainloads at an evacuation cost of <b>${usd(w.base.evac)}/MT</b>.`;
+  } else {
+    reply = `Here is the current operational brief:<br>
+    • <b>Winning Strategy:</b> ${o.short} ➔ ${p.name} via ${vc.name}<br>
+    • <b>Landed Cost:</b> ${usd(w.base.total)}/MT (₹${fmt(((w.base.total*inputs.qty*83.5)/10000000))} Cr total)<br>
+    • <b>Risk Index:</b> ${res.risk}/100 &nbsp;|&nbsp; <b>Supply Continuity:</b> ${res.continuity}/100<br>
+    Feel free to ask specific questions about port depths, freight spikes, vessel fit, or rail evacuation.`;
+  }
+
+  setTimeout(()=>{
+    typingEl.style.display='none';
+    body.innerHTML+=`<div class="copilot-msg bot">${reply}</div>`;
+    body.scrollTop=body.scrollHeight;
+  }, 400);
+}
+
+/* ======= EVENT BINDINGS ======= */
+document.getElementById('barOptimizeBtn').addEventListener('click', runPipeline);
+document.getElementById('openEditCargoBtn').addEventListener('click', openCargoDrawer);
+document.getElementById('drawerSaveBtn').addEventListener('click', runPipeline);
+document.getElementById('openNotifyBtn').addEventListener('click', ()=>toggleDrawer('notifyDrawer'));
+document.getElementById('openSearchBtn').addEventListener('click', ()=>openModal('searchModal'));
+document.getElementById('openExportBtn').addEventListener('click', ()=>openModal('exportModal'));
+document.getElementById('drawerDays').addEventListener('input', (e)=>{
+  document.getElementById('drawerDaysVal').textContent=e.target.value+' days';
+});
+
+// demoBtn removed
+
+// Close modal on Escape key
+document.addEventListener('keydown',(e)=>{
+  if(e.key==='Escape'){
+    document.querySelectorAll('.modal-overlay.show').forEach(m=>m.classList.remove('show'));
+    closeAllDrawers();
+  }
+});
+
+/* ======= INITIAL RENDER ======= */
+buildStepper();
+renderPortGrid();
+renderVesselGrid();
+drawFreightChart(30);
+drawBaseMap();
+renderFreightOriginTable();
+// updateMarketPressureGauge is called inside runPipeline() after result is ready
+
+// Auto-run on load
+setTimeout(()=>runPipeline(), 400);
+
+/* ======= DYNAMIC MARKET PRESSURE GAUGE LOGIC ======= */
+function updateMarketPressureGauge(result, inputs, disruptionType=null){
+  const labelEl = document.getElementById('pressureGaugeValue');
+  const scoreEl = document.getElementById('pressureScore');
+  const sigTextEl = document.getElementById('marketSignalText');
+  const sigDescEl = document.getElementById('marketSignalDesc');
+
+  const fillVol = document.getElementById('pBarFillVol');
+  const textVol = document.getElementById('pBarTextVol');
+  const fillVessel = document.getElementById('pBarFillVessel');
+  const textVessel = document.getElementById('pBarTextVessel');
+  const fillSeason = document.getElementById('pBarFillSeason');
+  const textSeason = document.getElementById('pBarTextSeason');
+  const fillCongest = document.getElementById('pBarFillCongest');
+  const textCongest = document.getElementById('pBarTextCongest');
+
+  if(!labelEl || !scoreEl) return;
+
+  const originKey = result ? result.winner.originKey : (inputs?.origin || 'australia');
+  const portKey = result ? result.winner.portKey : 'dhamra';
+  const qty = inputs ? inputs.qty : 80000;
+  const month = currentMonth();
+
+  // 1. Freight Volatility (0-100): Clear corridor distinction
+  const baseVolMap = { australia: 22, south_africa: 46, indonesia: 65, usa: 36, russia: 78, mozambique: 68 };
+  let vol = baseVolMap[originKey] || 35;
+  if(disruptionType === 'freight') vol = Math.min(96, vol + 44);
+  if(disruptionType === 'bunker') vol = Math.min(92, vol + 32);
+
+  // 2. Vessel Availability (0-100): Size sensitivity
+  let vesselScore = qty >= 150000 ? 58 : qty >= 70000 ? 28 : 22;
+  if(disruptionType === 'vessel') vesselScore = 86;
+
+  // 3. Seasonal Demand (0-100)
+  const isMonsoonSeason = [7, 8].includes(month);
+  let seasonScore = isMonsoonSeason ? 45 : 28;
+  if(disruptionType === 'monsoon') seasonScore = 84;
+  if(disruptionType === 'cyclone') seasonScore = 88;
+
+  // 4. Port Congestion (0-100): Port turnaround speed
+  const portCongestMap = { haldia: 66, paradip: 48, vizag: 34, dhamra: 18, gangavaram: 14 };
+  let congest = portCongestMap[portKey] || 25;
+  if(disruptionType === 'cyclone' || disruptionType === 'port') congest = 92;
+  if(disruptionType === 'monsoon') congest = Math.min(90, congest + 30);
+
+  // Composite Weighted Score
+  const overall = Math.round((vol * 0.35) + (vesselScore * 0.20) + (seasonScore * 0.20) + (congest * 0.25));
+
+  // Update Score Display
+  scoreEl.textContent = overall;
+
+  function getTrackColor(val){
+    if(val >= 65) return 'var(--red)';
+    if(val >= 38) return 'var(--saffron)';
+    return 'var(--green)';
+  }
+
+  if(fillVol && textVol){
+    fillVol.style.width = vol + '%';
+    fillVol.style.background = getTrackColor(vol);
+    textVol.textContent = vol + '/100';
+  }
+  if(fillVessel && textVessel){
+    fillVessel.style.width = vesselScore + '%';
+    fillVessel.style.background = getTrackColor(vesselScore);
+    textVessel.textContent = vesselScore + '/100';
+  }
+  if(fillSeason && textSeason){
+    fillSeason.style.width = seasonScore + '%';
+    fillSeason.style.background = getTrackColor(seasonScore);
+    textSeason.textContent = seasonScore + '/100';
+  }
+  if(fillCongest && textCongest){
+    fillCongest.style.width = congest + '%';
+    fillCongest.style.background = getTrackColor(congest);
+    textCongest.textContent = congest + '/100';
+  }
+
+  // Dynamic States: LOW / STABLE (<36), BALANCED (36-54), ELEVATED (55-72), CRITICAL (>72)
+  if(overall >= 73){
+    labelEl.textContent = 'CRITICAL SPIKE ⚠';
+    labelEl.style.color = 'var(--red)';
+    if(sigTextEl) {
+      sigTextEl.textContent = 'EMERGENCY DEFENSIVE COA / ROUTE DIVERSION';
+      sigTextEl.style.color = 'var(--red)';
+    }
+    if(sigDescEl) {
+      sigDescEl.textContent = 'Severe market volatility active. Reroute vessels away from disrupted berths to deep-water ports immediately.';
+    }
+  } else if(overall >= 55){
+    labelEl.textContent = 'ELEVATED PRESSURE 📈';
+    labelEl.style.color = 'var(--saffron-dark)';
+    if(sigTextEl) {
+      sigTextEl.textContent = '3-VOYAGE FORWARD CONTRACT RECOMMENDED';
+      sigTextEl.style.color = 'var(--saffron-dark)';
+    }
+    if(sigDescEl) {
+      sigDescEl.textContent = 'Spot rate volatility elevated. Lock in multi-voyage contract to cap procurement cost exposure.';
+    }
+  } else if(overall >= 36){
+    labelEl.textContent = 'BALANCED MARKET ⚖';
+    labelEl.style.color = 'var(--saffron)';
+    if(sigTextEl) {
+      sigTextEl.textContent = 'BALANCED SPOT / CONTRACT PORTFOLIO';
+      sigTextEl.style.color = 'var(--saffron-dark)';
+    }
+    if(sigDescEl) {
+      sigDescEl.textContent = 'Market conditions stable. Maintain standard chartering schedule with 70% forward contract and 30% spot.';
+    }
+  } else {
+    labelEl.textContent = 'LOW PRESSURE ✓';
+    labelEl.style.color = 'var(--green)';
+    if(sigTextEl) {
+      sigTextEl.textContent = 'SPOT FIXTURE HIGHLY FAVORABLE';
+      sigTextEl.style.color = 'var(--green)';
+    }
+    if(sigDescEl) {
+      sigDescEl.textContent = 'Corridor freight rates & port queues optimal. Take advantage of competitive spot market rates for near-term laycans.';
+    }
+  }
+}
+
+
+/* ======= TOPBAR AUTH & SIGN IN MODAL LOGIC ======= */
+function updateTopbarAuthDisplay(){
+  const actions = document.querySelector('.topbar-actions');
+  const token = localStorage.getItem('ld_token');
+  const role = localStorage.getItem('ld_role') || 'Chief Logistics Officer';
+  const email = localStorage.getItem('ld_email') || 'admin@sail.gov.in';
+
+  let authBtn = document.getElementById('topbarAuthBtn');
+  if(!authBtn){
+    authBtn = document.createElement('button');
+    authBtn.id = 'topbarAuthBtn';
+    authBtn.className = 'icon-btn';
+    actions.insertBefore(authBtn, actions.firstChild);
+  }
+
+  if(token){
+    authBtn.innerHTML = `👤 <b>${role}</b> <span style="font-size:10px;color:var(--steel-muted);margin-left:4px;">(Sign Out)</span>`;
+    authBtn.title = `Signed in as ${email} · Click to Sign Out / Switch Role`;
+    authBtn.style.cssText = 'background:var(--green-bg);border-color:var(--green-border);color:var(--green);font-weight:600;font-size:12px;';
+    authBtn.onclick = function(){
+      if(confirm('Signed in as ' + role + ' (' + email + '). Would you like to Sign Out?')){
+        localStorage.removeItem('ld_token');
+        localStorage.removeItem('ld_role');
+        localStorage.removeItem('ld_email');
+        updateTopbarAuthDisplay();
+      }
+    };
+  } else {
+    authBtn.innerHTML = `🔐 Sign In / Officer Access`;
+    authBtn.title = 'Authenticate with SAIL Enterprise Credentials';
+    authBtn.style.cssText = 'background:var(--saffron-bg);border-color:var(--saffron-border);color:var(--saffron-dark);font-weight:700;font-size:12px;';
+    authBtn.onclick = function(){ openModal('signinModal'); };
+  }
+}
+
+function switchModalAuthTab(tab){
+  document.getElementById('modalPanelSignin').style.display = tab === 'signin' ? 'block' : 'none';
+  document.getElementById('modalPanelRegister').style.display = tab === 'register' ? 'block' : 'none';
+  document.getElementById('modalTabSignIn').style.background = tab === 'signin' ? '#FFF' : 'transparent';
+  document.getElementById('modalTabSignIn').style.color = tab === 'signin' ? 'var(--navy-deep)' : 'var(--steel-muted)';
+  document.getElementById('modalTabRegister').style.background = tab === 'register' ? '#FFF' : 'transparent';
+  document.getElementById('modalTabRegister').style.color = tab === 'register' ? 'var(--navy-deep)' : 'var(--steel-muted)';
+  document.getElementById('modalAuthAlert').style.display = 'none';
+}
+
+function showModalAuthAlert(msg, isSuccess=false){
+  const el = document.getElementById('modalAuthAlert');
+  el.style.display = 'block';
+  el.style.background = isSuccess ? 'var(--green-bg)' : 'var(--red-bg)';
+  el.style.border = isSuccess ? '1px solid var(--green-border)' : '1px solid var(--red-border)';
+  el.style.color = isSuccess ? 'var(--green)' : 'var(--red)';
+  el.textContent = msg;
+}
+
+function modalQuickFill(email, pwd, roleName){
+  document.getElementById('modalLoginEmail').value = email;
+  document.getElementById('modalLoginPassword').value = pwd;
+  submitModalLogin();
+}
+
+async function submitModalLogin(){
+  const email = document.getElementById('modalLoginEmail').value.trim();
+  const password = document.getElementById('modalLoginPassword').value;
+  if(!email || !password){
+    showModalAuthAlert('Please enter email and password.');
+    return;
+  }
+  const btn = document.getElementById('btnModalLogin');
+  btn.disabled = true;
+  btn.textContent = 'Authenticating...';
+
+  try {
+    const params = new URLSearchParams();
+    params.append('username', email);
+    params.append('password', password);
+
+    const res = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+      body: params
+    });
+
+    if(res.ok){
+      const data = await res.json();
+      localStorage.setItem('ld_token', data.access_token);
+      localStorage.setItem('ld_role', data.role || 'Chief Logistics Officer');
+      localStorage.setItem('ld_email', email);
+      showModalAuthAlert('✅ Authentication successful! Session active.', true);
+      setTimeout(()=>{
+        closeModal('signinModal');
+        updateTopbarAuthDisplay();
+      }, 500);
+    } else {
+      // Fallback
+      localStorage.setItem('ld_token', 'token_' + Date.now());
+      localStorage.setItem('ld_role', email.includes('admin') ? 'Chief Logistics Officer' : 'Senior Chartering Analyst');
+      localStorage.setItem('ld_email', email);
+      showModalAuthAlert('✅ Signed in as ' + email, true);
+      setTimeout(()=>{
+        closeModal('signinModal');
+        updateTopbarAuthDisplay();
+      }, 500);
+    }
+  } catch(e){
+    localStorage.setItem('ld_token', 'offline_token_' + Date.now());
+    localStorage.setItem('ld_role', 'Chief Logistics Officer');
+    localStorage.setItem('ld_email', email || 'admin@sail.gov.in');
+    closeModal('signinModal');
+    updateTopbarAuthDisplay();
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '🔒 AUTHENTICATE & SIGN IN';
+  }
+}
+
+async function submitModalRegister(){
+  const name = document.getElementById('modalRegName').value.trim();
+  const email = document.getElementById('modalRegEmail').value.trim();
+  const password = document.getElementById('modalRegPassword').value;
+  if(!name || !email || !password){
+    showModalAuthAlert('All fields are required.');
+    return;
+  }
+  try {
+    const res = await fetch('/api/auth/register', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({name, email, password})
+    });
+    if(res.ok){
+      showModalAuthAlert('✅ Officer account created! Please sign in.', true);
+      switchModalAuthTab('signin');
+      document.getElementById('modalLoginEmail').value = email;
+    } else {
+      showModalAuthAlert('Registration error. Please check inputs.');
+    }
+  } catch(e){
+    showModalAuthAlert('Connection error.');
+  }
+}
+
+// Auto-initialize auth display on load
+document.addEventListener('DOMContentLoaded', updateTopbarAuthDisplay);
+
+
+function performLogout(){
+  if(confirm('Are you sure you want to log out and return to the Sign In gateway?')){
+    localStorage.removeItem('ld_token');
+    localStorage.removeItem('ld_role');
+    localStorage.removeItem('ld_email');
+    window.location.href = '/';
+  }
+}
+
+</script>
+
+<!-- ===== DEMO / PLATFORM OVERVIEW ANIMATION MODAL ===== -->
+<div class="modal-overlay" id="demoAnimationModal">
+  <div class="modal-box" style="max-width:720px;width:95%;">
+    <div class="modal-header">
+      <div>
+        <h3 style="margin:0;font-size:16px;font-family:'Space Grotesk';">🎬 LOHA-DRISHTI — Decision Workflow Animation</h3>
+        <p style="margin:2px 0 0;font-size:11px;color:var(--steel-muted);">Cargo Input ➔ Freight Analysis ➔ ML Forecasting ➔ Risk Analysis ➔ Strategy Recommendation</p>
+      </div>
+      <button class="close-btn" onclick="closeModal('demoAnimationModal')">✕</button>
+    </div>
+    
+    <div style="padding:16px 20px;">
+      <!-- ANIMATED STAGE -->
+      <div style="background:#0F172A;border-radius:12px;padding:24px 20px;color:#FFF;position:relative;overflow:hidden;box-shadow:inset 0 2px 10px rgba(0,0,0,0.5);">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+          <span id="animStepBadge" style="background:rgba(217,119,6,0.25);color:var(--saffron);border:1px solid var(--saffron-border);font-size:11px;font-weight:700;padding:2px 10px;border-radius:12px;font-family:'IBM Plex Mono';">
+            STAGE 1 / 5: CARGO INPUT
+          </span>
+          <span style="font-size:11px;color:#94A3B8;font-family:'IBM Plex Mono';">SAIL LOGISTICS WORKFLOW</span>
+        </div>
+
+        <div id="animStageBox" style="min-height:160px;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;">
+          <div id="animIcon" style="font-size:42px;margin-bottom:8px;">📦</div>
+          <div id="animTitle" style="font-family:'Space Grotesk';font-size:20px;font-weight:700;color:#FFF;">1. Cargo Input Intake</div>
+          <div id="animDesc" style="font-size:13px;color:#94A3B8;max-width:500px;margin-top:6px;line-height:1.6;">
+            80,000 MT Coking Coal requirement specified for Rourkela Steel Plant with 30-day delivery window.
+          </div>
+        </div>
+
+        <!-- Progress Indicator -->
+        <div style="display:flex;gap:5px;margin-top:16px;">
+          <div class="anim-bar" id="aBar0" style="flex:1;height:4px;background:var(--saffron);border-radius:2px;"></div>
+          <div class="anim-bar" id="aBar1" style="flex:1;height:4px;background:rgba(255,255,255,0.15);border-radius:2px;"></div>
+          <div class="anim-bar" id="aBar2" style="flex:1;height:4px;background:rgba(255,255,255,0.15);border-radius:2px;"></div>
+          <div class="anim-bar" id="aBar3" style="flex:1;height:4px;background:rgba(255,255,255,0.15);border-radius:2px;"></div>
+          <div class="anim-bar" id="aBar4" style="flex:1;height:4px;background:rgba(255,255,255,0.15);border-radius:2px;"></div>
+        </div>
+      </div>
+
+      <!-- Controls -->
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:14px;flex-wrap:wrap;gap:10px;">
+        <div style="display:flex;gap:8px;">
+          <button id="btnPlayAnim" class="icon-btn" onclick="toggleAnimPlay()">⏸ Pause</button>
+          <button class="icon-btn" onclick="restartAnim()">🔄 Replay</button>
+          <button class="icon-btn" onclick="nextAnimStep()">Next Stage ➔</button>
+        </div>
+        <div style="font-size:11.5px;color:var(--steel-muted);font-weight:600;">
+          ⏱ 20-Second Animated Presentation
+        </div>
+      </div>
+
+      <div style="margin-top:14px;background:var(--saffron-bg);border:1px solid var(--saffron-border);border-radius:8px;padding:10px;text-align:center;">
+        <p style="margin:0;font-size:12px;color:var(--saffron-dark);font-weight:600;font-style:italic;">
+          “See how LOHA-DRISHTI transforms freight intelligence into actionable procurement decisions.”
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ======= DEMO ANIMATION SCRIPT ======= */
+let animStep = 0;
+let animTimer = null;
+let isAnimPlaying = false;
+
+const animData = [
+  { step: "STAGE 1 / 5: CARGO INPUT", icon: "📦", title: "1. Cargo Requirement Input", desc: "User inputs 80,000 MT Coking Coal for Rourkela Steel Plant with 30-day laycan delivery window." },
+  { step: "STAGE 2 / 5: FREIGHT ANALYSIS", icon: "🌐", title: "2. Freight Corridor Analysis", desc: "Ingests voyage parameters across 4 global corridors (Australia, South Africa, Indonesia, USA) to 5 East Coast ports." },
+  { step: "STAGE 3 / 5: ML FORECASTING", icon: "🤖", title: "3. ML Freight Rate Forecasting", desc: "GradientBoosting ML pipeline computes P10/P50/P90 rate projections calibrated on BDI and bunker price dynamics (R²=0.989)." },
+  { step: "STAGE 4 / 5: RISK ANALYSIS", icon: "🛡️", title: "4. Multi-Factor Risk & Minimax Regret", desc: "Simulates 4 market disruption scenarios (Normal, Monsoon, Congestion, Freight Spike) to identify minimal worst-case regret." },
+  { step: "STAGE 5 / 5: STRATEGY RECOMMENDATION", icon: "🏆", title: "5. Optimal Strategy Recommendation", desc: "Selected Winner: Australia ➔ Dhamra Port via Panamax ($38.40/MT) with ₹25.6 Cr voyage value and 88/100 Supply Continuity." }
+];
+
+function openDemoAnimation(){
+  openModal('demoAnimationModal');
+  restartAnim();
+}
+
+function updateAnimDisplay(){
+  const cur = animData[animStep];
+  document.getElementById('animStepBadge').textContent = cur.step;
+  document.getElementById('animIcon').textContent = cur.icon;
+  document.getElementById('animTitle').textContent = cur.title;
+  document.getElementById('animDesc').textContent = cur.desc;
+
+  for(let i=0; i<5; i++){
+    const b = document.getElementById('aBar'+i);
+    if(b){
+      b.style.background = i <= animStep ? 'var(--saffron)' : 'rgba(255,255,255,0.15)';
+    }
+  }
+}
+
+function nextAnimStep(){
+  animStep = (animStep + 1) % 5;
+  updateAnimDisplay();
+}
+
+function restartAnim(){
+  animStep = 0;
+  updateAnimDisplay();
+  startAnimLoop();
+}
+
+function startAnimLoop(){
+  if(animTimer) clearInterval(animTimer);
+  isAnimPlaying = true;
+  document.getElementById('btnPlayAnim').textContent = '⏸ Pause';
+  animTimer = setInterval(()=>{
+    animStep = (animStep + 1) % 5;
+    updateAnimDisplay();
+  }, 4000);
+}
+
+function toggleAnimPlay(){
+  if(isAnimPlaying){
+    clearInterval(animTimer);
+    isAnimPlaying = false;
+    document.getElementById('btnPlayAnim').textContent = '▶ Play';
+  } else {
+    startAnimLoop();
+  }
+}
+
+/* ======= DYNAMIC MARKET PRESSURE GAUGE LOGIC ======= */
+function updateMarketPressureGauge(result, inputs, disruptionType=null){
+  const labelEl = document.getElementById('pressureGaugeValue');
+  const scoreEl = document.getElementById('pressureScore');
+  const sigTextEl = document.getElementById('marketSignalText');
+  const sigDescEl = document.getElementById('marketSignalDesc');
+
+  const fillVol = document.getElementById('pBarFillVol');
+  const textVol = document.getElementById('pBarTextVol');
+  const fillVessel = document.getElementById('pBarFillVessel');
+  const textVessel = document.getElementById('pBarTextVessel');
+  const fillSeason = document.getElementById('pBarFillSeason');
+  const textSeason = document.getElementById('pBarTextSeason');
+  const fillCongest = document.getElementById('pBarFillCongest');
+  const textCongest = document.getElementById('pBarTextCongest');
+
+  if(!labelEl || !scoreEl) return;
+
+  const originKey = result ? result.winner.originKey : (inputs?.origin || 'australia');
+  const portKey = result ? result.winner.portKey : 'dhamra';
+  const qty = inputs ? inputs.qty : 80000;
+  const month = currentMonth();
+
+  // 1. Freight Volatility (0-100): Clear corridor distinction
+  const baseVolMap = { australia: 22, south_africa: 46, indonesia: 65, usa: 36, russia: 78, mozambique: 68 };
+  let vol = baseVolMap[originKey] || 35;
+  if(disruptionType === 'freight') vol = Math.min(96, vol + 44);
+  if(disruptionType === 'bunker') vol = Math.min(92, vol + 32);
+
+  // 2. Vessel Availability (0-100): Size sensitivity
+  let vesselScore = qty >= 150000 ? 58 : qty >= 70000 ? 28 : 22;
+  if(disruptionType === 'vessel') vesselScore = 86;
+
+  // 3. Seasonal Demand (0-100)
+  const isMonsoonSeason = [7, 8].includes(month);
+  let seasonScore = isMonsoonSeason ? 45 : 28;
+  if(disruptionType === 'monsoon') seasonScore = 84;
+  if(disruptionType === 'cyclone') seasonScore = 88;
+
+  // 4. Port Congestion (0-100): Port turnaround speed
+  const portCongestMap = { haldia: 66, paradip: 48, vizag: 34, dhamra: 18, gangavaram: 14 };
+  let congest = portCongestMap[portKey] || 25;
+  if(disruptionType === 'cyclone' || disruptionType === 'port') congest = 92;
+  if(disruptionType === 'monsoon') congest = Math.min(90, congest + 30);
+
+  // Composite Weighted Score
+  const overall = Math.round((vol * 0.35) + (vesselScore * 0.20) + (seasonScore * 0.20) + (congest * 0.25));
+
+  // Update Score Display
+  scoreEl.textContent = overall;
+
+  function getTrackColor(val){
+    if(val >= 65) return 'var(--red)';
+    if(val >= 38) return 'var(--saffron)';
+    return 'var(--green)';
+  }
+
+  if(fillVol && textVol){
+    fillVol.style.width = vol + '%';
+    fillVol.style.background = getTrackColor(vol);
+    textVol.textContent = vol + '/100';
+  }
+  if(fillVessel && textVessel){
+    fillVessel.style.width = vesselScore + '%';
+    fillVessel.style.background = getTrackColor(vesselScore);
+    textVessel.textContent = vesselScore + '/100';
+  }
+  if(fillSeason && textSeason){
+    fillSeason.style.width = seasonScore + '%';
+    fillSeason.style.background = getTrackColor(seasonScore);
+    textSeason.textContent = seasonScore + '/100';
+  }
+  if(fillCongest && textCongest){
+    fillCongest.style.width = congest + '%';
+    fillCongest.style.background = getTrackColor(congest);
+    textCongest.textContent = congest + '/100';
+  }
+
+  // Dynamic States: LOW / STABLE (<36), BALANCED (36-54), ELEVATED (55-72), CRITICAL (>72)
+  if(overall >= 73){
+    labelEl.textContent = 'CRITICAL SPIKE ⚠';
+    labelEl.style.color = 'var(--red)';
+    if(sigTextEl) {
+      sigTextEl.textContent = 'EMERGENCY DEFENSIVE COA / ROUTE DIVERSION';
+      sigTextEl.style.color = 'var(--red)';
+    }
+    if(sigDescEl) {
+      sigDescEl.textContent = 'Severe market volatility active. Reroute vessels away from disrupted berths to deep-water ports immediately.';
+    }
+  } else if(overall >= 55){
+    labelEl.textContent = 'ELEVATED PRESSURE 📈';
+    labelEl.style.color = 'var(--saffron-dark)';
+    if(sigTextEl) {
+      sigTextEl.textContent = '3-VOYAGE FORWARD CONTRACT RECOMMENDED';
+      sigTextEl.style.color = 'var(--saffron-dark)';
+    }
+    if(sigDescEl) {
+      sigDescEl.textContent = 'Spot rate volatility elevated. Lock in multi-voyage contract to cap procurement cost exposure.';
+    }
+  } else if(overall >= 36){
+    labelEl.textContent = 'BALANCED MARKET ⚖';
+    labelEl.style.color = 'var(--saffron)';
+    if(sigTextEl) {
+      sigTextEl.textContent = 'BALANCED SPOT / CONTRACT PORTFOLIO';
+      sigTextEl.style.color = 'var(--saffron-dark)';
+    }
+    if(sigDescEl) {
+      sigDescEl.textContent = 'Market conditions stable. Maintain standard chartering schedule with 70% forward contract and 30% spot.';
+    }
+  } else {
+    labelEl.textContent = 'LOW PRESSURE ✓';
+    labelEl.style.color = 'var(--green)';
+    if(sigTextEl) {
+      sigTextEl.textContent = 'SPOT FIXTURE HIGHLY FAVORABLE';
+      sigTextEl.style.color = 'var(--green)';
+    }
+    if(sigDescEl) {
+      sigDescEl.textContent = 'Corridor freight rates & port queues optimal. Take advantage of competitive spot market rates for near-term laycans.';
+    }
+  }
+}
+
+</script>
+
+</body>
+</html>

@@ -1,0 +1,25 @@
+{
+  "model_name": "LOHA-DRISHTI Freight Predictor",
+  "algorithm": "GradientBoostingRegressor",
+  "version": "v2.2-optimal",
+  "dataset_type": "Synthetic / Calibrated Maritime Benchmark",
+  "records_count": 1500,
+  "features_list": [
+    "distance_nm",
+    "month",
+    "bunker_price_usd",
+    "pressure_index",
+    "origin_Australia",
+    "origin_Indonesia",
+    "origin_South Africa",
+    "origin_USA"
+  ],
+  "target_variable": "freight_rate_usd",
+  "r2_score": 0.9891,
+  "mae_usd": 0.67,
+  "rmse_usd": 0.9,
+  "mape_pct": 3.03,
+  "training_duration_sec": 9.12,
+  "trained_at": "2026-08-28 17:39:59 UTC",
+  "status": "PREDICTION_READY"
+}
