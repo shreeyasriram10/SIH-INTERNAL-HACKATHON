@@ -9,7 +9,7 @@ import joblib
 from database import get_db, engine
 import models
 import auth
-from routers import waterways
+from routers import waterways, ml
 
 router = APIRouter()
 START_TIME = time.time()
@@ -108,7 +108,7 @@ def run_live_system_tests(db: Session = Depends(get_db)):
     try:
         model_path = os.path.join(os.path.dirname(__file__), "..", "ml", "model.pkl")
         assert os.path.exists(model_path), "model.pkl artifact exists"
-        model_data = joblib.load(model_path)
+        model_data = ml.load_model_payload()
         assert 'model' in model_data
         assert 'features' in model_data
         tests.append({"category": "ML Pipeline", "name": "Model Artifact & Feature Registry", "status": "PASS", "details": f"Algorithm: {model_data.get('algorithm', 'GradientBoosting')}, Features: {len(model_data['features'])}"})
@@ -119,7 +119,7 @@ def run_live_system_tests(db: Session = Depends(get_db)):
     try:
         import pandas as pd
         model_path = os.path.join(os.path.dirname(__file__), "..", "ml", "model.pkl")
-        m_data = joblib.load(model_path)
+        m_data = ml.load_model_payload()
         model = m_data['model']
         feats = m_data['features']
         

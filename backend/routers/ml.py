@@ -25,6 +25,16 @@ class TrainResponse(BaseModel):
     message: str
     metadata: dict
 
+def load_model_payload():
+    model_path = os.path.join(os.path.dirname(__file__), "..", "ml", "model.pkl")
+    try:
+        if not os.path.exists(model_path):
+            raise FileNotFoundError(model_path)
+        return joblib.load(model_path)
+    except Exception:
+        train_model()
+        return joblib.load(model_path)
+
 @router.get("/info")
 def get_model_info():
     meta_path = os.path.join(os.path.dirname(__file__), "..", "ml", "model_metadata.json")
@@ -111,11 +121,7 @@ def trigger_training(db: Session = Depends(get_db)):
 
 @router.post("/predict")
 def predict_freight(request: ForecastRequest, db: Session = Depends(get_db)):
-    model_path = os.path.join(os.path.dirname(__file__), "..", "ml", "model.pkl")
-    if not os.path.exists(model_path):
-        train_model()
-        
-    model_data = joblib.load(model_path)
+    model_data = load_model_payload()
     model = model_data['model']
     features = model_data['features']
     
