@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ML Model &amp; Training — LOHA DRISHTI</title>
+<link rel="icon" type="image/svg+xml" href="/static/loha-drishti-logo.svg">
 <meta name="description" content="Machine Learning Model Lifecycle, Training, Evaluation, and Inference Engine for SAIL Maritime Freight Intelligence">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -148,7 +149,7 @@
 <body>
   <div class="topbar">
     <div class="brand">
-      <div class="brand-mark">L</div>
+      <img class="brand-mark" src="/static/loha-drishti-logo.svg" alt="Loha Drishti maritime emblem">
       <div>
         <div class="brand-text">LOHA DRISHTI</div>
         <div class="brand-sub">Maritime Decision Intelligence · SAIL Logistics</div>
@@ -314,7 +315,7 @@
           ⚡ RUN INFERENCE
         </button>
         <div id="sbResult" style="font-family:'IBM Plex Mono';font-size:13.5px;color:var(--navy-deep);font-weight:600;">
-          Predicted Freight: <strong>$21.40/MT</strong> (90% Confidence Interval: $19.80 – $23.00/MT)
+          Enter parameters and run inference to request a model prediction.
         </div>
       </div>
     </div>
@@ -373,10 +374,12 @@
         document.getElementById('dispMAPE').textContent = d.metadata.mape_pct + '%';
         document.getElementById('dispTrainedAt').textContent = d.metadata.trained_at;
       } else {
-        con.innerHTML += `<div style="color:#EF4444;">> Error during backend training execution.</div>`;
+        let detail = 'Backend training failed.';
+        try { detail = (await res.json()).detail || detail; } catch(e) {}
+        con.innerHTML += `<div style="color:#EF4444;">&gt; Error: ${detail}</div>`;
       }
     } catch(e) {
-      con.innerHTML += `<div style="color:#10B981;">> Deployed GradientBoostingRegressor | R² = 0.9891 (Synchronized)</div>`;
+      con.innerHTML += `<div style="color:#EF4444;">&gt; Training request failed: ${e.message}</div>`;
     } finally {
       btn.disabled = false;
       btn.innerHTML = '⚡ TRAIN / RETRAIN MODEL';
@@ -393,6 +396,10 @@
     const dist = distances[origin] || 4500;
 
     const out = document.getElementById('sbResult');
+    if(!Number.isFinite(month) || !Number.isFinite(bunker) || !Number.isFinite(pressure) || bunker <= 0 || pressure < 0 || pressure > 100){
+      out.innerHTML = '<span style="color:var(--red);">Please enter valid month, bunker price, and pressure values.</span>';
+      return;
+    }
     out.innerHTML = '<span class="spinner-inline" style="border-color:var(--steel-muted);border-top-color:var(--saffron);width:10px;height:10px;"></span> Running inference...';
 
     try {
@@ -409,13 +416,15 @@
       });
       if(res.ok) {
         const d = await res.json();
-        out.innerHTML = `Predicted Rate: <strong>$${d.predicted_rate_usd.toFixed(2)}/MT</strong> (90% CI: $${d.confidence_interval[0].toFixed(2)} – $${d.confidence_interval[1].toFixed(2)}/MT) · Model: ${d.algorithm}`;
+        const features = d.features_evaluated || {};
+        out.innerHTML = `Predicted Rate: <strong>$${d.predicted_rate_usd.toFixed(2)}/MT</strong> (90% CI: $${d.confidence_interval[0].toFixed(2)} – $${d.confidence_interval[1].toFixed(2)}/MT) · Model: ${d.algorithm}<br><span style="font-size:11px;color:var(--steel-muted);font-weight:500;">Inputs: ${features.origin || origin} · Month ${features.month || month} · Bunker $${features.bunker_price_usd || bunker}/MT · Pressure ${features.market_pressure_index ?? pressure}/100<br>Predicted at: ${d.predicted_at || new Date().toISOString()}</span>`;
+      } else {
+        let detail = 'Inference failed. No prediction was returned.';
+        try { detail = (await res.json()).detail || detail; } catch(e) {}
+        out.innerHTML = `<span style="color:var(--red);">${detail}</span>`;
       }
     } catch(e) {
-      let rate = (dist * 0.0034) + 4.20 + ((dist / 312) * 32 * bunker / 75000 * 1.12);
-      if(month === 7 || month === 8) rate *= 1.14;
-      rate *= (1.0 + (pressure - 50.0) / 220.0);
-      out.innerHTML = `Predicted Rate: <strong>$${rate.toFixed(2)}/MT</strong> (90% CI: $${(rate-1.5).toFixed(2)} – $${(rate+1.5).toFixed(2)}/MT) · Model: GradientBoostingRegressor`;
+      out.innerHTML = `<span style="color:var(--red);">Inference request failed: ${e.message}</span>`;
     }
   }
 

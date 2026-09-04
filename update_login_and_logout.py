@@ -359,15 +359,15 @@ login_html = """<!DOCTYPE html>
           <span>👥</span> Select Official Account
         </div>
         <div class="demo-roles-grid">
-          <button type="button" class="btn-role-quick selected" id="roleBtnAdmin" onclick="selectRole('admin@sail.gov.in', 'Chief Logistics Officer', 'admin123')">
+          <button type="button" class="btn-role-quick selected" id="roleBtnAdmin" onclick="selectRole('admin@sail.gov.in', 'Chief Logistics Officer', '12345')">
             <strong>👤 CLO (Admin)</strong>
             <span>admin@sail.gov.in</span>
           </button>
-          <button type="button" class="btn-role-quick" id="roleBtnAnalyst" onclick="selectRole('analyst@sail.gov.in', 'Senior Chartering Analyst', 'analyst123')">
+          <button type="button" class="btn-role-quick" id="roleBtnAnalyst" onclick="selectRole('analyst@sail.gov.in', 'Senior Chartering Analyst', '12345')">
             <strong>📊 Analyst</strong>
             <span>analyst@sail.gov.in</span>
           </button>
-          <button type="button" class="btn-role-quick" id="roleBtnOfficer" onclick="selectRole('officer@sail.gov.in', 'Procurement Officer', 'officer123')">
+          <button type="button" class="btn-role-quick" id="roleBtnOfficer" onclick="selectRole('officer@sail.gov.in', 'Procurement Officer', '12345')">
             <strong>📦 Officer</strong>
             <span>officer@sail.gov.in</span>
           </button>
@@ -382,7 +382,7 @@ login_html = """<!DOCTYPE html>
       <div class="field">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
           <label style="margin:0;">Secure Password</label>
-          <span style="font-size:10.5px;color:var(--saffron-gold);cursor:pointer;" id="pwdHint" onclick="fillHintPassword()">💡 Demo pwd: <b id="hintText">admin123</b></span>
+          <span style="font-size:10.5px;color:var(--saffron-gold);cursor:pointer;" id="pwdHint" onclick="fillHintPassword()">💡 Demo pwd: <b id="hintText">12345</b></span>
         </div>
         <div class="pwd-wrapper">
           <input type="password" id="loginPassword" placeholder="Enter secure password" autocomplete="current-password" autofocus>
@@ -429,7 +429,7 @@ login_html = """<!DOCTYPE html>
 
 <script>
   const delay = ms => new Promise(r => setTimeout(r, ms));
-  let currentExpectedPwd = 'admin123';
+  let currentExpectedPwd = '12345';
 
   function showTab(tab) {
     document.getElementById('panelSignin').classList.toggle('active', tab === 'signin');
@@ -575,7 +575,7 @@ login_html = """<!DOCTYPE html>
       showAlert('All fields are required.');
       return;
     }
-    if (password.length < 6) {
+    if (password.length < 5) {
       showAlert('Password must be at least 6 characters.');
       return;
     }

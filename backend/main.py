@@ -6,7 +6,7 @@ import os
 
 from database import engine, Base
 import models
-from routers import auth, cargo, ml, decision, ports, vessels, system
+from routers import auth, cargo, ml, decision, ports, vessels, system, waterways
 import seed_data
 
 # Create database tables and auto-seed initial data
@@ -39,9 +39,11 @@ app.include_router(cargo.router, prefix="/api/cargo", tags=["cargo"])
 app.include_router(ml.router, prefix="/api/ml", tags=["ml"])
 app.include_router(decision.router, prefix="/api/decision", tags=["decision"])
 app.include_router(system.router, prefix="/api/system", tags=["system"])
+app.include_router(waterways.router, prefix="/api/waterways", tags=["waterways"])
 
 # Static HTML directory
 STATIC_DIR = os.path.join(os.path.dirname(__file__), "static")
+app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 # 1. ROOT "/" & "/login" SERVES THE SIGN IN & REGISTRATION GATEWAY
 @app.get("/", include_in_schema=False)

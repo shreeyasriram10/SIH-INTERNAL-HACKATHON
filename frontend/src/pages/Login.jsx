@@ -32,7 +32,7 @@ export default function Login({ onLogin }) {
     <div style={{ display: 'flex', minHeight: '100vh', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-subtle)' }}>
       <div style={{ background: 'var(--bg-surface)', padding: '40px', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-xl)', width: '100%', maxWidth: '400px', border: '1px solid var(--steel-border)' }}>
         <div style={{ textAlign: 'center', marginBottom: '30px' }}>
-          <div className="brand-mark" style={{ margin: '0 auto 15px', width: '48px', height: '48px', fontSize: '24px' }}>L</div>
+          <img className="brand-mark" src="/loha-drishti-logo.svg" alt="Loha Drishti maritime emblem" style={{ margin: '0 auto 15px', width: '48px', height: '48px' }} />
           <h1 style={{ fontSize: '24px', margin: '0 0 5px', color: 'var(--navy-deep)' }}>LOHA DRISHTI</h1>
           <p style={{ margin: 0, fontSize: '13px', color: 'var(--steel-muted)' }}>Ministry of Steel / SAIL Logistics Platform</p>
         </div>

@@ -9,6 +9,7 @@ import joblib
 from database import get_db, engine
 import models
 import auth
+from routers import waterways
 
 router = APIRouter()
 START_TIME = time.time()
@@ -162,6 +163,15 @@ def run_live_system_tests(db: Session = Depends(get_db)):
         tests.append({"category": "Decision Engine", "name": "Minimax-Regret Optimization Matrix", "status": "PASS", "details": f"4-scenario regret evaluated; Max Regret non-negative constraint satisfied"})
     except Exception as e:
         tests.append({"category": "Decision Engine", "name": "Minimax-Regret Optimization Matrix", "status": "FAIL", "details": str(e)})
+
+    # 7. International Waterways data integrity
+    try:
+        assert len(waterways.WATERWAYS) >= 10
+        assert len(waterways.VESSELS) >= 5
+        assert all(len(item["coordinates"]) >= 2 for item in waterways.WATERWAYS)
+        tests.append({"category": "International Waterways", "name": "Waterway Routes & Vessel Dataset", "status": "PASS", "details": f"{len(waterways.WATERWAYS)} curated routes and {len(waterways.VESSELS)} vessels available as {waterways._source()}"})
+    except Exception as e:
+        tests.append({"category": "International Waterways", "name": "Waterway Routes & Vessel Dataset", "status": "FAIL", "details": str(e)})
 
     passed_count = sum(1 for t in tests if t["status"] == "PASS")
     failed_count = len(tests) - passed_count

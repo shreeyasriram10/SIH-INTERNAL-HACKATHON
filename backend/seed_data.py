@@ -13,13 +13,13 @@ def seed_database():
             admin = models.User(
                 name="Chief Logistics Officer",
                 email="admin@sail.gov.in",
-                hashed_password=auth.get_password_hash("admin123"),
+                hashed_password=auth.get_password_hash("12345"),
                 role="Admin"
             )
             analyst = models.User(
                 name="SAIL Procurement Analyst",
                 email="analyst@sail.gov.in",
-                hashed_password=auth.get_password_hash("sail2026"),
+                hashed_password=auth.get_password_hash("12345"),
                 role="Analyst"
             )
             db.add_all([admin, analyst])

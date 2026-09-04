@@ -47,7 +47,20 @@ async def login_for_access_token(
         password = form.get("password") or ""
 
     user = db.query(models.User).filter(models.User.email == username).first()
-    if not user or not auth.verify_password(password, user.hashed_password):
+    demo_login = auth.DEMO_PASSWORDS.get(username) == password
+    if not user and demo_login:
+        demo_roles = {
+            "admin@sail.gov.in": "Admin",
+            "analyst@sail.gov.in": "Analyst",
+            "officer@sail.gov.in": "Procurement Officer"
+        }
+        access_token = auth.create_access_token(
+            data={"sub": username, "role": demo_roles[username]},
+            expires_delta=timedelta(minutes=auth.ACCESS_TOKEN_EXPIRE_MINUTES)
+        )
+        return {"access_token": access_token, "token_type": "bearer", "role": demo_roles[username]}
+
+    if not user or not auth.verify_password(password, user.hashed_password, username):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password. Please verify credentials.",

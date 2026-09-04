@@ -7,7 +7,7 @@ export default function Dashboard({ onLogout }) {
     <div>
       <div className="topbar">
         <div className="brand">
-          <div className="brand-mark">L</div>
+          <img className="brand-mark" src="/loha-drishti-logo.svg" alt="Loha Drishti maritime emblem" />
           <div>
             <div className="brand-text">LOHA DRISHTI</div>
             <div className="brand-sub">Maritime Decision Intelligence · SAIL Logistics</div>
@@ -93,7 +93,7 @@ export default function Dashboard({ onLogout }) {
             <div className="decision-card">
               <h3>Datasets</h3>
               <ul>
-                <li><strong>Freight and Shipping Data:</strong> Simulated based on general historical Baltic Dry Index (BDI) and bunker fuel prices to mimic realistic market conditions (Simulated Demo Data).</li>
+                <li><strong>Freight and Shipping Data:</strong> Simulated based on general historical Baltic Dry Index (BDI) and bunker fuel prices to mimic realistic market conditions (Synthetic Benchmark Data).</li>
                 <li><strong>Port Data:</strong> Real publicly available parameters (max draft, LOA, loading rates) for major Indian ports like Paradip, Dhamra, Haldia, and Vizag (Real Public Data).</li>
                 <li><strong>Vessel Data:</strong> Standardized maritime industry averages for Panamax, Supramax, and Capesize classes (Real Industry Standard Data).</li>
                 <li><strong>Commodity/Cargo Data:</strong> Coking coal and limestone operational requirements provided by SAIL specifications (Sample Operational Data).</li>

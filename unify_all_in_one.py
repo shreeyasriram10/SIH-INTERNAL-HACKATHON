@@ -122,7 +122,7 @@ signin_modal_html = """
       </div>
       <div class="field" style="margin-bottom:14px;">
         <label style="display:block;font-size:11px;font-weight:700;color:var(--navy-deep);margin-bottom:4px;text-transform:uppercase;">Password</label>
-        <input type="password" id="modalLoginPassword" value="admin123" style="width:100%;padding:9px 12px;border:1px solid var(--steel-border);border-radius:6px;font-size:12.5px;box-sizing:border-box;">
+        <input type="password" id="modalLoginPassword" value="12345" style="width:100%;padding:9px 12px;border:1px solid var(--steel-border);border-radius:6px;font-size:12.5px;box-sizing:border-box;">
       </div>
 
       <button id="btnModalLogin" onclick="submitModalLogin()" class="btn-optimize" style="width:100%;padding:10px;justify-content:center;font-size:13px;">
@@ -133,19 +133,19 @@ signin_modal_html = """
       <div style="margin-top:16px;padding-top:12px;border-top:1px solid var(--steel-border);">
         <div style="font-size:11px;font-weight:700;color:var(--saffron-dark);text-transform:uppercase;margin-bottom:6px;">⚡ 1-Click Pre-loaded Demo Roles</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
-          <button type="button" class="prompt-btn" style="text-align:left;padding:6px 8px;" onclick="modalQuickFill('admin@sail.gov.in','admin123','Chief Logistics Officer')">
+          <button type="button" class="prompt-btn" style="text-align:left;padding:6px 8px;" onclick="modalQuickFill('admin@sail.gov.in','12345','Chief Logistics Officer')">
             <strong style="color:var(--navy-deep);font-size:11px;">👤 Admin (CLO)</strong>
             <div style="font-size:9.5px;color:var(--steel-muted);">admin@sail.gov.in</div>
           </button>
-          <button type="button" class="prompt-btn" style="text-align:left;padding:6px 8px;" onclick="modalQuickFill('analyst@sail.gov.in','analyst123','Senior Chartering Analyst')">
+          <button type="button" class="prompt-btn" style="text-align:left;padding:6px 8px;" onclick="modalQuickFill('analyst@sail.gov.in','12345','Senior Chartering Analyst')">
             <strong style="color:var(--navy-deep);font-size:11px;">📊 Analyst</strong>
             <div style="font-size:9.5px;color:var(--steel-muted);">analyst@sail.gov.in</div>
           </button>
-          <button type="button" class="prompt-btn" style="text-align:left;padding:6px 8px;" onclick="modalQuickFill('officer@sail.gov.in','officer123','Procurement Officer')">
+          <button type="button" class="prompt-btn" style="text-align:left;padding:6px 8px;" onclick="modalQuickFill('officer@sail.gov.in','12345','Procurement Officer')">
             <strong style="color:var(--navy-deep);font-size:11px;">📦 Officer</strong>
             <div style="font-size:9.5px;color:var(--steel-muted);">officer@sail.gov.in</div>
           </button>
-          <button type="button" class="prompt-btn" style="text-align:left;padding:6px 8px;border-color:var(--saffron-border);background:var(--saffron-bg);" onclick="modalQuickFill('guest@sail.gov.in','admin123','Guest Officer')">
+          <button type="button" class="prompt-btn" style="text-align:left;padding:6px 8px;border-color:var(--saffron-border);background:var(--saffron-bg);" onclick="modalQuickFill('guest@sail.gov.in','12345','Guest Officer')">
             <strong style="color:var(--saffron-dark);font-size:11px;">🚀 Instant Guest</strong>
             <div style="font-size:9.5px;color:var(--saffron);">Direct Entry</div>
           </button>

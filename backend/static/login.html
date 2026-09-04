@@ -4,17 +4,18 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>LOHA DRISHTI — Ministry of Steel Secure Gateway</title>
+<link rel="icon" type="image/svg+xml" href="/static/loha-drishti-logo.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
 body{
   font-family:'IBM Plex Sans',sans-serif;
-  background:radial-gradient(ellipse at 50% 20%,#152244 0%,#080D1D 65%,#030712 100%);
+  background:radial-gradient(ellipse at 50% 20%,#FFFFFF 0%,#F8FAFC 65%,#F1F5F9 100%);
   min-height:100vh;
   display:flex;flex-direction:column;
   align-items:center;justify-content:center;
-  padding:24px 20px;color:#F1F5F9;
+  padding:24px 20px;color:#0F172A;
 }
 .brand{text-align:center;margin-bottom:28px;}
 .logo{
@@ -26,25 +27,25 @@ body{
   box-shadow:0 0 30px rgba(245,158,11,0.3);margin-bottom:12px;
 }
 .brand h1{font-family:'Space Grotesk';font-size:26px;font-weight:700;letter-spacing:0.04em;margin-bottom:4px;}
-.brand p{font-size:12px;color:#8E9EB5;line-height:1.5;}
+.brand p{font-size:12px;color:#64748B;line-height:1.5;}
 .gov-badge{
   display:inline-block;margin-top:8px;
-  background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);
-  padding:3px 12px;border-radius:20px;font-size:11px;color:#CBD5E1;
+  background:#FFFBEB;border:1px solid #FDE68A;
+  padding:3px 12px;border-radius:20px;font-size:11px;color:#B45309;
 }
 .card{
   width:100%;max-width:440px;
-  background:#0F1A36;border:1px solid #2A3B66;
+  background:#FFFFFF;border:1px solid #E2E8F0;
   border-radius:16px;padding:28px 24px;
-  box-shadow:0 20px 40px rgba(0,0,0,0.5);
+  box-shadow:0 20px 40px rgba(15,23,42,0.12);
 }
 .card-title{font-family:'Space Grotesk';font-size:17px;font-weight:700;margin-bottom:4px;}
-.card-sub{font-size:12px;color:#8E9EB5;margin-bottom:18px;}
+.card-sub{font-size:12px;color:#64748B;margin-bottom:18px;}
 
 /* Tabs */
-.tabs{display:flex;background:rgba(0,0,0,0.3);border-radius:8px;padding:3px;margin-bottom:20px;border:1px solid rgba(255,255,255,0.06);}
-.tab-btn{flex:1;padding:8px;font-size:12px;font-weight:600;color:#8E9EB5;background:transparent;border:none;border-radius:6px;cursor:pointer;transition:all 0.15s;}
-.tab-btn.active{background:#1C294E;color:#FFF;box-shadow:0 2px 4px rgba(0,0,0,0.3);}
+.tabs{display:flex;background:#F1F5F9;border-radius:8px;padding:3px;margin-bottom:20px;border:1px solid #E2E8F0;}
+.tab-btn{flex:1;padding:8px;font-size:12px;font-weight:600;color:#64748B;background:transparent;border:none;border-radius:6px;cursor:pointer;transition:all 0.15s;}
+.tab-btn.active{background:#FFFFFF;color:#0F172A;box-shadow:0 2px 4px rgba(15,23,42,0.08);}
 .panel{display:none;}
 .panel.active{display:block;}
 
@@ -52,23 +53,23 @@ body{
 .role-title{font-size:10.5px;font-weight:700;color:#F59E0B;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:7px;}
 .roles{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:16px;}
 .role-btn{
-  padding:8px 6px;background:rgba(255,255,255,0.04);
-  border:1px solid rgba(255,255,255,0.1);border-radius:7px;
-  color:#E2E8F0;font-size:11px;cursor:pointer;text-align:left;
+  padding:8px 6px;background:#F8FAFC;
+  border:1px solid #E2E8F0;border-radius:7px;
+  color:#334155;font-size:11px;cursor:pointer;text-align:left;
   transition:all 0.15s;line-height:1.4;
 }
-.role-btn strong{display:block;font-size:10.5px;color:#FFF;}
-.role-btn span{font-size:9.5px;color:#8E9EB5;}
-.role-btn.active,.role-btn:hover{background:rgba(232,135,30,0.1);border-color:rgba(232,135,30,0.4);color:#F59E0B;}
-.role-btn.active strong{color:#F59E0B;}
+.role-btn strong{display:block;font-size:10.5px;color:#0F172A;}
+.role-btn span{font-size:9.5px;color:#64748B;}
+.role-btn.active,.role-btn:hover{background:#FFFBEB;border-color:#FDE68A;color:#B45309;}
+.role-btn.active strong{color:#B45309;}
 
 /* Fields */
 .field{margin-bottom:14px;}
-.field label{display:block;font-size:11px;font-weight:700;color:#CBD5E1;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:5px;}
+.field label{display:block;font-size:11px;font-weight:700;color:#334155;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:5px;}
 .field input{
   width:100%;padding:11px 14px;
-  background:#1C294E;border:1px solid #2A3B66;
-  border-radius:8px;color:#FFF;font-size:13px;font-family:'IBM Plex Sans';
+  background:#F8FAFC;border:1px solid #E2E8F0;
+  border-radius:8px;color:#0F172A;font-size:13px;font-family:'IBM Plex Sans';
   transition:border-color 0.15s;
 }
 .field input:focus{outline:none;border-color:#F59E0B;box-shadow:0 0 0 3px rgba(245,158,11,0.12);}
@@ -76,10 +77,10 @@ body{
 .pwd-row input{padding-right:44px;}
 .eye-btn{
   position:absolute;right:12px;top:50%;transform:translateY(-50%);
-  background:none;border:none;color:#8E9EB5;cursor:pointer;font-size:16px;
+  background:none;border:none;color:#64748B;cursor:pointer;font-size:16px;
   padding:4px;
 }
-.eye-btn:hover{color:#FFF;}
+.eye-btn:hover{color:#0F172A;}
 .pwd-hint{font-size:10.5px;color:#F59E0B;margin-top:4px;cursor:pointer;}
 .pwd-hint:hover{text-decoration:underline;}
 
@@ -101,26 +102,26 @@ body{
   padding:10px 12px;border-radius:7px;font-size:12px;
   margin-bottom:14px;display:none;
 }
-.alert.error{display:block;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:#FCA5A5;}
-.alert.success{display:block;background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.3);color:#86EFAC;}
-.alert.info{display:block;background:rgba(232,135,30,0.08);border:1px solid rgba(232,135,30,0.3);color:#FCD34D;}
+.alert.error{display:block;background:#FEF2F2;border:1px solid #FECACA;color:#991B1B;}
+.alert.success{display:block;background:#F0FDF4;border:1px solid #BBF7D0;color:#166534;}
+.alert.info{display:block;background:#FFFBEB;border:1px solid #FDE68A;color:#B45309;}
 
 /* Process stages */
-.process{display:none;margin-top:12px;background:rgba(0,0,0,0.3);border:1px solid #2A3B66;border-radius:8px;padding:12px 14px;}
+.process{display:none;margin-top:12px;background:#F8FAFC;border:1px solid #E2E8F0;border-radius:8px;padding:12px 14px;}
 .process.show{display:block;}
-.stage{font-size:11.5px;color:#8E9EB5;padding:3px 0;display:flex;gap:8px;align-items:center;}
+.stage{font-size:11.5px;color:#64748B;padding:3px 0;display:flex;gap:8px;align-items:center;}
 .stage.ok{color:#10B981;}
 .stage.run{color:#F59E0B;}
 @keyframes spin{to{transform:rotate(360deg);}}
 .spin{display:inline-block;width:10px;height:10px;border:2px solid #F59E0B;border-top-color:transparent;border-radius:50%;animation:spin 0.6s linear infinite;}
 
-.footer{margin-top:18px;text-align:center;font-size:11px;color:#475569;line-height:1.6;}
+.footer{margin-top:18px;text-align:center;font-size:11px;color:#64748B;line-height:1.6;}
 </style>
 </head>
 <body>
 
 <div class="brand">
-  <div class="logo">L</div>
+  <img class="logo" src="/static/loha-drishti-logo.svg" alt="Loha Drishti maritime emblem">
   <h1>LOHA DRISHTI</h1>
   <p>Maritime Cargo Chartering &amp; Decision Intelligence<br>Steel Authority of India Limited (SAIL)</p>
   <div class="gov-badge">🇮🇳 Ministry of Steel · Government of India</div>
@@ -141,15 +142,15 @@ body{
   <div class="panel active" id="p-signin">
     <div class="role-title">👥 Quick Role Select</div>
     <div class="roles">
-      <button class="role-btn active" id="rb-admin" onclick="pickRole('admin@sail.gov.in','admin123','Chief Logistics Officer','rb-admin')">
+      <button class="role-btn active" id="rb-admin" onclick="pickRole('admin@sail.gov.in','Chief Logistics Officer','rb-admin')">
         <strong>👤 CLO Admin</strong>
         <span>admin@sail.gov.in</span>
       </button>
-      <button class="role-btn" id="rb-analyst" onclick="pickRole('analyst@sail.gov.in','analyst123','Sr. Chartering Analyst','rb-analyst')">
+      <button class="role-btn" id="rb-analyst" onclick="pickRole('analyst@sail.gov.in','Sr. Chartering Analyst','rb-analyst')">
         <strong>📊 Analyst</strong>
         <span>analyst@sail.gov.in</span>
       </button>
-      <button class="role-btn" id="rb-officer" onclick="pickRole('officer@sail.gov.in','officer123','Procurement Officer','rb-officer')">
+      <button class="role-btn" id="rb-officer" onclick="pickRole('officer@sail.gov.in','Procurement Officer','rb-officer')">
         <strong>📦 Officer</strong>
         <span>officer@sail.gov.in</span>
       </button>
@@ -163,10 +164,9 @@ body{
     <div class="field">
       <label>Password</label>
       <div class="pwd-row">
-        <input type="password" id="si-pwd" value="admin123" autocomplete="current-password">
+        <input type="password" id="si-pwd" autocomplete="current-password">
         <button type="button" class="eye-btn" id="eyeBtn" onclick="toggleEye()">👁</button>
       </div>
-      <div class="pwd-hint" id="pwdHint" onclick="document.getElementById('si-pwd').value=currentPwd">💡 Click to fill: <b id="hintPwd">admin123</b></div>
     </div>
 
     <button class="submit-btn" id="loginBtn" onclick="doLogin()">🔒 AUTHENTICATE &amp; ENTER</button>
@@ -190,7 +190,7 @@ body{
       <input type="email" id="reg-email" placeholder="officer@sail.gov.in">
     </div>
     <div class="field">
-      <label>Password (min 6 chars)</label>
+      <label>Password (min 5 chars)</label>
       <div class="pwd-row">
         <input type="password" id="reg-pwd" placeholder="Create password">
         <button type="button" class="eye-btn" onclick="toggleEye2()">👁</button>
@@ -203,8 +203,6 @@ body{
 <p class="footer">🔒 256-Bit Encrypted Session &nbsp;·&nbsp; Role-Based Access Control &nbsp;·&nbsp; SAIL / Ministry of Steel</p>
 
 <script>
-var currentPwd = 'admin123';
-
 function showPanel(p) {
   document.getElementById('p-signin').classList.toggle('active', p === 'signin');
   document.getElementById('p-register').classList.toggle('active', p === 'register');
@@ -227,7 +225,7 @@ function toggleEye() {
   var f = document.getElementById('si-pwd');
   var btn = document.getElementById('eyeBtn');
   if (f.type === 'password') { f.type = 'text'; btn.style.color = '#F59E0B'; }
-  else { f.type = 'password'; btn.style.color = '#8E9EB5'; }
+  else { f.type = 'password'; btn.style.color = '#64748B'; }
 }
 
 function toggleEye2() {
@@ -236,11 +234,9 @@ function toggleEye2() {
   else f.type = 'password';
 }
 
-function pickRole(email, pwd, roleName, btnId) {
+function pickRole(email, roleName, btnId) {
   document.getElementById('si-email').value = email;
-  document.getElementById('si-pwd').value = pwd;
-  document.getElementById('hintPwd').textContent = pwd;
-  currentPwd = pwd;
+  document.getElementById('si-pwd').value = '';
   var btns = document.querySelectorAll('.role-btn');
   for (var i = 0; i < btns.length; i++) btns[i].classList.remove('active');
   document.getElementById(btnId).classList.add('active');
@@ -259,7 +255,16 @@ async function doLogin() {
   var pwd = document.getElementById('si-pwd').value;
 
   if (!email) { showAlert('Please enter your email.'); return; }
-  if (!pwd) { showAlert('Please enter your password. Hint: ' + currentPwd); return; }
+  if (!pwd) { showAlert('Please enter your password.'); return; }
+
+  if (window.location.protocol === 'file:') {
+    if (email !== 'admin@sail.gov.in' || pwd !== '12345') {
+      showAlert('Incorrect email or password.');
+      return;
+    }
+    await runDirectFileLogin();
+    return;
+  }
 
   var btn = document.getElementById('loginBtn');
   var box = document.getElementById('processBox');
@@ -278,40 +283,77 @@ async function doLogin() {
     xhr.open('POST', '/api/auth/login', true);
     xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
 
-    xhr.onload = function() {
+    xhr.onload = async function() {
       if (xhr.status === 200) {
-        var data = JSON.parse(xhr.responseText);
+        var data;
+        try { data = JSON.parse(xhr.responseText); }
+        catch(e) { data = null; }
+        if (!data || !data.access_token) {
+          setStage(2, '✗ Invalid authentication response', '');
+          box.className = 'process';
+          btn.disabled = false;
+          showAlert('Unable to establish a secure session. Please try again.');
+          return;
+        }
         setStage(2, '✓ Credentials verified', 'ok');
+        await sleep(350);
+        setStage(3, '⏳ Establishing JWT session...', 'run');
+        await sleep(350);
         setStage(3, '✓ JWT session established', 'ok');
+        await sleep(350);
+        setStage(4, '⏳ Loading Executive Command Center...', 'run');
+        await sleep(350);
         setStage(4, '✓ Access granted. Redirecting...', 'ok');
         localStorage.setItem('ld_token', data.access_token);
         localStorage.setItem('ld_role', data.role || 'Chief Logistics Officer');
         localStorage.setItem('ld_email', email);
-        setTimeout(function() { window.location.href = '/app'; }, 400);
+        setTimeout(function() { window.location.href = '/app'; }, 700);
       } else {
         setStage(2, '✗ Authentication failed', '');
         box.className = 'process';
         btn.disabled = false;
-        showAlert('❌ Wrong password for ' + email + '. Try: ' + currentPwd);
+        showAlert('❌ Incorrect email or password.');
       }
     };
 
     xhr.onerror = function() {
-      // Offline fallback
-      localStorage.setItem('ld_token', 'offline_' + Date.now());
-      localStorage.setItem('ld_role', 'Chief Logistics Officer');
-      localStorage.setItem('ld_email', email);
-      window.location.href = '/app';
+      setStage(2, '✗ Server connection failed', '');
+      box.className = 'process';
+      btn.disabled = false;
+      showAlert('Cannot connect to the authentication server. Please start the backend and try again.');
     };
 
     xhr.send(params);
 
   } catch(e) {
-    localStorage.setItem('ld_token', 'fallback_' + Date.now());
-    localStorage.setItem('ld_role', 'Chief Logistics Officer');
-    localStorage.setItem('ld_email', email);
-    window.location.href = '/app';
+    box.className = 'process';
+    btn.disabled = false;
+    showAlert('Unable to connect to the authentication server. Please try again.');
   }
+}
+
+async function runDirectFileLogin() {
+  var btn = document.getElementById('loginBtn');
+  var box = document.getElementById('processBox');
+  btn.disabled = true;
+  hideAlert();
+  box.className = 'process show';
+  setStage(1, '⏳ Initiating secure connection...', 'run');
+  await sleep(350);
+  setStage(1, '✓ Connection established', 'ok');
+  setStage(2, '⏳ Verifying credentials...', 'run');
+  await sleep(500);
+  setStage(2, '✓ Credentials verified', 'ok');
+  setStage(3, '⏳ Establishing session...', 'run');
+  await sleep(500);
+  setStage(3, '✓ Session established', 'ok');
+  setStage(4, '⏳ Loading Executive Command Center...', 'run');
+  await sleep(500);
+  setStage(4, '✓ Access granted. Opening dashboard...', 'ok');
+  localStorage.setItem('ld_token', 'direct_demo_' + Date.now());
+  localStorage.setItem('ld_role', 'Chief Logistics Officer');
+  localStorage.setItem('ld_email', 'admin@sail.gov.in');
+  setTimeout(function() { window.location.href = 'app.html'; }, 700);
 }
 
 function sleep(ms) {
@@ -323,7 +365,7 @@ async function doRegister() {
   var email = document.getElementById('reg-email').value.trim();
   var pwd = document.getElementById('reg-pwd').value;
   if (!name || !email || !pwd) { showAlert('All fields required.'); return; }
-  if (pwd.length < 6) { showAlert('Password must be at least 6 characters.'); return; }
+  if (pwd.length < 5) { showAlert('Password must be at least 5 characters.'); return; }
 
   var btn = document.getElementById('regBtn');
   btn.disabled = true;
@@ -340,7 +382,7 @@ async function doRegister() {
         showAlert('✅ Account created! Please sign in.', 'success');
         showPanel('signin');
         document.getElementById('si-email').value = email;
-        document.getElementById('si-pwd').value = pwd;
+        document.getElementById('si-pwd').value = '';
       } else {
         try { var err = JSON.parse(xhr.responseText); showAlert(err.detail || 'Registration failed.'); }
         catch(e) { showAlert('Registration failed. Try a different email.'); }

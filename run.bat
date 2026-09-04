@@ -17,6 +17,6 @@ echo  ML Training:    http://localhost:8000/ml-training
 echo  Verification:   http://localhost:8000/verification
 echo  API Swagger:    http://localhost:8000/docs
 echo.
-echo  Demo Credentials: admin@sail.gov.in / admin123
+echo  Sample Credentials: admin@sail.gov.in / 12345
 echo.
 uvicorn main:app --host 0.0.0.0 --port 8000

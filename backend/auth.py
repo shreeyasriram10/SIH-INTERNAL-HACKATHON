@@ -6,15 +6,21 @@ import hashlib
 SECRET_KEY = "supersecretkey_lohadrishti_sih2026"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 # 24 hours
+DEMO_PASSWORDS = {
+    "admin@sail.gov.in": "12345",
+    "analyst@sail.gov.in": "12345",
+    "officer@sail.gov.in": "12345"
+}
 
-def verify_password(plain_password: str, hashed_password: str) -> bool:
+def verify_password(plain_password: str, hashed_password: str, email: str | None = None) -> bool:
     if not plain_password or not hashed_password:
         return False
     
     # 1. Native bcrypt check
     try:
         if hashed_password.startswith("$2b$") or hashed_password.startswith("$2a$") or hashed_password.startswith("$2y$"):
-            return bcrypt.checkpw(plain_password[:72].encode('utf-8'), hashed_password.encode('utf-8'))
+            if bcrypt.checkpw(plain_password[:72].encode('utf-8'), hashed_password.encode('utf-8')):
+                return True
     except Exception:
         pass
     
@@ -27,12 +33,7 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
         pass
 
     # 3. Known demo credentials fallback for foolproof operation
-    demo_passwords = {
-        "admin@sail.gov.in": "admin123",
-        "analyst@sail.gov.in": "analyst123",
-        "officer@sail.gov.in": "officer123"
-    }
-    return False
+    return DEMO_PASSWORDS.get(email) == plain_password
 
 def get_password_hash(password: str) -> str:
     pwd_bytes = password[:72].encode('utf-8')

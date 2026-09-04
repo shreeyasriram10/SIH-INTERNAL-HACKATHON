@@ -19,7 +19,7 @@
   "mae_usd": 0.67,
   "rmse_usd": 0.9,
   "mape_pct": 3.03,
-  "training_duration_sec": 9.12,
-  "trained_at": "2026-08-28 17:39:59 UTC",
+  "training_duration_sec": 10.3,
+  "trained_at": "2026-09-04 06:52:12 UTC",
   "status": "PREDICTION_READY"
 }

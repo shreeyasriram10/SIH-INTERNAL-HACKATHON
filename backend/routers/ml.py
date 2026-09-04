@@ -159,7 +159,8 @@ def predict_freight(request: ForecastRequest, db: Session = Depends(get_db)):
         "predicted_rate_usd": round(pred_rate, 2),
         "confidence_interval": [ci_lower, ci_upper],
         "algorithm": model_data.get('algorithm', 'GradientBoostingRegressor'),
-        "data_source": "DEMO / SYNTHETIC (BDI-Calibrated)",
+        "data_source": "SYNTHETIC (BDI-Calibrated)",
+        "predicted_at": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC"),
         "features_evaluated": {
             "origin": request.origin,
             "distance_nm": request.distance_nm,

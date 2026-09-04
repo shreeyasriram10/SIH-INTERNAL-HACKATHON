@@ -31,7 +31,7 @@ class TestPageRoutes:
         assert r.status_code == 200
         assert "LOHA DRISHTI" in r.text
         assert "Command Center" in r.text
-        assert "Watch Demo" in r.text
+        assert "Watch Workflow" in r.text
 
     def test_login_page_serves(self):
         """GET /login must return the dedicated Sign In page."""
@@ -62,10 +62,10 @@ class TestPageRoutes:
 # ---------- 2. AUTHENTICATION API TESTS ----------
 class TestAuthAPI:
     def test_login_valid(self):
-        """Valid admin@sail.gov.in / admin123 credentials return JWT token."""
+        """Valid admin@sail.gov.in / 12345 credentials return JWT token."""
         r = client.post(
             "/api/auth/login",
-            data={"username": "admin@sail.gov.in", "password": "admin123"},
+            data={"username": "admin@sail.gov.in", "password": "12345"},
             headers={"Content-Type": "application/x-www-form-urlencoded"}
         )
         assert r.status_code == 200

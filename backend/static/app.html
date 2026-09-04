@@ -4,10 +4,16 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>LOHA DRISHTI — Maritime Cargo Chartering & Decision Intelligence Platform</title>
+<link rel="icon" type="image/svg+xml" href="/static/loha-drishti-logo.svg">
 <meta name="description" content="LOHA DRISHTI: AI-powered maritime cargo chartering and route decision intelligence platform for SAIL's steel logistics operations.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" crossorigin="">
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" crossorigin="">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js" crossorigin=""></script>
 <style>
 :root {
   --bg-main: #F8FAFC;
@@ -274,6 +280,27 @@ svg#routemap{width:100%;height:auto;display:block;border-radius:8px;background:#
 .modal-box{background:#FFF;border-radius:var(--radius-lg);max-width:640px;width:100%;max-height:85vh;overflow-y:auto;padding:20px;box-shadow:var(--shadow-xl);border:1px solid var(--steel-border);}
 .modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;}
 .modal-header h3{margin:0;font-size:16px;color:var(--navy-deep);}
+.demo-stage{background:#0F172A;border-radius:12px;padding:24px 20px;color:#FFF;position:relative;overflow:hidden;box-shadow:inset 0 2px 10px rgba(0,0,0,0.5);}
+.demo-stage::before{content:'';position:absolute;inset:0;background-image:linear-gradient(rgba(148,163,184,0.08) 1px,transparent 1px),linear-gradient(90deg,rgba(148,163,184,0.08) 1px,transparent 1px);background-size:28px 28px;opacity:.5;animation:demoGridShift 12s linear infinite;}
+.demo-stage::after{content:'';position:absolute;left:0;right:0;top:-20%;height:22%;background:linear-gradient(180deg,transparent,rgba(217,119,6,0.16),transparent);border-top:1px solid rgba(245,158,11,0.28);animation:demoScan 4.5s ease-in-out infinite;pointer-events:none;}
+.demo-stage>*{position:relative;z-index:1;}
+.demo-stage-box{position:relative;}
+.demo-stage-box::before,.demo-stage-box::after{content:'';position:absolute;width:92px;height:92px;border:1px solid rgba(245,158,11,0.18);border-radius:50%;animation:demoOrbit 8s linear infinite;pointer-events:none;}
+.demo-stage-box::before{transform:rotate(35deg) scaleX(1.7);}
+.demo-stage-box::after{transform:rotate(-35deg) scaleX(1.7);animation-direction:reverse;}
+.demo-icon{display:inline-block;filter:drop-shadow(0 0 10px rgba(245,158,11,0.35));animation:demoIconFloat 2.8s ease-in-out infinite;}
+.demo-copy-in{animation:demoCopyIn .45s ease both;}
+.demo-particle{position:absolute;z-index:1;width:4px;height:4px;border-radius:50%;background:var(--saffron);box-shadow:0 0 10px var(--saffron);opacity:0;animation:demoParticle 3.6s ease-in-out infinite;}
+.demo-particle.p1{left:13%;top:32%;animation-delay:.2s}.demo-particle.p2{left:82%;top:40%;animation-delay:1.1s}.demo-particle.p3{left:24%;top:72%;animation-delay:1.8s}.demo-particle.p4{left:72%;top:76%;animation-delay:2.5s}
+.anim-bar{transition:background-color .45s ease,transform .45s ease;}
+.anim-bar[style*="var(--saffron)"]{transform:scaleY(1.25);}
+@keyframes demoGridShift{to{background-position:28px 28px;}}
+@keyframes demoScan{0%,100%{transform:translateY(-20%);opacity:0}35%,65%{opacity:1}85%{transform:translateY(520%);opacity:0}}
+@keyframes demoOrbit{0%{rotate:0deg;scale:1}50%{scale:1.08}100%{rotate:360deg;scale:1}}
+@keyframes demoIconFloat{0%,100%{transform:translateY(0) rotate(-2deg)}50%{transform:translateY(-7px) rotate(2deg)}}
+@keyframes demoCopyIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+@keyframes demoParticle{0%,100%{opacity:0;transform:translate(0,8px) scale(.5)}35%,65%{opacity:.85}50%{transform:translate(18px,-16px) scale(1)}}
+@media(prefers-reduced-motion:reduce){.demo-stage::before,.demo-stage::after,.demo-stage-box::before,.demo-stage-box::after,.demo-icon,.demo-copy-in,.demo-particle{animation:none!important;}.anim-bar{transition:none;}}
 .close-btn{background:transparent;border:none;font-size:20px;cursor:pointer;color:var(--steel-muted);line-height:1;padding:0;}
 .close-btn:hover{color:var(--navy-deep);}
 
@@ -329,6 +356,41 @@ footer .data-disclaimer{font-size:10.5px;color:var(--steel-light);margin-top:6px
 /* ---- SCENARIO STATUS PILL ---- */
 .scenario-pill{display:none;background:var(--red-bg);border:1px solid var(--red-border);color:var(--red);padding:4px 10px;border-radius:10px;font-size:11px;font-weight:700;font-family:'IBM Plex Mono';}
 .scenario-pill.show{display:inline-flex;align-items:center;gap:5px;}
+.charter-strategy-section{background:var(--bg-surface);border:1px solid var(--steel-border);border-radius:var(--radius-lg);padding:18px;margin:16px 0;box-shadow:var(--shadow-md);}
+.charter-strategy-header{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:12px;}
+.charter-strategy-header h3{margin:0;font-size:15px;color:var(--navy-deep);font-family:'Space Grotesk';}
+.charter-strategy-header p{margin:3px 0 0;font-size:11px;color:var(--steel-muted);}
+.charter-strategy-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
+.charter-option{background:var(--bg-subtle);border:1px solid var(--steel-border);border-radius:var(--radius);padding:12px;position:relative;}
+.charter-option.recommended{background:var(--saffron-bg);border:2px solid var(--saffron);padding:11px;}
+.charter-option h4{margin:0 0 8px;font-size:12px;color:var(--navy-deep);font-family:'Space Grotesk';}
+.charter-option.recommended h4{color:var(--saffron-dark);}
+.charter-option-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px 10px;font-size:10.5px;}
+.charter-option-grid span{display:block;color:var(--steel-muted);font-size:9px;text-transform:uppercase;font-weight:700;margin-bottom:1px;}
+.charter-option-grid strong{color:var(--navy-deep);font-weight:600;}
+.charter-recommended{margin-top:12px;background:var(--green-bg);border:1px solid var(--green-border);border-radius:var(--radius);padding:12px;}
+.charter-recommended h4{margin:0 0 6px;color:var(--green-dark);font:700 12px 'Space Grotesk';}
+.charter-recommended p{margin:0;font-size:11px;color:var(--steel-dark);line-height:1.55;}
+@media(max-width:760px){.charter-strategy-grid{grid-template-columns:1fr;}}
+.waterways-layout{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:14px;align-items:start;}
+.waterways-toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px;}
+.waterways-search{flex:1;min-width:220px;padding:9px 12px;border:1px solid var(--steel-border);border-radius:6px;background:#FFF;color:var(--navy-deep);font:12px 'IBM Plex Sans';}
+.waterways-map-shell{background:#0F172A;border:1px solid var(--navy-border);border-radius:var(--radius-lg);padding:8px;box-shadow:var(--shadow-xl);}
+#internationalMap{height:620px;border-radius:10px;background:#0B1628;}
+.waterways-side{display:flex;flex-direction:column;gap:12px;}
+.waterways-panel{background:var(--bg-surface);border:1px solid var(--steel-border);border-radius:var(--radius);padding:14px;box-shadow:var(--shadow-sm);}
+.waterways-panel h3{margin:0 0 10px;font-size:13px;color:var(--navy-deep);}
+.waterway-detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px 12px;font-size:11px;}
+.waterway-detail-grid div{border-bottom:1px solid var(--steel-border);padding-bottom:6px;}
+.waterway-detail-grid span{display:block;color:var(--steel-muted);font-size:9.5px;text-transform:uppercase;font-weight:700;margin-bottom:2px;}
+.waterway-detail-grid strong{color:var(--navy-deep);font-weight:600;}
+.traffic-badge{display:inline-flex;align-items:center;gap:5px;padding:4px 8px;border-radius:12px;font-size:10px;font-weight:700;font-family:'IBM Plex Mono';}
+.traffic-high{background:var(--red-bg);color:var(--red);border:1px solid var(--red-border);}.traffic-moderate{background:var(--saffron-bg);color:var(--saffron-dark);border:1px solid var(--saffron-border);}.traffic-low{background:var(--green-bg);color:var(--green);border:1px solid var(--green-border);}
+.waterways-checks{display:grid;grid-template-columns:1fr 1fr;gap:7px;font-size:11px;color:var(--steel-dark);}.waterways-checks label{display:flex;gap:6px;align-items:center;cursor:pointer;}.waterways-checks input{accent-color:var(--saffron);}
+.waterways-legend{display:flex;flex-wrap:wrap;gap:7px;font-size:10px;color:var(--steel-muted);}.waterways-legend span{display:inline-flex;align-items:center;gap:4px;}.waterways-legend i{width:9px;height:9px;border-radius:50%;display:inline-block;}
+.waterway-line{stroke:#F59E0B;stroke-width:3;stroke-opacity:.75;}.waterway-line.selected{stroke:#FFF;stroke-width:6;stroke-opacity:1;}
+.leaflet-container{font-family:'IBM Plex Sans',sans-serif;}.leaflet-popup-content-wrapper,.leaflet-popup-tip{background:#0F172A;color:#F8FAFC;}.leaflet-popup-content{font-size:11px;line-height:1.55;}.leaflet-control-layers{border:1px solid var(--steel-border)!important;box-shadow:var(--shadow-md)!important;}
+@media(max-width:900px){.waterways-layout{grid-template-columns:1fr;}#internationalMap{height:480px;}}
 </style>
 </head>
 <body>
@@ -348,7 +410,7 @@ footer .data-disclaimer{font-size:10.5px;color:var(--steel-light);margin-top:6px
 <!-- TOPSTICKY NAV BAR -->
 <div class="topbar">
   <div class="brand">
-    <div class="brand-mark">L</div>
+    <img class="brand-mark" src="/static/loha-drishti-logo.svg" alt="Loha Drishti maritime emblem">
     <div>
       <div class="brand-text">LOHA DRISHTI</div>
       <div class="brand-sub">Maritime Decision Intelligence · SAIL Logistics</div>
@@ -360,6 +422,7 @@ footer .data-disclaimer{font-size:10.5px;color:var(--steel-light);margin-top:6px
     <a id="nav-intelligence" onclick="switchPanel('intelligence')">📊 Intelligence</a>
     <a id="nav-scenarios" onclick="switchPanel('scenarios')">⚡ Scenarios</a>
     <a id="nav-ports" onclick="switchPanel('ports')">🚢 Port &amp; Vessel DNA</a>
+    <a id="nav-international-waterways" onclick="switchPanel('international-waterways')">🌍 International Waterways</a>
     <a href="/ml-training">🤖 ML Model &amp; Training</a>
     <a href="/verification">🧪 System Verification</a>
     <a id="nav-copilot" onclick="openCopilot()">❓ Questions &amp; AI Copilot</a>
@@ -369,7 +432,7 @@ footer .data-disclaimer{font-size:10.5px;color:var(--steel-light);margin-top:6px
     <span class="scenario-pill" id="scenarioPill">⚠ SCENARIO ACTIVE</span>
     <button class="icon-btn" id="openNotifyBtn">🔔 Alerts <span class="badge-num">2</span></button>
     <button class="icon-btn" id="openSearchBtn">🔍 Search</button>
-    <button class="icon-btn" id="demoAnimBtn" onclick="openDemoAnimation()" style="background:var(--saffron-bg);border-color:var(--saffron-border);color:var(--saffron-dark);font-weight:700;">🎬 Watch Demo</button>
+    <button class="icon-btn" id="demoAnimBtn" onclick="openDemoAnimation()" style="background:var(--saffron-bg);border-color:var(--saffron-border);color:var(--saffron-dark);font-weight:700;">🎬 Watch Workflow</button>
     <button class="icon-btn" id="openExportBtn">📄 Report</button>
     <button class="icon-btn" id="topbarLogoutBtn" onclick="performLogout()" style="background:var(--red-bg);border-color:var(--red-border);color:var(--red);font-weight:700;cursor:pointer;" title="Sign out and return to Login Gateway">🚪 Logout</button>
   </div>
@@ -399,6 +462,54 @@ footer .data-disclaimer{font-size:10.5px;color:var(--steel-light);margin-top:6px
   <button class="tab-btn" id="tab-scenarios" onclick="switchPanel('scenarios')">What-If Simulator</button>
   <button class="tab-btn" id="tab-ports" onclick="switchPanel('ports')">Port DNA</button>
   <button class="tab-btn" id="tab-vessels" onclick="switchPanel('vessels')">Vessel Fit</button>
+  <button class="tab-btn" id="tab-international-waterways" onclick="switchPanel('international-waterways')">🌍 International Waterways</button>
+</div>
+
+<!-- ===== PANEL: INTERNATIONAL WATERWAYS ===== -->
+<div class="panel" id="panel-international-waterways">
+  <div class="section">
+    <div class="section-header">
+      <div>
+        <h2>🌍 International Waterways</h2>
+        <p>Global maritime awareness across strategic waterways, shipping lanes, ports, and vessel traffic.</p>
+      </div>
+      <span class="section-tag" id="waterwaysDataSource">SYNTHETIC</span>
+    </div>
+    <div class="waterways-toolbar">
+      <input class="waterways-search" id="waterwaysSearch" type="search" placeholder="Search waterway, vessel, port or region" oninput="filterWaterwaysMap(this.value)">
+      <button class="icon-btn" onclick="resetWaterwaysMap()">↺ Reset View</button>
+    </div>
+    <div class="waterways-layout">
+      <div>
+        <div class="waterways-map-shell"><div id="internationalMap"></div></div>
+        <div class="waterways-panel" style="margin-top:12px;">
+          <h3>Map Layers</h3>
+          <div class="waterways-checks">
+            <label><input type="checkbox" checked onchange="toggleWaterwaysLayer('waterways',this.checked)"> 🌊 Waterways</label>
+            <label><input type="checkbox" checked onchange="toggleWaterwaysLayer('routes',this.checked)"> 🛳 Shipping Routes</label>
+            <label><input type="checkbox" checked onchange="toggleWaterwaysLayer('vessels',this.checked)"> 🚢 Vessels</label>
+            <label><input type="checkbox" checked onchange="toggleWaterwaysLayer('ports',this.checked)"> ⚓ Ports</label>
+            <label><input type="checkbox" checked onchange="toggleWaterwaysLayer('strategic',this.checked)"> 📍 Strategic Locations</label>
+            <label><input type="checkbox" checked onchange="toggleWaterwaysLayer('density',this.checked)"> ◉ Traffic Density</label>
+          </div>
+          <div class="waterways-legend" style="margin-top:12px;"><span><i style="background:#F59E0B"></i>Waterway</span><span><i style="background:#FFF"></i>Selected</span><span><i style="background:#EF4444"></i>High traffic</span><span><i style="background:#10B981"></i>Port</span></div>
+        </div>
+      </div>
+      <aside class="waterways-side">
+        <div class="waterways-panel">
+          <h3>Traffic Overview</h3>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;"><span style="font-size:11px;color:var(--steel-muted);">Detected vessels</span><strong id="waterwaysVesselTotal" style="font:700 20px 'Space Grotesk';color:var(--navy-deep);">—</strong></div>
+          <div id="waterwaysTrafficSummary" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
+          <div style="font-size:10px;color:var(--steel-muted);margin-top:10px;line-height:1.5;">Traffic levels are calculated from available vessel records. Vessel positions are clearly marked as synthetic when live AIS is unavailable.</div>
+        </div>
+        <div class="waterways-panel" id="waterwayDetailPanel"><h3>Select a waterway</h3><p style="font-size:11px;color:var(--steel-muted);margin:0;line-height:1.5;">Click a highlighted canal, strait, or shipping route to inspect connected ports, traffic, and vessel movement.</p></div>
+        <div class="waterways-panel">
+          <h3>Vessel Filters</h3>
+          <div class="waterways-checks"><label><input type="checkbox" checked onchange="setVesselTypeFilter('Cargo',this.checked)"> Cargo</label><label><input type="checkbox" checked onchange="setVesselTypeFilter('Tanker',this.checked)"> Tanker</label><label><input type="checkbox" checked onchange="setVesselTypeFilter('Passenger',this.checked)"> Passenger</label><label><input type="checkbox" checked onchange="setVesselTypeFilter('Fishing',this.checked)"> Fishing</label><label><input type="checkbox" checked onchange="setVesselTypeFilter('Container',this.checked)"> Container</label><label><input type="checkbox" checked onchange="setVesselTypeFilter('Other',this.checked)"> Other</label></div>
+        </div>
+      </aside>
+    </div>
+  </div>
 </div>
 
 <!-- ===== PANEL 1: COMMAND CENTER ===== -->
@@ -421,6 +532,8 @@ footer .data-disclaimer{font-size:10.5px;color:var(--steel-light);margin-top:6px
         <button class="btn-optimize" style="margin:20px auto 0;display:inline-flex;" onclick="runPipeline()">⚡ FIND BEST STRATEGY NOW</button>
       </div>
     </div>
+
+    <div id="charterStrategyHost"></div>
 
     <!-- DECISION PIPELINE STEPPER -->
     <div class="stepper-card" style="margin-top:16px;">
@@ -449,7 +562,7 @@ footer .data-disclaimer{font-size:10.5px;color:var(--steel-light);margin-top:6px
           <h3>Strategy Battle — Route Comparison</h3>
           <p>Top candidate strategies ranked by landed cost and Minimax-Regret resilience.</p>
         </div>
-        <span class="data-tag">DEMO / SYNTHETIC</span>
+        <span class="data-tag">SYNTHETIC</span>
       </div>
       <div class="table-responsive">
         <table class="battle-table" id="battleTable">
@@ -481,7 +594,7 @@ footer .data-disclaimer{font-size:10.5px;color:var(--steel-light);margin-top:6px
     <div class="section-header">
       <div>
         <h2>Freight Intelligence &amp; Market Pressure</h2>
-        <p>Historical trends, P10/P50/P90 confidence bands, and market timing signals. Data: DEMO/SYNTHETIC dry-bulk model.</p>
+        <p>Historical trends, P10/P50/P90 confidence bands, and market timing signals. Data: SYNTHETIC dry-bulk benchmark.</p>
       </div>
       <span class="section-tag">Market Forecasting</span>
     </div>
@@ -550,9 +663,9 @@ footer .data-disclaimer{font-size:10.5px;color:var(--steel-light);margin-top:6px
       <div class="section-header">
         <div>
           <h3>Freight Rates by Origin ($/MT, P50)</h3>
-          <p>Representative freight benchmarks for each origin corridor. DEMO/SYNTHETIC model.</p>
+          <p>Representative freight benchmarks for each origin corridor. SYNTHETIC benchmark model.</p>
         </div>
-        <span class="data-tag">DEMO / SYNTHETIC</span>
+        <span class="data-tag">SYNTHETIC</span>
       </div>
       <div class="table-responsive">
         <table class="battle-table" id="freightOriginTable">
@@ -649,7 +762,7 @@ footer .data-disclaimer{font-size:10.5px;color:var(--steel-light);margin-top:6px
     <div class="section-header">
       <div>
         <h2>India East Coast — Port DNA</h2>
-        <p>Draft limits, LOA, turnaround rates, and infrastructure profiles. Source: DEMO/SYNTHETIC data.</p>
+        <p>Draft limits, LOA, turnaround rates, and infrastructure profiles. Source: SYNTHETIC benchmark data.</p>
       </div>
       <span class="section-tag">Infrastructure Reference</span>
     </div>
@@ -765,7 +878,7 @@ footer .data-disclaimer{font-size:10.5px;color:var(--steel-light);margin-top:6px
           <span style="margin-left:auto;font-size:10px;font-weight:700;background:var(--saffron-bg);color:var(--saffron-dark);padding:2px 8px;border-radius:10px;border:1px solid var(--saffron-border);">SIMULATED</span>
         </div>
         <ul style="font-size:12px;color:var(--steel-dark);line-height:1.65;padding-left:18px;margin:0;">
-          <li><b>Demo Requisition Parcels:</b> Simulated SAIL procurement batches (25,000–180,000 MT) for Rourkela, Bhilai, Durgapur, Bokaro, and Burnpur.</li>
+          <li><b>Simulation Requisition Parcels:</b> Simulated SAIL procurement batches (25,000–180,000 MT) for Rourkela, Bhilai, Durgapur, Bokaro, and Burnpur.</li>
           <li><b>Disruption Injection Matrix:</b> Synthetic scenario testing for Cyclone Warnings (Odisha Coast), Primary Port Closures, and Freight Spikes (+20%).</li>
           <li><b>Minimax-Regret Score Engine:</b> Multi-scenario cost and supply continuity optimizer designed for automated decision resilience.</li>
           <li><b>ML Gradient Boosting Regressor:</b> Trained on 1,500 calibrated voyage records with 8 feature encodings ($R^2 = 0.9891$).</li>
@@ -817,7 +930,7 @@ footer .data-disclaimer{font-size:10.5px;color:var(--steel-light);margin-top:6px
           <tr>
             <td style="padding:10px 12px;"><b>SAIL Requisition &amp; Disruption Scenarios</b></td>
             <td style="padding:10px 12px;">LOHA-DRISHTI Simulation Engine (SIH PS 26006)</td>
-            <td style="padding:10px 12px;"><span style="background:var(--saffron-bg);color:var(--saffron-dark);padding:2px 8px;border-radius:10px;font-weight:700;font-size:10.5px;">Synthetic / Demo</span></td>
+            <td style="padding:10px 12px;"><span style="background:var(--saffron-bg);color:var(--saffron-dark);padding:2px 8px;border-radius:10px;font-weight:700;font-size:10.5px;">Synthetic</span></td>
             <td style="padding:10px 12px;color:var(--steel-muted);">Parameterized Generator</td>
             <td style="padding:10px 12px;">Interactive Hackathon Demonstrator &amp; What-If Engine</td>
           </tr>
@@ -909,17 +1022,17 @@ footer .data-disclaimer{font-size:10.5px;color:var(--steel-light);margin-top:6px
     <div style="background:var(--saffron-bg);border:1px solid var(--saffron-border);padding:10px 12px;border-radius:8px;font-size:12px;">
       <b style="color:var(--saffron-dark);">⚠️ Odisha Coast Monsoon Active</b><br>
       Paradip &amp; Dhamra wait times elevated (+1.7× delay multiplier applied in model).
-      <div style="font-size:10.5px;color:var(--steel-muted);margin-top:4px;">Source: DEMO/SYNTHETIC · Aug 2026</div>
+      <div style="font-size:10.5px;color:var(--steel-muted);margin-top:4px;">Source: SYNTHETIC · Aug 2026</div>
     </div>
     <div style="background:var(--green-bg);border:1px solid var(--green-border);padding:10px 12px;border-radius:8px;font-size:12px;">
       <b style="color:var(--green);">✓ Gangavaram Draft Optimal</b><br>
       Deep draft 18.9m available for Capesize class. No tidal restriction in current window.
-      <div style="font-size:10.5px;color:var(--steel-muted);margin-top:4px;">Source: DEMO/SYNTHETIC · Aug 2026</div>
+      <div style="font-size:10.5px;color:var(--steel-muted);margin-top:4px;">Source: SYNTHETIC · Aug 2026</div>
     </div>
     <div style="background:var(--red-bg);border:1px solid var(--red-border);padding:10px 12px;border-radius:8px;font-size:12px;">
       <b style="color:var(--red);">🚢 Capesize Spot Tightening</b><br>
       Baltic Capesize Index up 8.2% this week. Consider locking contract now.
-      <div style="font-size:10.5px;color:var(--steel-muted);margin-top:4px;">Source: DEMO/SYNTHETIC · Aug 2026</div>
+      <div style="font-size:10.5px;color:var(--steel-muted);margin-top:4px;">Source: SYNTHETIC · Aug 2026</div>
     </div>
   </div>
 </div>
@@ -975,6 +1088,8 @@ footer .data-disclaimer{font-size:10.5px;color:var(--steel-light);margin-top:6px
       <h3>Quick Jump &amp; Module Search 🔍</h3>
       <button class="close-btn" onclick="closeModal('searchModal')">✕</button>
     </div>
+    <input id="globalSearchInput" type="search" placeholder="Search waterway, vessel, port or region" oninput="runGlobalSearch(this.value)" style="width:100%;padding:10px 12px;border:1px solid var(--steel-border);border-radius:6px;font-size:12px;margin-bottom:10px;">
+    <div id="globalSearchResults" style="display:none;margin-bottom:10px;"></div>
     <div style="display:flex;flex-direction:column;gap:7px;">
       <button class="prompt-btn" onclick="closeModal('searchModal');switchPanel('command')">➔ Command Center (Executive Decision)</button>
       <button class="prompt-btn" onclick="closeModal('searchModal');switchPanel('scenarios')">➔ What-If Disruption Simulator</button>
@@ -999,7 +1114,7 @@ footer .data-disclaimer{font-size:10.5px;color:var(--steel-light);margin-top:6px
       <div class="risk-factor-list" id="riskFactorList"></div>
       <p style="font-size:12px;background:var(--blue-bg);border:1px solid var(--blue-border);padding:10px;border-radius:6px;color:var(--blue);">
         <b>Interpretation:</b> Below 35 = Low Risk (optimal). 35–60 = Moderate (acceptable). Above 60 = High Risk (seek alternatives).<br>
-        <b>Model:</b> DEMO / SYNTHETIC — not real operational data.
+        <b>Model:</b> SYNTHETIC — not real operational data.
       </p>
     </div>
   </div>
@@ -1081,7 +1196,7 @@ footer .data-disclaimer{font-size:10.5px;color:var(--steel-light);margin-top:6px
   <div class="modal-box" style="max-width:440px;padding:24px;">
     <div class="modal-header" style="border-bottom:1px solid var(--steel-border);padding-bottom:12px;margin-bottom:16px;">
       <div style="display:flex;align-items:center;gap:10px;">
-        <div class="brand-mark" style="width:32px;height:32px;font-size:16px;">L</div>
+        <img class="brand-mark" src="/static/loha-drishti-logo.svg" alt="Loha Drishti maritime emblem" style="width:32px;height:32px;font-size:16px;">
         <div>
           <h3 style="margin:0;font-size:16px;font-family:'Space Grotesk';color:var(--navy-deep);">SAIL Officer Authentication</h3>
           <p style="margin:2px 0 0;font-size:11px;color:var(--steel-muted);">Ministry of Steel · Secure Enterprise Gateway</p>
@@ -1106,7 +1221,7 @@ footer .data-disclaimer{font-size:10.5px;color:var(--steel-light);margin-top:6px
       </div>
       <div class="field" style="margin-bottom:14px;">
         <label style="display:block;font-size:11px;font-weight:700;color:var(--navy-deep);margin-bottom:4px;text-transform:uppercase;">Password</label>
-        <input type="password" id="modalLoginPassword" value="admin123" style="width:100%;padding:9px 12px;border:1px solid var(--steel-border);border-radius:6px;font-size:12.5px;box-sizing:border-box;">
+        <input type="password" id="modalLoginPassword" value="12345" style="width:100%;padding:9px 12px;border:1px solid var(--steel-border);border-radius:6px;font-size:12.5px;box-sizing:border-box;">
       </div>
 
       <button id="btnModalLogin" onclick="submitModalLogin()" class="btn-optimize" style="width:100%;padding:10px;justify-content:center;font-size:13px;">
@@ -1115,21 +1230,21 @@ footer .data-disclaimer{font-size:10.5px;color:var(--steel-light);margin-top:6px
 
       <!-- 1-CLICK QUICK ACCESS -->
       <div style="margin-top:16px;padding-top:12px;border-top:1px solid var(--steel-border);">
-        <div style="font-size:11px;font-weight:700;color:var(--saffron-dark);text-transform:uppercase;margin-bottom:6px;">⚡ 1-Click Pre-loaded Demo Roles</div>
+        <div style="font-size:11px;font-weight:700;color:var(--saffron-dark);text-transform:uppercase;margin-bottom:6px;">⚡ 1-Click Pre-loaded Roles</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
-          <button type="button" class="prompt-btn" style="text-align:left;padding:6px 8px;" onclick="modalQuickFill('admin@sail.gov.in','admin123','Chief Logistics Officer')">
+          <button type="button" class="prompt-btn" style="text-align:left;padding:6px 8px;" onclick="modalQuickFill('admin@sail.gov.in','12345','Chief Logistics Officer')">
             <strong style="color:var(--navy-deep);font-size:11px;">👤 Admin (CLO)</strong>
             <div style="font-size:9.5px;color:var(--steel-muted);">admin@sail.gov.in</div>
           </button>
-          <button type="button" class="prompt-btn" style="text-align:left;padding:6px 8px;" onclick="modalQuickFill('analyst@sail.gov.in','analyst123','Senior Chartering Analyst')">
+          <button type="button" class="prompt-btn" style="text-align:left;padding:6px 8px;" onclick="modalQuickFill('analyst@sail.gov.in','12345','Senior Chartering Analyst')">
             <strong style="color:var(--navy-deep);font-size:11px;">📊 Analyst</strong>
             <div style="font-size:9.5px;color:var(--steel-muted);">analyst@sail.gov.in</div>
           </button>
-          <button type="button" class="prompt-btn" style="text-align:left;padding:6px 8px;" onclick="modalQuickFill('officer@sail.gov.in','officer123','Procurement Officer')">
+          <button type="button" class="prompt-btn" style="text-align:left;padding:6px 8px;" onclick="modalQuickFill('officer@sail.gov.in','12345','Procurement Officer')">
             <strong style="color:var(--navy-deep);font-size:11px;">📦 Officer</strong>
             <div style="font-size:9.5px;color:var(--steel-muted);">officer@sail.gov.in</div>
           </button>
-          <button type="button" class="prompt-btn" style="text-align:left;padding:6px 8px;border-color:var(--saffron-border);background:var(--saffron-bg);" onclick="modalQuickFill('guest@sail.gov.in','admin123','Guest Officer')">
+          <button type="button" class="prompt-btn" style="text-align:left;padding:6px 8px;border-color:var(--saffron-border);background:var(--saffron-bg);" onclick="modalQuickFill('guest@sail.gov.in','12345','Guest Officer')">
             <strong style="color:var(--saffron-dark);font-size:11px;">🚀 Instant Guest</strong>
             <div style="font-size:9.5px;color:var(--saffron);">Direct Entry</div>
           </button>
@@ -1456,6 +1571,47 @@ function renderWaterfallBars(base,qty){
     </div>`;
 }
 
+/* ======= CHARTER CONTRACT STRATEGY ======= */
+function renderCharterStrategy(result, inputs){
+  const host=document.getElementById('charterStrategyHost');
+  if(!host || !result || !inputs) return;
+  const w=result.winner;
+  const origin=ORIGINS[w.originKey], port=PORTS[w.portKey], vessel=VESSEL_CLASSES[result.vesselClassKey];
+  const FX_INR_PER_USD=83.5;
+  const spotFreight=w.base.freight*(1+origin.vol);
+  const baseNonFreight=w.base.total-w.base.freight;
+  const volatility=origin.vol;
+  const totalCargo=inputs.qty;
+  const options=[
+    {key:'spot',label:'SPOT CONTRACT',months:1,voyages:1,rate:w.base.freight*(1+volatility),risk:Math.min(95,result.risk+8),continuity:Math.max(10,result.continuity-15),window:result.risk<45?'Enter now':'Review before fixing'},
+    {key:'short',label:'SHORT-TERM MULTIPLE-VOYAGE',months:3,voyages:4,rate:w.base.freight,risk:Math.max(10,result.risk-4),continuity:Math.min(98,result.continuity+4),window:result.risk<60?'Optimal now':'After risk review'},
+    {key:'medium',label:'MEDIUM-TERM MULTIPLE-VOYAGE',months:6,voyages:8,rate:w.base.freight*(1-volatility),risk:Math.max(10,result.risk-7),continuity:Math.min(99,result.continuity+8),window:result.risk<50?'Optimal now':'After first risk reset'}
+  ].map(option=>{
+    option.totalCargo=totalCargo;
+    option.cargoPerVoyage=totalCargo/option.voyages;
+    option.utilization=Math.min(100,Math.round((option.cargoPerVoyage/vessel.dwtMax)*100));
+    option.freightCostInr=(option.rate*option.cargoPerVoyage*option.voyages*FX_INR_PER_USD)/10000000;
+    option.otherCostInr=(baseNonFreight*option.cargoPerVoyage*option.voyages*FX_INR_PER_USD)/10000000;
+    option.totalInr=option.freightCostInr+option.otherCostInr;
+    option.spotBenchmarkInr=(spotFreight+baseNonFreight)*option.totalCargo*FX_INR_PER_USD/10000000;
+    option.savingsInr=option.spotBenchmarkInr-option.totalInr;
+    option.savingsPct=option.spotBenchmarkInr ? (option.savingsInr/option.spotBenchmarkInr)*100 : 0;
+    option.score=(option.totalInr/Math.max(1,option.spotBenchmarkInr))*60+option.risk*0.25-option.continuity*0.20;
+    return option;
+  });
+  const recommended=options.reduce((best,option)=>option.score<best.score?option:best,options[0]);
+  const riskLabel=score=>score<40?'LOW':score<60?'MODERATE':'HIGH';
+  const reasonList=[
+    `${recommended.label} has the lowest composite cost-risk score (${recommended.score.toFixed(1)}).`,
+    `Forecast freight is ${usd(recommended.rate)}/MT against ${usd(spotFreight)}/MT on spot.`,
+    `Supply continuity is ${recommended.continuity}/100 with ${riskLabel(recommended.risk).toLowerCase()} operational risk (${recommended.risk}/100).`,
+    `${vessel.name} utilization is ${recommended.utilization}% at ${fmt(recommended.cargoPerVoyage)} MT per voyage.`,
+    `${recommended.voyages} planned voyages cover the fixed ${fmt(totalCargo)} MT requirement with a ${inputs.days}-day delivery window per voyage.`
+  ];
+  const cards=options.map(option=>`<div class="charter-option${option.key===recommended.key?' recommended':''}"><h4>${option.label}${option.key===recommended.key?' <span class="winner-badge">RECOMMENDED</span>':''}</h4><div class="charter-option-grid"><div><span>Forecast Freight</span><strong>${usd(option.rate)}/MT</strong></div><div><span>Duration</span><strong>${option.months} month${option.months>1?'s':''}</strong></div><div><span>Voyages</span><strong>${option.voyages}</strong></div><div><span>Total Cargo</span><strong>${fmt(option.totalCargo)} MT</strong></div><div><span>Cargo / Voyage</span><strong>${fmt(option.cargoPerVoyage)} MT</strong></div><div><span>Vessel</span><strong>${vessel.name}</strong></div><div><span>Route</span><strong>${origin.short} → ${port.name}</strong></div><div><span>Total Freight Cost</span><strong>₹${fmt(option.freightCostInr)} Cr</strong></div><div><span>Other Logistics</span><strong>₹${fmt(option.otherCostInr)} Cr</strong></div><div><span>Total Contract Cost</span><strong>₹${fmt(option.totalInr)} Cr</strong></div><div><span>Savings vs Spot</span><strong>${option.savingsInr>0?'₹'+fmt(option.savingsInr)+' Cr ('+option.savingsPct.toFixed(2)+'%)':'— (0.00%)'}</strong></div><div><span>Risk / Continuity</span><strong>${riskLabel(option.risk)} / ${option.continuity}</strong></div><div><span>Utilization</span><strong>${option.utilization}%</strong></div><div><span>Delivery Window</span><strong>${inputs.days} days/voyage</strong></div><div><span>Market Window</span><strong>${option.window}</strong></div></div></div>`).join('');
+  host.innerHTML=`<section class="charter-strategy-section"><div class="charter-strategy-header"><div><h3>📑 CHARTER CONTRACT STRATEGY</h3><p>Moving from single-voyage spot exposure toward continuity-led multiple-voyage coverage. Totals: ₹ Cr at $1 = ₹${FX_INR_PER_USD}.</p></div><span class="data-tag">CALCULATED FROM ACTIVE RESULT</span></div><div class="charter-strategy-grid">${cards}</div><div class="charter-recommended"><h4>RECOMMENDED CHARTER STRATEGY → ${recommended.label}</h4><p><b>WHY THIS STRATEGY?</b> ${reasonList.join(' ')}</p></div></section>`;
+}
+
 /* ======= DECISION CARD RENDERER ======= */
 function renderDecisionCard(result,inputs,targetId='decisionCardHost'){
   const w=result.winner, b=result.backup;
@@ -1487,7 +1643,7 @@ function renderDecisionCard(result,inputs,targetId='decisionCardHost'){
       </div>
       <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;">
         <div class="confidence-badge">✓ CONFIDENCE: 87%</div>
-        <span class="data-tag">DEMO / SYNTHETIC</span>
+        <span class="data-tag">SYNTHETIC</span>
       </div>
     </div>
 
@@ -1772,6 +1928,7 @@ function handleChallenge(type){
 
     // Render scenario decision card
     renderDecisionCard(newResult,activeInputs,'scenarioDecisionHost');
+    renderCharterStrategy(newResult,activeInputs);
 
     // Render scenario battle table
     renderBattleTable(newResult.candidates,'scenarioBattleBody');
@@ -1804,6 +1961,7 @@ function resetBaseline(){
   if(baselineResult){
     activeResult=baselineResult;
     renderDecisionCard(baselineResult,activeInputs,'decisionCardHost');
+    renderCharterStrategy(baselineResult,activeInputs);
     drawBaseMap();
     animateRouteBattle(baselineResult.candidates,baselineResult.winner);
     updateMarketPressureGauge(baselineResult, activeInputs, null);
@@ -2052,6 +2210,7 @@ async function runPipeline(){
 
   setStage(8,`✅ Optimal Strategy: ${ORIGINS[result.winner.originKey].short} ➔ ${PORTS[result.winner.portKey].name} at ${usd(result.winner.base.total)}/MT.`);
   renderDecisionCard(result,inputs,'decisionCardHost');
+  renderCharterStrategy(result,inputs);
   drawBaseMap();
   animateRouteBattle(result.candidates,result.winner);
 
@@ -2077,14 +2236,14 @@ async function runPipeline(){
     <p><b>Backup Failover Route:</b> ${ORIGINS[result.backup.originKey].name} → ${PORTS[result.backup.portKey].name}</p>
     <p><b>Delivery Window:</b> ${inputs.days} days</p>
     <hr/>
-    <p style="font-size:11px;color:#888;">⚠ All values are DEMO/SYNTHETIC — derived from deterministic dry-bulk model. Not real SAIL operational data.</p>`;
+    <p style="font-size:11px;color:#888;">⚠ All values are SYNTHETIC — derived from deterministic dry-bulk model. Not real SAIL operational data.</p>`;
 
   document.getElementById('decisionSection').scrollIntoView({behavior:'smooth'});
 }
 
 /* ======= PANEL SWITCHING ======= */
 function switchPanel(name){
-  const panels=['command','intelligence','scenarios','ports','vessels'];
+  const panels=['command','intelligence','scenarios','ports','vessels','international-waterways'];
   panels.forEach(p=>{
     document.getElementById('panel-'+p)?.classList.remove('active');
     document.getElementById('tab-'+p)?.classList.remove('active');
@@ -2093,6 +2252,7 @@ function switchPanel(name){
   document.getElementById('panel-'+name)?.classList.add('active');
   document.getElementById('tab-'+name)?.classList.add('active');
   document.getElementById('nav-'+name)?.classList.add('active');
+  if(name==='international-waterways') initWaterwaysMap();
   window.scrollTo({top:0,behavior:'smooth'});
 }
 
@@ -2128,6 +2288,32 @@ function openCopilot(){
 /* ======= MODAL UTILS ======= */
 function openModal(id){ document.getElementById(id).classList.add('show'); }
 function closeModal(id){ document.getElementById(id).classList.remove('show'); }
+
+function runGlobalSearch(query){
+  const resultsEl=document.getElementById('globalSearchResults');
+  if(!resultsEl) return;
+  window.pendingGlobalSearch=query;
+  const term=query.trim().toLowerCase();
+  if(!term){resultsEl.style.display='none';resultsEl.innerHTML='';return;}
+  const items=[
+    {label:'Command Center',text:'decision strategy cargo optimization',action:"closeModal('searchModal');switchPanel('command')"},
+    {label:'Freight Intelligence',text:'freight market forecast rate',action:"closeModal('searchModal');switchPanel('intelligence')"},
+    {label:'What-If Simulator',text:'scenario disruption cyclone monsoon',action:"closeModal('searchModal');switchPanel('scenarios')"},
+    {label:'Port DNA',text:'port infrastructure draft loa chennai paradip dhamra',action:"closeModal('searchModal');switchPanel('ports')"},
+    {label:'Vessel Fit',text:'vessel cargo tanker passenger container',action:"closeModal('searchModal');switchPanel('vessels')"},
+    {label:'International Waterways',text:'waterway strait canal vessel mmsi singapore suez canal malacca panama canal hormuz bab el mandeb english channel bosporus gibraltar danish cape good hope indian ocean pacific atlantic',action:"openWaterwaysFromGlobalSearch()"}
+  ];
+  const matches=items.filter(item=>(item.label+' '+item.text).includes(term));
+  resultsEl.style.display='block';
+  resultsEl.innerHTML=matches.length ? matches.map(item=>'<button class="prompt-btn" style="width:100%;text-align:left;margin-bottom:5px" onclick="'+item.action+'">🔎 '+item.label+'</button>').join('') : '<div style="padding:10px;background:var(--bg-subtle);border:1px solid var(--steel-border);border-radius:6px;font-size:11px;color:var(--steel-muted);">No matching dashboard data found.</div>';
+}
+
+function openWaterwaysFromGlobalSearch(){
+  const query=window.pendingGlobalSearch || '';
+  closeModal('searchModal');
+  switchPanel('international-waterways');
+  setTimeout(()=>{const input=document.getElementById('waterwaysSearch');if(input){input.value=query;input.dispatchEvent(new Event('input',{bubbles:true}));}},350);
+}
 
 // Close modals on overlay click
 document.querySelectorAll('.modal-overlay').forEach(m=>{
@@ -2510,6 +2696,116 @@ function performLogout(){
   }
 }
 
+/* ======= INTERNATIONAL WATERWAYS MAP ======= */
+let waterwaysMap = null;
+let waterwaysData = [];
+let waterwayVessels = [];
+let waterwaysLayers = {};
+let waterwayRouteLayers = {};
+let activeWaterwayId = null;
+let vesselTypeFilters = new Set(['Cargo', 'Tanker', 'Passenger', 'Fishing', 'Container', 'Other']);
+
+const waterwayPortCoordinates = {
+  'Port Said': [31.26, 32.31], Suez: [29.97, 32.55], Jeddah: [21.49, 39.18],
+  Singapore: [1.26, 103.84], 'Port Klang': [3.00, 101.39], 'Tanjung Pelepas': [1.36, 103.55],
+  'Jebel Ali': [25.01, 55.06], 'Bandar Abbas': [27.18, 56.27], Fujairah: [25.12, 56.33],
+  Djibouti: [11.59, 43.15], Aden: [12.79, 45.03], 'Port Sudan': [19.62, 37.22],
+  'Port of Dover': [51.13, 1.31], 'Le Havre': [49.49, 0.11], Southampton: [50.90, -1.40],
+  Istanbul: [41.01, 28.98], Mersin: [36.80, 34.63], Constanta: [44.18, 28.65],
+  Copenhagen: [55.68, 12.57], Gothenburg: [57.71, 11.97], Gdansk: [54.35, 18.65],
+  Algeciras: [36.13, -5.44], 'Tangier Med': [35.88, -5.50], Gibraltar: [36.14, -5.35],
+  'Cape Town': [-33.92, 18.42], Durban: [-29.87, 31.05], 'Port Elizabeth': [-33.96, 25.60],
+  Chennai: [13.08, 80.29], Colombo: [6.93, 79.85], Mumbai: [18.95, 72.95],
+  'Los Angeles': [33.74, -118.27], Yokohama: [35.45, 139.65], Shanghai: [31.23, 121.47],
+  'New York': [40.67, -74.05], Rotterdam: [51.95, 4.14], Felixstowe: [51.96, 1.35],
+  Cristobal: [9.31, -79.92], Balboa: [8.95, -79.56], Colon: [9.36, -79.90], Batam: [1.13, 104.05]
+};
+
+function initWaterwaysMap(){
+  if(waterwaysMap) { setTimeout(()=>waterwaysMap.invalidateSize(),100); return; }
+  if(typeof L === 'undefined') return;
+  waterwaysMap = L.map('internationalMap', {worldCopyJump:true, minZoom:2, zoomControl:true}).setView([18, 35], 2.4);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom:6, attribution:'&copy; OpenStreetMap contributors'}).addTo(waterwaysMap);
+  waterwaysLayers.waterways = L.layerGroup().addTo(waterwaysMap);
+  waterwaysLayers.routes = L.layerGroup().addTo(waterwaysMap);
+  waterwaysLayers.ports = L.layerGroup().addTo(waterwaysMap);
+  waterwaysLayers.strategic = L.layerGroup().addTo(waterwaysMap);
+  waterwaysLayers.density = L.layerGroup().addTo(waterwaysMap);
+  waterwaysLayers.vessels = L.markerClusterGroup({showCoverageOnHover:false, maxClusterRadius:42}).addTo(waterwaysMap);
+  L.control.layers(null, {'🌊 Waterways':waterwaysLayers.waterways,'🛳 Shipping Routes':waterwaysLayers.routes,'⚓ Ports':waterwaysLayers.ports,'📍 Strategic Locations':waterwaysLayers.strategic,'◉ Traffic Density':waterwaysLayers.density,'🚢 Vessels':waterwaysLayers.vessels}, {collapsed:false, position:'topright'}).addTo(waterwaysMap);
+  fetch('/api/waterways').then(response=>response.json()).then(data=>{
+    waterwaysData = data.waterways || [];
+    waterwayVessels = data.vessels || [];
+    document.getElementById('waterwaysDataSource').textContent = data.data_source || 'SYNTHETIC';
+    renderWaterways();
+  }).catch(()=>showWaterwaysError('Unable to load waterways data.'));
+}
+
+function showWaterwaysError(message){ document.getElementById('waterwayDetailPanel').innerHTML='<h3>Map unavailable</h3><p style="font-size:11px;color:var(--red);margin:0;">'+message+'</p>'; }
+function trafficClass(status){ return status === 'HIGH' ? 'traffic-high' : status === 'MODERATE' ? 'traffic-moderate' : 'traffic-low'; }
+function trafficDot(status){ return status === 'HIGH' ? '🔴' : status === 'MODERATE' ? '🟡' : '🟢'; }
+
+function renderWaterways(){
+  if(!waterwaysMap) return;
+  waterwaysLayers.waterways.clearLayers(); waterwaysLayers.routes.clearLayers(); waterwaysLayers.ports.clearLayers(); waterwaysLayers.strategic.clearLayers(); waterwaysLayers.density.clearLayers(); waterwaysLayers.vessels.clearLayers();
+  waterwayRouteLayers = {};
+  waterwaysData.forEach(waterway=>{
+    const route = L.polyline(waterway.coordinates, {className:'waterway-line', color:waterway.type === 'Shipping Route' ? '#38BDF8' : '#F59E0B', weight:waterway.type === 'Shipping Route' ? 2 : 3, opacity:.78, dashArray:waterway.type === 'Shipping Route' ? '8 7' : null});
+    route.bindTooltip(waterway.name+' · '+waterway.traffic, {sticky:true}); route.on('click',()=>selectWaterway(waterway.id));
+    waterwayRouteLayers[waterway.id] = route;
+    (waterway.type === 'Shipping Route' ? waterwaysLayers.routes : waterwaysLayers.waterways).addLayer(route);
+    const count = waterway.vessel_count || 0;
+    const center = waterway.coordinates[Math.floor(waterway.coordinates.length / 2)];
+    L.circle(center, {radius:Math.max(90000, count * 55000), color:waterway.traffic === 'HIGH' ? '#EF4444' : '#F59E0B', fillColor:waterway.traffic === 'HIGH' ? '#EF4444' : '#F59E0B', fillOpacity:.10, weight:1}).bindTooltip(waterway.name+' density: '+count+' vessel(s)').addTo(waterwaysLayers.density);
+  });
+  Object.entries(waterwayPortCoordinates).forEach(([name, position])=>L.circleMarker(position,{radius:4,color:'#10B981',fillColor:'#10B981',fillOpacity:.9,weight:1}).bindPopup('<b>⚓ '+name+'</b><br><span style="color:#94A3B8">Strategic port · SYNTHETIC</span>').addTo(waterwaysLayers.ports));
+  [[31.26,32.31,'Suez Canal'],[9.08,-79.68,'Panama Canal'],[1.25,103.85,'Singapore Strait'],[26.35,56.55,'Strait of Hormuz'],[6.93,79.85,'Indian Ocean hub']].forEach(item=>L.marker([item[0],item[1]],{icon:L.divIcon({className:'strategic-pin',html:'📍',iconSize:[20,20],iconAnchor:[10,10]})}).bindTooltip(item[2]).addTo(waterwaysLayers.strategic));
+  renderWaterwayVessels(); renderWaterwaySummary();
+  if(activeWaterwayId) selectWaterway(activeWaterwayId, false);
+}
+
+function renderWaterwayVessels(){
+  waterwaysLayers.vessels.clearLayers();
+  waterwayVessels.filter(v=>vesselTypeFilters.has(v.type) || (vesselTypeFilters.has('Other') && !['Cargo','Tanker','Passenger','Fishing','Container'].includes(v.type))).forEach(vessel=>{
+    const marker = L.marker(vessel.position, {icon:L.divIcon({className:'vessel-pin',html:'🚢',iconSize:[24,24],iconAnchor:[12,12]})});
+    marker.bindPopup('<b>🚢 '+vessel.name+'</b><br>MMSI: '+vessel.mmsi+' · IMO: '+vessel.imo+'<br>Type: '+vessel.type+' · Flag: '+vessel.flag+'<br>Speed: '+vessel.speed_knots+' kn · Heading: '+vessel.heading+'°<br>Destination: '+vessel.destination+'<br>ETA: '+vessel.eta+'<br>Position: '+vessel.position[0].toFixed(3)+', '+vessel.position[1].toFixed(3)+'<br>Last update: '+vessel.last_update+'<br><span style="color:#F59E0B;font-weight:700">SYNTHETIC</span>');
+    marker.on('click',()=>showVesselDetails(vessel));
+    waterwaysLayers.vessels.addLayer(marker);
+  });
+}
+
+function showVesselDetails(vessel){
+  const panel=document.getElementById('waterwayDetailPanel');
+  if(!panel) return;
+  panel.innerHTML='<h3>🚢 '+vessel.name+' <span class="traffic-badge traffic-moderate">MOVING</span></h3><div class="waterway-detail-grid"><div><span>MMSI</span><strong>'+vessel.mmsi+'</strong></div><div><span>IMO</span><strong>'+vessel.imo+'</strong></div><div><span>Type / Flag</span><strong>'+vessel.type+' · '+vessel.flag+'</strong></div><div><span>Speed / Heading</span><strong>'+vessel.speed_knots+' kn · '+vessel.heading+'°</strong></div><div><span>Destination</span><strong>'+vessel.destination+'</strong></div><div><span>ETA</span><strong>'+vessel.eta+'</strong></div><div><span>Latitude / Longitude</span><strong>'+vessel.position[0].toFixed(3)+' / '+vessel.position[1].toFixed(3)+'</strong></div><div><span>Associated Waterway</span><strong>'+((waterwaysData.find(w=>w.id===vessel.waterway_id)||{}).name||'—')+'</strong></div></div><p style="font-size:11px;color:var(--steel-dark);line-height:1.5;margin:12px 0 0"><b>Recent movement:</b> Course '+vessel.heading+'° at '+vessel.speed_knots+' knots. Track history is unavailable in SYNTHETIC mode.</p><div style="font-size:10px;color:var(--steel-muted);margin-top:9px"><b>Last AIS update:</b> '+vessel.last_update+'<br><b>Source: SYNTHETIC</b></div>';
+}
+
+function renderWaterwaySummary(){
+  document.getElementById('waterwaysVesselTotal').textContent = waterwayVessels.length;
+  const counts = waterwaysData.reduce((out,item)=>{out[item.traffic]=(out[item.traffic]||0)+1;return out;},{});
+  document.getElementById('waterwaysTrafficSummary').innerHTML=['LOW','MODERATE','HIGH'].map(level=>'<span class="traffic-badge '+trafficClass(level)+'">'+trafficDot(level)+' '+level+' '+(counts[level]||0)+'</span>').join('');
+}
+
+function selectWaterway(id, fly=true){
+  const waterway = waterwaysData.find(item=>item.id===id); if(!waterway) return;
+  activeWaterwayId=id;
+  Object.values(waterwayRouteLayers).forEach(layer=>layer.setStyle({weight:layer.options.dashArray ? 2 : 3, color:layer.options.dashArray ? '#38BDF8' : '#F59E0B', opacity:.78}));
+  const routeLayer = waterwayRouteLayers[id];
+  if(routeLayer) routeLayer.setStyle({className:'waterway-line selected',weight:6,color:'#FFFFFF',opacity:1});
+  if(fly) waterwaysMap.fitBounds(waterway.coordinates,{padding:[35,35],maxZoom:5});
+  const vessels = waterwayVessels.filter(v=>v.waterway_id===id);
+  document.getElementById('waterwayDetailPanel').innerHTML='<h3>'+waterway.name+' <span class="traffic-badge '+trafficClass(waterway.traffic)+'">'+trafficDot(waterway.traffic)+' '+waterway.traffic+'</span></h3><div class="waterway-detail-grid"><div><span>Region</span><strong>'+waterway.region+'</strong></div><div><span>Type</span><strong>'+waterway.type+'</strong></div><div><span>Countries connected</span><strong>'+waterway.countries+'</strong></div><div><span>Approx. length</span><strong>'+waterway.length_km.toLocaleString()+' km</strong></div><div><span>Vessels currently detected</span><strong>'+vessels.length+'</strong></div><div><span>Direction of traffic</span><strong>'+ (vessels.length ? 'Mixed · '+vessels.map(v=>v.heading+'°').join(', ') : 'Monitoring')+'</strong></div><div style="grid-column:1/-1"><span>Major ports connected</span><strong>'+waterway.ports.join(' · ')+'</strong></div></div><p style="font-size:11px;color:var(--steel-dark);line-height:1.5;margin:12px 0 0"><b>Strategic importance:</b> '+waterway.importance+'</p><div style="font-size:10px;color:var(--steel-muted);margin-top:9px">Recent movement: '+(vessels.length ? vessels.map(v=>v.name+' → '+v.destination).join(' · ') : 'No vessel records in selected corridor')+'<br><b>Source: '+(document.getElementById('waterwaysDataSource').textContent)+'</b></div>';
+}
+
+function filterWaterwaysMap(query){
+  const term=query.trim().toLowerCase(); if(!term){renderWaterways(); return;}
+  const match=waterwaysData.find(item=>[item.name,item.region,item.countries,...item.ports].join(' ').toLowerCase().includes(term)) || waterwayVessels.find(v=>[v.name,v.mmsi,v.type,v.destination].join(' ').toLowerCase().includes(term));
+  if(match && match.waterway_id) selectWaterway(match.waterway_id); else if(match) selectWaterway(match.id);
+}
+function setVesselTypeFilter(type, enabled){ if(enabled) vesselTypeFilters.add(type); else vesselTypeFilters.delete(type); renderWaterwayVessels(); }
+function toggleWaterwaysLayer(layer, enabled){ if(!waterwaysMap || !waterwaysLayers[layer]) return; if(enabled) waterwaysMap.addLayer(waterwaysLayers[layer]); else waterwaysMap.removeLayer(waterwaysLayers[layer]); }
+function resetWaterwaysMap(){ if(waterwaysMap) waterwaysMap.setView([18,35],2.4); activeWaterwayId=null; document.getElementById('waterwaysSearch').value=''; document.getElementById('waterwayDetailPanel').innerHTML='<h3>Select a waterway</h3><p style="font-size:11px;color:var(--steel-muted);margin:0;line-height:1.5;">Click a highlighted canal, strait, or shipping route to inspect connected ports, traffic, and vessel movement.</p>'; renderWaterways(); }
+
 </script>
 
 <!-- ===== DEMO / PLATFORM OVERVIEW ANIMATION MODAL ===== -->
@@ -2525,7 +2821,8 @@ function performLogout(){
     
     <div style="padding:16px 20px;">
       <!-- ANIMATED STAGE -->
-      <div style="background:#0F172A;border-radius:12px;padding:24px 20px;color:#FFF;position:relative;overflow:hidden;box-shadow:inset 0 2px 10px rgba(0,0,0,0.5);">
+      <div class="demo-stage">
+        <span class="demo-particle p1"></span><span class="demo-particle p2"></span><span class="demo-particle p3"></span><span class="demo-particle p4"></span>
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
           <span id="animStepBadge" style="background:rgba(217,119,6,0.25);color:var(--saffron);border:1px solid var(--saffron-border);font-size:11px;font-weight:700;padding:2px 10px;border-radius:12px;font-family:'IBM Plex Mono';">
             STAGE 1 / 5: CARGO INPUT
@@ -2533,10 +2830,10 @@ function performLogout(){
           <span style="font-size:11px;color:#94A3B8;font-family:'IBM Plex Mono';">SAIL LOGISTICS WORKFLOW</span>
         </div>
 
-        <div id="animStageBox" style="min-height:160px;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;">
-          <div id="animIcon" style="font-size:42px;margin-bottom:8px;">📦</div>
-          <div id="animTitle" style="font-family:'Space Grotesk';font-size:20px;font-weight:700;color:#FFF;">1. Cargo Input Intake</div>
-          <div id="animDesc" style="font-size:13px;color:#94A3B8;max-width:500px;margin-top:6px;line-height:1.6;">
+        <div id="animStageBox" class="demo-stage-box" style="min-height:160px;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;">
+          <div id="animIcon" class="demo-icon demo-copy-in" style="font-size:42px;margin-bottom:8px;">📦</div>
+          <div id="animTitle" class="demo-copy-in" style="font-family:'Space Grotesk';font-size:20px;font-weight:700;color:#FFF;">1. Cargo Input Intake</div>
+          <div id="animDesc" class="demo-copy-in" style="font-size:13px;color:#94A3B8;max-width:500px;margin-top:6px;line-height:1.6;">
             80,000 MT Coking Coal requirement specified for Rourkela Steel Plant with 30-day delivery window.
           </div>
         </div>
@@ -2593,10 +2890,20 @@ function openDemoAnimation(){
 
 function updateAnimDisplay(){
   const cur = animData[animStep];
+  const stageBox = document.getElementById('animStageBox');
+  const copyElements = [document.getElementById('animIcon'), document.getElementById('animTitle'), document.getElementById('animDesc')];
   document.getElementById('animStepBadge').textContent = cur.step;
   document.getElementById('animIcon').textContent = cur.icon;
   document.getElementById('animTitle').textContent = cur.title;
   document.getElementById('animDesc').textContent = cur.desc;
+  if(stageBox) stageBox.dataset.stage = animStep + 1;
+  copyElements.forEach((element, index) => {
+    if(!element) return;
+    element.classList.remove('demo-copy-in');
+    void element.offsetWidth;
+    element.style.animationDelay = (index * 0.08) + 's';
+    element.classList.add('demo-copy-in');
+  });
 
   for(let i=0; i<5; i++){
     const b = document.getElementById('aBar'+i);

@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>System Verification &amp; Tester — LOHA DRISHTI</title>
+<link rel="icon" type="image/svg+xml" href="/static/loha-drishti-logo.svg">
 <meta name="description" content="Automated system verification, test suite execution, and integrity check for LOHA DRISHTI Maritime Decision Intelligence Platform">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -116,7 +117,7 @@
 <body>
   <div class="topbar">
     <div class="brand">
-      <div class="brand-mark">L</div>
+      <img class="brand-mark" src="/static/loha-drishti-logo.svg" alt="Loha Drishti maritime emblem">
       <div>
         <div class="brand-text">LOHA DRISHTI</div>
         <div class="brand-sub">Maritime Decision Intelligence · SAIL Logistics</div>
@@ -149,16 +150,16 @@
       <div>
         <div style="font-size:11px;font-weight:700;color:var(--steel-muted);text-transform:uppercase;">Overall System Health</div>
         <div class="score-badge">
-          <span class="score-num" id="healthScore">100%</span>
-          <span style="font-size:13px;font-weight:600;color:var(--green);" id="overallStatusLabel">ALL TESTS PASSING</span>
+          <span class="score-num" id="healthScore">—</span>
+          <span style="font-size:13px;font-weight:600;color:var(--steel-muted);" id="overallStatusLabel">WAITING FOR RESULTS</span>
         </div>
       </div>
       <div style="display:flex;gap:24px;font-size:13px;flex-wrap:wrap;">
-        <div><strong>Total Tests:</strong> <span id="totalTests" class="mono">6</span></div>
-        <div><strong>Passed:</strong> <span id="passedTests" class="mono" style="color:var(--green);font-weight:700;">6</span></div>
+        <div><strong>Total Tests:</strong> <span id="totalTests" class="mono">—</span></div>
+        <div><strong>Passed:</strong> <span id="passedTests" class="mono" style="color:var(--green);font-weight:700;">—</span></div>
         <div><strong>Failed:</strong> <span id="failedTests" class="mono" style="color:var(--red);font-weight:700;">0</span></div>
-        <div><strong>Execution Time:</strong> <span id="execDuration" class="mono">18.2 ms</span></div>
-        <div><strong>Last Run:</strong> <span id="lastRunTime" class="mono">2026-08-28 21:50:31 UTC</span></div>
+        <div><strong>Execution Time:</strong> <span id="execDuration" class="mono">—</span></div>
+        <div><strong>Last Run:</strong> <span id="lastRunTime" class="mono">Not run</span></div>
       </div>
     </div>
 
@@ -178,42 +179,7 @@
             </tr>
           </thead>
           <tbody id="testTableBody">
-            <tr>
-              <td><strong>Authentication</strong></td>
-              <td>Bcrypt Hashing &amp; JWT Signature</td>
-              <td>HMAC-SHA256 token generated &amp; decoded with valid role claims</td>
-              <td><span class="badge-pass">PASS</span></td>
-            </tr>
-            <tr>
-              <td><strong>Database</strong></td>
-              <td>SQLite ORM Read/Write Transaction</td>
-              <td>Audit log persisted, committed, and queried via SQLAlchemy</td>
-              <td><span class="badge-pass">PASS</span></td>
-            </tr>
-            <tr>
-              <td><strong>ML Pipeline</strong></td>
-              <td>Model Artifact &amp; Feature Registry</td>
-              <td>GradientBoostingRegressor model loaded with 8 feature encodings</td>
-              <td><span class="badge-pass">PASS</span></td>
-            </tr>
-            <tr>
-              <td><strong>ML Prediction</strong></td>
-              <td>Inference Latency &amp; Boundary Check</td>
-              <td>Predicted $21.40/MT within valid maritime dry-bulk boundary [$10–$80/MT]</td>
-              <td><span class="badge-pass">PASS</span></td>
-            </tr>
-            <tr>
-              <td><strong>Backend APIs</strong></td>
-              <td>Port &amp; Vessel Infrastructure Database</td>
-              <td>5 Indian East Coast ports &amp; 4 vessel classes loaded with draft limits</td>
-              <td><span class="badge-pass">PASS</span></td>
-            </tr>
-            <tr>
-              <td><strong>Decision Engine</strong></td>
-              <td>Minimax-Regret Optimization Matrix</td>
-              <td>4-scenario regret evaluated; non-negative max-regret verified</td>
-              <td><span class="badge-pass">PASS</span></td>
-            </tr>
+            <tr><td colspan="4" style="text-align:center;color:var(--steel-muted);padding:20px;">Run the automated test suite to load live results.</td></tr>
           </tbody>
         </table>
       </div>
@@ -247,9 +213,18 @@
             <td><span class="${t.status==='PASS'?'badge-pass':'badge-fail'}">${t.status}</span></td>
           </tr>
         `).join('');
+      } else {
+        throw new Error('Backend returned HTTP ' + res.status);
       }
     } catch (e) {
-      console.log('Error running verification suite.');
+      document.getElementById('healthScore').textContent = '0%';
+      document.getElementById('overallStatusLabel').textContent = 'VERIFICATION UNAVAILABLE';
+      document.getElementById('totalTests').textContent = '0';
+      document.getElementById('passedTests').textContent = '0';
+      document.getElementById('failedTests').textContent = '1';
+      document.getElementById('execDuration').textContent = '—';
+      document.getElementById('lastRunTime').textContent = new Date().toISOString();
+      document.getElementById('testTableBody').innerHTML = `<tr><td><strong>System</strong></td><td>Backend verification request</td><td>${e.message}</td><td><span class="badge-fail">FAIL</span></td></tr>`;
     } finally {
       btn.disabled = false;
       btn.innerHTML = '▶ RUN AUTOMATED TEST SUITE';
