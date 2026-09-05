@@ -51,7 +51,7 @@ class TestPageRoutes:
         r = client.get("/app")
         assert r.status_code == 200
         assert "LOHA DRISHTI" in r.text
-        assert "Command Center" in r.text
+        assert "Command Centre" in r.text
 
     def test_ml_training_page_serves(self, client):
         r = client.get("/ml-training")
@@ -311,14 +311,23 @@ class TestDecisionEngine:
         assert r.status_code == 422
 
     def test_optimize_persists_a_recommendation(self, client, auth_headers):
-        before = client.get("/api/decision/history", headers=auth_headers).json()["count"]
+        """Compare the newest row rather than a page count - /history returns a
+        capped page, so once it is full the count stops moving."""
+        def newest_id():
+            page = client.get(
+                "/api/decision/history?limit=1", headers=auth_headers
+            ).json()["items"]
+            return page[0]["id"] if page else None
+
+        before = newest_id()
         client.post(
             "/api/decision/optimize",
             json={**self.BASE_REQUEST, "persist": True},
             headers=auth_headers,
         )
-        after = client.get("/api/decision/history", headers=auth_headers).json()["count"]
-        assert after > before
+        after = newest_id()
+        assert after is not None
+        assert after != before
 
     def test_port_blocked_scenario_diverts(self, client):
         r = client.post(

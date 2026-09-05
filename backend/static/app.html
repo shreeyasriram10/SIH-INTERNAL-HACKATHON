@@ -56,7 +56,8 @@
 html{scroll-behavior:smooth;}
 body{margin:0;background:var(--bg-main);color:var(--navy-deep);font-family:'IBM Plex Sans',-apple-system,BlinkMacSystemFont,sans-serif;line-height:1.5;min-height:100vh;}
 .mono{font-family:'IBM Plex Mono',monospace;}
-h1,h2,h3,h4,.display{font-family:'Space Grotesk',sans-serif;letter-spacing:-0.01em;}
+h1,h2,h3,h4,h5,.display{font-family:'IBM Plex Sans',-apple-system,sans-serif;letter-spacing:-0.005em;color:var(--gov-navy);}
+h2{font-weight:600;}h3,h4,h5{font-weight:600;}
 @media(prefers-reduced-motion:reduce){*{animation-duration:0.01ms!important;animation-iteration-count:1!important;transition-duration:0.01ms!important;}}
 
 /* ---- TOPBAR ---- */
@@ -69,8 +70,9 @@ h1,h2,h3,h4,.display{font-family:'Space Grotesk',sans-serif;letter-spacing:-0.01
 .nav-menu a{color:var(--steel-dark);text-decoration:none;padding:5px 10px;border-radius:6px;transition:all 0.15s;cursor:pointer;}
 .nav-menu a:hover,.nav-menu a.active{color:var(--saffron-dark);background:var(--saffron-bg);}
 .topbar-actions{display:flex;align-items:center;gap:8px;}
-.icon-btn{background:var(--bg-surface);border:1px solid var(--steel-border);border-radius:6px;padding:6px 10px;font-size:12px;font-weight:600;color:var(--navy-deep);cursor:pointer;transition:all 0.15s;display:flex;align-items:center;gap:4px;}
-.icon-btn:hover{border-color:var(--navy-deep);background:var(--bg-subtle);}
+.icon-btn{background:var(--bg-surface);border:1px solid var(--gov-line);border-radius:5px;padding:6px 11px;font-size:12px;font-weight:500;color:var(--steel-dark);cursor:pointer;transition:border-color .15s,color .15s,background .15s;display:inline-flex;align-items:center;gap:5px;}
+.icon-btn:hover{border-color:var(--gov-navy-2);color:var(--gov-navy);background:#F4F7FB;}
+.icon-btn:focus-visible{outline:2px solid var(--gov-navy-2);outline-offset:2px;}
 .badge-num{font-size:11px;font-weight:700;padding:2px 6px;border-radius:10px;background:var(--red);color:#FFF;line-height:1;}
 
 /* ---- SECTION TABS (functional panel switcher) ---- */
@@ -81,15 +83,16 @@ h1,h2,h3,h4,.display{font-family:'Space Grotesk',sans-serif;letter-spacing:-0.01
 .tab-btn.active{color:var(--saffron-dark);border-bottom-color:var(--saffron);}
 
 /* ---- CARGO BAR ---- */
-.cargo-bar-wrapper{background:#FFF;border-bottom:1px solid var(--steel-border);padding:10px 24px;box-shadow:var(--shadow-sm);}
+.cargo-bar-wrapper{position:sticky;top:var(--header-h);z-index:90;background:#FFF;border-bottom:1px solid var(--gov-line);padding:10px 24px;box-shadow:0 1px 3px rgba(16,35,63,.06);}
 .cargo-bar{max-width:1280px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;}
 .cargo-summary-pills{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
 .cargo-pill{background:var(--bg-subtle);border:1px solid var(--steel-border);border-radius:6px;padding:4px 10px;font-size:12px;color:var(--navy-deep);font-weight:600;display:flex;align-items:center;gap:5px;cursor:pointer;transition:all 0.15s;}
-.cargo-pill:hover{border-color:var(--saffron);background:var(--saffron-bg);}
+.cargo-pill:hover{border-color:var(--gov-navy-2);background:#F4F7FB;}
 .cargo-pill span.label{color:var(--steel-muted);font-size:10.5px;text-transform:uppercase;font-weight:700;}
 .cargo-actions{display:flex;gap:8px;}
-.btn-optimize{background:linear-gradient(135deg,var(--saffron-dark),var(--saffron));color:#FFF;border:none;padding:8px 16px;border-radius:6px;font-weight:700;font-size:13px;font-family:'Space Grotesk';cursor:pointer;transition:all 0.15s;box-shadow:0 2px 4px rgba(217,119,6,0.2);display:flex;align-items:center;gap:6px;}
-.btn-optimize:hover{transform:translateY(-1px);box-shadow:0 4px 8px rgba(217,119,6,0.3);}
+.btn-optimize{background:var(--gov-navy-2);color:#FFF;border:1px solid var(--gov-navy-2);padding:8px 18px;border-radius:5px;font-weight:600;font-size:13px;font-family:'IBM Plex Sans',sans-serif;letter-spacing:.01em;cursor:pointer;transition:background .15s,border-color .15s;display:inline-flex;align-items:center;justify-content:center;gap:6px;}
+.btn-optimize:hover{background:var(--gov-navy);border-color:var(--gov-navy);}
+.btn-optimize:focus-visible{outline:3px solid var(--tri-saffron);outline-offset:2px;}
 .btn-optimize:disabled{opacity:0.6;cursor:not-allowed;transform:none;}
 
 /* ---- LOADING OVERLAY ---- */
@@ -104,7 +107,7 @@ h1,h2,h3,h4,.display{font-family:'Space Grotesk',sans-serif;letter-spacing:-0.01
 .panel{display:none;}
 .panel.active{display:block;}
 .section{max-width:1280px;margin:0 auto;padding:20px 24px;}
-.section-header{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px;}
+.section-header{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px;padding-bottom:10px;border-bottom:2px solid var(--gov-line);}
 .section-header h2{font-size:19px;margin:0;color:var(--navy-deep);}
 .section-header p{margin:2px 0 0;font-size:12px;color:var(--steel-muted);}
 .section-tag{font-size:11px;font-weight:700;color:var(--steel-muted);text-transform:uppercase;letter-spacing:0.06em;white-space:nowrap;}
@@ -414,6 +417,155 @@ footer .data-disclaimer{font-size:10.5px;color:var(--steel-light);margin-top:6px
   background:var(--red-bg, #fef2f2); border-color:var(--red-border, #fecaca);
   color:var(--red, #dc2626);
 }
+
+/* =========================================================================
+   GOVERNMENT PORTAL SHELL
+   Layout conventions follow Indian government portals (india.gov.in,
+   Ministry of Steel, PIB): a utility strip above an emblem masthead, a
+   tricolour rule, a persistent left section rail, breadcrumbs, and a
+   dense two-tone content area. Icons are inline SVG - no emoji.
+   ========================================================================= */
+:root{
+  --gov-strip:#0B1A2E;
+  --gov-navy:#10233F;
+  --gov-navy-2:#1B3663;
+  --gov-line:#D8DEE7;
+  --gov-rail:#FCFDFE;
+  --tri-saffron:#FF9933;
+  --tri-green:#138808;
+  --header-h:104px;
+  --rail-w:244px;
+}
+
+/* ---- utility strip ---- */
+.gov-header{position:sticky;top:0;z-index:120;}
+.gov-strip{background:var(--gov-strip);color:#C7D2E1;font-size:11.5px;}
+.gov-strip-inner{max-width:1560px;margin:0 auto;padding:0 22px;height:32px;display:flex;align-items:center;justify-content:space-between;gap:14px;}
+.gov-strip-left{display:flex;align-items:center;gap:8px;letter-spacing:.02em;}
+.gov-strip-left strong{color:#FFF;font-weight:600;}
+.gov-strip-sep{opacity:.35;}
+.gov-strip-right{display:flex;align-items:center;gap:4px;}
+.gov-strip a,.gov-strip button{color:#C7D2E1;background:none;border:none;font:inherit;text-decoration:none;padding:3px 8px;border-radius:4px;cursor:pointer;}
+.gov-strip a:hover,.gov-strip button:hover{color:#FFF;background:rgba(255,255,255,.1);}
+.gov-strip button.tsz{font-weight:600;min-width:26px;}
+.gov-strip button.tsz[aria-pressed="true"]{background:rgba(255,255,255,.16);color:#FFF;}
+.skip-link{position:absolute;left:-9999px;}
+.skip-link:focus{left:22px;top:6px;z-index:200;background:#FFF;color:var(--gov-navy);padding:6px 12px;border-radius:4px;}
+
+/* ---- masthead ---- */
+.masthead{background:#FFF;border-bottom:1px solid var(--gov-line);}
+.masthead-inner{max-width:1560px;margin:0 auto;padding:0 22px;height:68px;display:flex;align-items:center;justify-content:space-between;gap:18px;}
+.brand{display:flex;align-items:center;gap:12px;min-width:0;}
+.brand-mark{width:42px;height:42px;border-radius:8px;flex:0 0 42px;border:1px solid var(--gov-line);background:#FFF;padding:2px;}
+.brand-text{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:17px;color:var(--gov-navy);letter-spacing:.05em;line-height:1.15;}
+.brand-sub{font-size:11px;color:var(--steel-muted);letter-spacing:.01em;font-weight:500;margin-top:1px;}
+.brand-rule{width:1px;height:38px;background:var(--gov-line);margin:0 4px;}
+.brand-org{font-size:11px;line-height:1.35;color:var(--steel-muted);}
+.brand-org b{display:block;color:var(--gov-navy);font-size:12px;font-weight:600;}
+.topbar-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end;}
+
+/* ---- tricolour rule ---- */
+.tricolour{height:3px;display:flex;}
+.tricolour i{flex:1;}
+.tricolour i:nth-child(1){background:var(--tri-saffron);}
+.tricolour i:nth-child(2){background:#FFFFFF;}
+.tricolour i:nth-child(3){background:var(--tri-green);}
+
+/* ---- shell + left rail ---- */
+.app-shell{display:flex;align-items:flex-start;max-width:1560px;margin:0 auto;}
+.sidenav{position:sticky;top:var(--header-h);width:var(--rail-w);flex:0 0 var(--rail-w);
+  height:calc(100vh - var(--header-h));overflow-y:auto;background:var(--gov-rail);
+  border-right:1px solid var(--gov-line);padding:14px 0 24px;}
+.sidenav-group{padding:0 12px;margin-bottom:16px;}
+.sidenav-label{font-size:10px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--steel-light);padding:0 10px 6px;}
+.sidenav a{display:flex;align-items:center;gap:10px;padding:8px 10px;margin-bottom:1px;border-radius:6px;
+  font-size:13px;font-weight:500;color:var(--steel-dark);text-decoration:none;cursor:pointer;
+  border-left:3px solid transparent;transition:background .12s,color .12s;}
+.sidenav a:hover{background:#EEF2F7;color:var(--gov-navy);}
+.sidenav a.active{background:#E8EEF7;color:var(--gov-navy-2);font-weight:600;border-left-color:var(--gov-navy-2);}
+.sidenav a svg{width:16px;height:16px;flex:0 0 16px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;opacity:.8;}
+.sidenav a.active svg{opacity:1;}
+.sidenav a .ext{margin-left:auto;font-size:9.5px;color:var(--steel-light);font-weight:600;letter-spacing:.04em;}
+.sidenav-foot{padding:12px 22px 0;margin-top:4px;border-top:1px solid var(--gov-line);font-size:10.5px;color:var(--steel-light);line-height:1.6;}
+.app-main{flex:1;min-width:0;}
+
+/* ---- breadcrumb bar ---- */
+.crumbbar{background:#FFF;border-bottom:1px solid var(--gov-line);padding:10px 24px;}
+.crumbbar-inner{max-width:1280px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;}
+.crumbs{font-size:11.5px;color:var(--steel-muted);display:flex;align-items:center;gap:6px;}
+.crumbs a{color:var(--blue);text-decoration:none;}
+.crumbs a:hover{text-decoration:underline;}
+.crumbs span[aria-current]{color:var(--navy-deep);font-weight:600;}
+.crumb-sep{color:var(--steel-light);}
+
+/* ---- content footer ---- */
+.gov-footer{background:var(--gov-navy);color:#B9C6D8;margin-top:28px;}
+.gov-footer-inner{max-width:1280px;margin:0 auto;padding:22px 24px;}
+.gov-footer-cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:20px;padding-bottom:16px;border-bottom:1px solid rgba(255,255,255,.12);}
+.gov-footer h5{margin:0 0 8px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#FFF;font-family:'IBM Plex Sans',sans-serif;font-weight:700;}
+.gov-footer ul{list-style:none;margin:0;padding:0;font-size:12px;line-height:1.9;}
+.gov-footer a{color:#B9C6D8;text-decoration:none;cursor:pointer;}
+.gov-footer a:hover{color:#FFF;text-decoration:underline;}
+.gov-footer-base{padding-top:14px;font-size:11.5px;display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap;}
+.gov-footer-note{max-width:760px;line-height:1.6;color:#8FA2BA;}
+
+/* ---- copilot floating action button ---- */
+.copilot-fab{position:fixed;right:24px;bottom:24px;z-index:150;width:56px;height:56px;border-radius:50%;
+  border:none;cursor:pointer;background:var(--gov-navy-2);color:#FFF;
+  box-shadow:0 6px 18px rgba(16,35,63,.32),0 2px 6px rgba(16,35,63,.2);
+  display:flex;align-items:center;justify-content:center;transition:transform .15s,background .15s,box-shadow .15s;}
+.copilot-fab:hover{background:var(--gov-navy);transform:translateY(-2px);box-shadow:0 10px 24px rgba(16,35,63,.38);}
+.copilot-fab:focus-visible{outline:3px solid var(--tri-saffron);outline-offset:3px;}
+.copilot-fab svg{width:24px;height:24px;stroke:#FFF;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;}
+.copilot-fab .fab-dot{position:absolute;top:3px;right:3px;width:11px;height:11px;border-radius:50%;background:var(--tri-saffron);border:2px solid #FFF;}
+.copilot-fab-label{position:fixed;right:88px;bottom:39px;z-index:150;background:var(--gov-navy);color:#FFF;
+  font-size:12px;font-weight:600;padding:5px 10px;border-radius:5px;white-space:nowrap;pointer-events:none;
+  opacity:0;transform:translateX(6px);transition:opacity .15s,transform .15s;}
+.copilot-fab:hover + .copilot-fab-label,.copilot-fab:focus-visible + .copilot-fab-label{opacity:1;transform:translateX(0);}
+
+/* ---- about / governance panel ---- */
+.about-hero{background:var(--gov-navy);color:#E6ECF5;border-radius:var(--radius-lg);padding:26px 28px;margin-bottom:20px;}
+.about-hero h2{margin:0 0 6px;color:#FFF;font-size:22px;}
+.about-hero p{margin:0;font-size:13px;line-height:1.7;color:#B9C6D8;max-width:880px;}
+.about-hero-meta{display:flex;gap:22px;flex-wrap:wrap;margin-top:18px;padding-top:16px;border-top:1px solid rgba(255,255,255,.14);}
+.about-hero-meta div{font-size:11px;color:#8FA2BA;letter-spacing:.04em;text-transform:uppercase;}
+.about-hero-meta b{display:block;font-size:14px;color:#FFF;text-transform:none;letter-spacing:0;margin-top:3px;font-family:'Space Grotesk',sans-serif;}
+.about-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;margin-bottom:20px;}
+.about-card{background:#FFF;border:1px solid var(--gov-line);border-radius:var(--radius);padding:18px 20px;}
+.about-card h4{margin:0 0 4px;font-size:14px;color:var(--gov-navy);}
+.about-card .about-kicker{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--steel-light);margin-bottom:8px;}
+.about-card p,.about-card li{font-size:12.5px;color:var(--steel-dark);line-height:1.7;}
+.about-card ul{margin:8px 0 0;padding-left:18px;}
+.gov-table{width:100%;border-collapse:collapse;font-size:12.5px;}
+.gov-table th{background:var(--gov-navy);color:#FFF;text-align:left;padding:10px 12px;font-weight:600;font-size:11.5px;letter-spacing:.03em;}
+.gov-table td{padding:10px 12px;border-bottom:1px solid var(--gov-line);vertical-align:top;color:var(--steel-dark);}
+.gov-table tbody tr:nth-child(even){background:#FAFBFD;}
+.tag{display:inline-block;font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:4px;letter-spacing:.03em;}
+.tag-public{background:var(--green-bg);color:var(--green);border:1px solid var(--green-border);}
+.tag-calib{background:var(--blue-bg);color:var(--blue);border:1px solid var(--blue-border);}
+.tag-synth{background:var(--saffron-bg);color:var(--saffron-dark);border:1px solid var(--saffron-border);}
+
+/* ---- text-size control ---- */
+body.tsz-lg{font-size:106%;}
+body.tsz-sm{font-size:94%;}
+
+/* ---- responsive: rail folds to a horizontal strip ---- */
+@media(max-width:1024px){
+  .app-shell{flex-direction:column;}
+  .sidenav{position:static;width:100%;flex:none;height:auto;display:flex;gap:4px;overflow-x:auto;
+    border-right:none;border-bottom:1px solid var(--gov-line);padding:8px 12px;}
+  .sidenav-group{display:flex;gap:4px;margin:0;padding:0;}
+  .sidenav-label,.sidenav-foot{display:none;}
+  .sidenav a{white-space:nowrap;border-left:none;border-bottom:3px solid transparent;border-radius:4px 4px 0 0;}
+  .sidenav a.active{border-left-color:transparent;border-bottom-color:var(--gov-navy-2);}
+  .masthead-inner{height:auto;padding:10px 16px;flex-wrap:wrap;}
+  .brand-rule,.brand-org{display:none;}
+}
+@media(max-width:640px){
+  .gov-strip-left .gov-strip-hide{display:none;}
+  .copilot-fab{right:16px;bottom:16px;}
+}
+
 </style>
 </head>
 <body>
@@ -430,35 +582,112 @@ footer .data-disclaimer{font-size:10.5px;color:var(--steel-light);margin-top:6px
 <!-- DRAWER OVERLAY -->
 <div class="drawer-overlay" id="drawerOverlay" onclick="closeAllDrawers()"></div>
 
-<!-- TOPSTICKY NAV BAR -->
-<div class="topbar">
-  <div class="brand">
-    <img class="brand-mark" src="/static/loha-drishti-logo.svg" alt="Loha Drishti maritime emblem">
-    <div>
-      <div class="brand-text">LOHA DRISHTI</div>
-      <div class="brand-sub">Maritime Decision Intelligence · SAIL Logistics</div>
+<a class="skip-link" href="#mainContent">Skip to main content</a>
+
+<!-- ===== GOVERNMENT UTILITY STRIP + MASTHEAD ===== -->
+<div class="gov-header">
+  <div class="gov-strip">
+    <div class="gov-strip-inner">
+      <div class="gov-strip-left">
+        <strong>Government of India</strong>
+        <span class="gov-strip-sep">|</span>
+        <span>Ministry of Steel</span>
+        <span class="gov-strip-sep gov-strip-hide">|</span>
+        <span class="gov-strip-hide">Steel Authority of India Limited</span>
+      </div>
+      <div class="gov-strip-right">
+        <a href="#mainContent">Skip to Content</a>
+        <span class="gov-strip-sep">|</span>
+        <button class="tsz" onclick="setTextSize('sm')" aria-pressed="false" title="Decrease text size">A-</button>
+        <button class="tsz" onclick="setTextSize('md')" aria-pressed="true" title="Normal text size">A</button>
+        <button class="tsz" onclick="setTextSize('lg')" aria-pressed="false" title="Increase text size">A+</button>
+        <span class="gov-strip-sep">|</span>
+        <a href="/verification">System Status</a>
+      </div>
     </div>
   </div>
 
-  <div class="nav-menu">
-    <a id="nav-command" class="active" onclick="switchPanel('command')">⚙ Command Center</a>
-    <a id="nav-intelligence" onclick="switchPanel('intelligence')">📊 Intelligence</a>
-    <a id="nav-scenarios" onclick="switchPanel('scenarios')">⚡ Scenarios</a>
-    <a id="nav-ports" onclick="switchPanel('ports')">🚢 Port &amp; Vessel DNA</a>
-    <a id="nav-international-waterways" onclick="switchPanel('international-waterways')">🌍 International Waterways</a>
-    <a href="/ml-training">🤖 ML Model &amp; Training</a>
-    <a href="/verification">🧪 System Verification</a>
-    <a id="nav-copilot" onclick="openCopilot()">❓ Questions &amp; AI Copilot</a>
+  <header class="masthead">
+    <div class="masthead-inner">
+      <div class="brand">
+        <img class="brand-mark" src="/static/loha-drishti-logo.svg" alt="Loha Drishti maritime emblem">
+        <div>
+          <div class="brand-text">LOHA DRISHTI</div>
+          <div class="brand-sub">Maritime Decision Intelligence &middot; SAIL Logistics</div>
+        </div>
+        <div class="brand-rule"></div>
+        <div class="brand-org">
+          <b>Bulk Cargo Chartering Directorate</b>
+          Decision Support System
+        </div>
+      </div>
+
+      <div class="topbar-actions">
+        <span class="engine-source" id="engineSourceBadge" title="Checking the decision service...">CONNECTING</span>
+        <span class="scenario-pill" id="scenarioPill">Scenario Active</span>
+        <button class="icon-btn" id="openNotifyBtn">Alerts <span class="badge-num">2</span></button>
+        <button class="icon-btn" id="openSearchBtn">Search</button>
+        <button class="icon-btn" id="openExportBtn">Report</button>
+        <button class="icon-btn" id="topbarLogoutBtn" onclick="performLogout()" title="Sign out and return to the login gateway">Sign Out</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="tricolour" aria-hidden="true"><i></i><i></i><i></i></div>
+</div>
+
+<!-- ===== SHELL: LEFT SECTION RAIL + MAIN CONTENT ===== -->
+<div class="app-shell">
+<nav class="sidenav" aria-label="Sections">
+  <div class="sidenav-group">
+    <div class="sidenav-label">Decision Support</div>
+    <a id="nav-command" class="active" onclick="switchPanel('command')">
+      <svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/></svg>Command Centre</a>
+    <a id="nav-intelligence" onclick="switchPanel('intelligence')">
+      <svg viewBox="0 0 24 24"><path d="M3 17l5-6 4 3 4-7 5 5"/><path d="M3 21h18"/></svg>Freight Intelligence</a>
+    <a id="nav-scenarios" onclick="switchPanel('scenarios')">
+      <svg viewBox="0 0 24 24"><path d="M12 3v4"/><path d="M5.6 5.6l2.9 2.9"/><path d="M3 12h4"/><path d="M12 21a6 6 0 100-12 6 6 0 000 12z"/></svg>What-If Simulator</a>
   </div>
 
-  <div class="topbar-actions">
-    <span class="engine-source" id="engineSourceBadge" title="Checking the decision service...">CONNECTING</span>
-    <span class="scenario-pill" id="scenarioPill">⚠ SCENARIO ACTIVE</span>
-    <button class="icon-btn" id="openNotifyBtn">🔔 Alerts <span class="badge-num">2</span></button>
-    <button class="icon-btn" id="openSearchBtn">🔍 Search</button>
-    <button class="icon-btn" id="demoAnimBtn" onclick="openDemoAnimation()" style="background:var(--saffron-bg);border-color:var(--saffron-border);color:var(--saffron-dark);font-weight:700;">🎬 Watch Workflow</button>
-    <button class="icon-btn" id="openExportBtn">📄 Report</button>
-    <button class="icon-btn" id="topbarLogoutBtn" onclick="performLogout()" style="background:var(--red-bg);border-color:var(--red-border);color:var(--red);font-weight:700;cursor:pointer;" title="Sign out and return to Login Gateway">🚪 Logout</button>
+  <div class="sidenav-group">
+    <div class="sidenav-label">Infrastructure</div>
+    <a id="nav-ports" onclick="switchPanel('ports')">
+      <svg viewBox="0 0 24 24"><path d="M12 3v13"/><circle cx="12" cy="5" r="2"/><path d="M4 12a8 8 0 0016 0"/><path d="M3 12h3M18 12h3"/></svg>Port Profiles</a>
+    <a id="nav-vessels" onclick="switchPanel('vessels')">
+      <svg viewBox="0 0 24 24"><path d="M3 17l1.8-6h14.4L21 17"/><path d="M3 17c2 2 4 2 6 0s4-2 6 0 4 2 6 0"/><path d="M12 11V5H8"/></svg>Vessel Fit</a>
+    <a id="nav-international-waterways" onclick="switchPanel('international-waterways')">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a14 14 0 000 18a14 14 0 000-18"/></svg>International Waterways</a>
+  </div>
+
+  <div class="sidenav-group">
+    <div class="sidenav-label">Model &amp; Assurance</div>
+    <a href="/ml-training">
+      <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M9 9h6v6H9z"/><path d="M9 2v2M15 2v2M9 20v2M15 20v2M2 9h2M2 15h2M20 9h2M20 15h2"/></svg>ML Model &amp; Training<span class="ext">PAGE</span></a>
+    <a href="/verification">
+      <svg viewBox="0 0 24 24"><path d="M9 11l2 2 4-4"/><path d="M12 3l7 3v6c0 4.2-2.8 7.9-7 9-4.2-1.1-7-4.8-7-9V6z"/></svg>System Verification<span class="ext">PAGE</span></a>
+    <a id="nav-about" onclick="switchPanel('about')">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 16v-5"/><path d="M12 8h.01"/></svg>About &amp; Data Governance</a>
+  </div>
+
+  <div class="sidenav-foot">
+    Problem Statement 26006<br>Smart India Hackathon<br>
+    <span id="railBuild">Version 2.3.0</span>
+  </div>
+</nav>
+
+<main class="app-main" id="mainContent">
+
+<!-- ===== BREADCRUMB ===== -->
+<div class="crumbbar">
+  <div class="crumbbar-inner">
+    <div class="crumbs">
+      <a href="/app" onclick="switchPanel('command');return false;">Home</a>
+      <span class="crumb-sep">/</span>
+      <span id="crumbGroup">Decision Support</span>
+      <span class="crumb-sep">/</span>
+      <span aria-current="page" id="crumbCurrent">Command Centre</span>
+    </div>
+    <button class="icon-btn" id="demoAnimBtn" onclick="openDemoAnimation()">Watch Workflow</button>
   </div>
 </div>
 
@@ -473,20 +702,10 @@ footer .data-disclaimer{font-size:10.5px;color:var(--steel-light);margin-top:6px
       <div class="cargo-pill" onclick="openCargoDrawer()"><span class="label">Window:</span> <span id="barDays">30 Days</span></div>
     </div>
     <div class="cargo-actions">
-      <button class="icon-btn" id="openEditCargoBtn">✏️ EDIT CARGO</button>
-      <button class="btn-optimize" id="barOptimizeBtn">⚡ FIND BEST STRATEGY</button>
+      <button class="icon-btn" id="openEditCargoBtn">Edit Cargo</button>
+      <button class="btn-optimize" id="barOptimizeBtn">Find Best Strategy</button>
     </div>
   </div>
-</div>
-
-<!-- SECTION TAB SWITCHER -->
-<div class="section-tabs" id="sectionTabs">
-  <button class="tab-btn active" id="tab-command" onclick="switchPanel('command')">Command Center</button>
-  <button class="tab-btn" id="tab-intelligence" onclick="switchPanel('intelligence')">Freight Intelligence</button>
-  <button class="tab-btn" id="tab-scenarios" onclick="switchPanel('scenarios')">What-If Simulator</button>
-  <button class="tab-btn" id="tab-ports" onclick="switchPanel('ports')">Port DNA</button>
-  <button class="tab-btn" id="tab-vessels" onclick="switchPanel('vessels')">Vessel Fit</button>
-  <button class="tab-btn" id="tab-international-waterways" onclick="switchPanel('international-waterways')">🌍 International Waterways</button>
 </div>
 
 <!-- ===== PANEL: INTERNATIONAL WATERWAYS ===== -->
@@ -494,7 +713,7 @@ footer .data-disclaimer{font-size:10.5px;color:var(--steel-light);margin-top:6px
   <div class="section">
     <div class="section-header">
       <div>
-        <h2>🌍 International Waterways</h2>
+        <h2>International Waterways</h2>
         <p>Global maritime awareness across strategic waterways, shipping lanes, ports, and vessel traffic.</p>
       </div>
       <span class="section-tag" id="waterwaysDataSource">SYNTHETIC</span>
@@ -509,12 +728,12 @@ footer .data-disclaimer{font-size:10.5px;color:var(--steel-light);margin-top:6px
         <div class="waterways-panel" style="margin-top:12px;">
           <h3>Map Layers</h3>
           <div class="waterways-checks">
-            <label><input type="checkbox" checked onchange="toggleWaterwaysLayer('waterways',this.checked)"> 🌊 Waterways</label>
-            <label><input type="checkbox" checked onchange="toggleWaterwaysLayer('routes',this.checked)"> 🛳 Shipping Routes</label>
-            <label><input type="checkbox" checked onchange="toggleWaterwaysLayer('vessels',this.checked)"> 🚢 Vessels</label>
-            <label><input type="checkbox" checked onchange="toggleWaterwaysLayer('ports',this.checked)"> ⚓ Ports</label>
-            <label><input type="checkbox" checked onchange="toggleWaterwaysLayer('strategic',this.checked)"> 📍 Strategic Locations</label>
-            <label><input type="checkbox" checked onchange="toggleWaterwaysLayer('density',this.checked)"> ◉ Traffic Density</label>
+            <label><input type="checkbox" checked onchange="toggleWaterwaysLayer('waterways',this.checked)">Waterways</label>
+            <label><input type="checkbox" checked onchange="toggleWaterwaysLayer('routes',this.checked)">Shipping Routes</label>
+            <label><input type="checkbox" checked onchange="toggleWaterwaysLayer('vessels',this.checked)">Vessels</label>
+            <label><input type="checkbox" checked onchange="toggleWaterwaysLayer('ports',this.checked)">Ports</label>
+            <label><input type="checkbox" checked onchange="toggleWaterwaysLayer('strategic',this.checked)">Strategic Locations</label>
+            <label><input type="checkbox" checked onchange="toggleWaterwaysLayer('density',this.checked)">  Traffic Density</label>
           </div>
           <div class="waterways-legend" style="margin-top:12px;"><span><i style="background:#F59E0B"></i>Waterway</span><span><i style="background:#FFF"></i>Selected</span><span><i style="background:#EF4444"></i>High traffic</span><span><i style="background:#10B981"></i>Port</span></div>
         </div>
@@ -541,7 +760,7 @@ footer .data-disclaimer{font-size:10.5px;color:var(--steel-light);margin-top:6px
   <div class="section" id="decisionSection">
     <div class="section-header">
       <div>
-        <h2>Executive Command Center — WHAT SHOULD I DO?</h2>
+        <h2>Executive Command Centre</h2>
         <p>Primary strategy recommendation, ranked on risk-adjusted landed cost. Freight rates are served by the trained model; port and vessel figures come from the platform database.</p>
       </div>
       <span class="section-tag">Recommended Strategy</span>
@@ -550,10 +769,10 @@ footer .data-disclaimer{font-size:10.5px;color:var(--steel-light);margin-top:6px
     <!-- DECISION HERO CARD (injected) -->
     <div id="decisionCardHost">
       <div style="text-align:center;padding:50px 20px;background:var(--bg-surface);border:1px dashed var(--steel-border);border-radius:var(--radius-lg);">
-        <div style="font-size:32px;margin-bottom:10px;">⚡</div>
+        
         <div style="font-family:'Space Grotesk';font-size:18px;font-weight:700;color:var(--navy-deep);">Click FIND BEST STRATEGY to begin</div>
         <div style="font-size:13px;color:var(--steel-muted);margin-top:6px;">The decision engine will evaluate all origin-port-vessel combinations.</div>
-        <button class="btn-optimize" style="margin:20px auto 0;display:inline-flex;" onclick="runPipeline()">⚡ FIND BEST STRATEGY NOW</button>
+        <button class="btn-optimize" style="margin:20px auto 0;display:inline-flex;" onclick="runPipeline()">Find Best Strategy</button>
       </div>
     </div>
 
@@ -584,7 +803,7 @@ footer .data-disclaimer{font-size:10.5px;color:var(--steel-light);margin-top:6px
       <div class="section-header">
         <div>
           <h3>Strategy Battle — Route Comparison</h3>
-          <p>Top candidate strategies ranked by landed cost and Minimax-Regret resilience.</p>
+          <p>Candidate strategies ranked by risk-adjusted landed cost, with scenario regret shown as a cross-check.</p>
         </div>
         <span class="data-tag">SYNTHETIC</span>
       </div>
@@ -598,8 +817,8 @@ footer .data-disclaimer{font-size:10.5px;color:var(--steel-light);margin-top:6px
               <th>Landed Cost ($/MT)</th>
               <th>Demurrage Est.</th>
               <th>Transit</th>
-              <th>Risk Index ℹ</th>
-              <th>Supply Continuity ℹ</th>
+              <th>Risk Index </th>
+              <th>Supply Continuity </th>
               <th>Status</th>
             </tr>
           </thead>
@@ -675,7 +894,7 @@ footer .data-disclaimer{font-size:10.5px;color:var(--steel-light);margin-top:6px
           </div>
         </div>
         <div style="background:var(--bg-subtle);padding:10px;border-radius:8px;font-size:12px;margin-top:12px;">
-          <div style="font-weight:700;color:var(--navy-deep);margin-bottom:2px;">📈 Market Timing Signal</div>
+          <div style="font-weight:700;color:var(--navy-deep);margin-bottom:2px;">Market Timing Signal</div>
           <div id="marketSignalText" style="color:var(--saffron-dark);font-weight:600;">3-VOYAGE CONTRACT RECOMMENDED</div>
           <div id="marketSignalDesc" style="font-size:11px;color:var(--steel-muted);margin-top:3px;">Spot rate upside risk +12% over 60 days. Lock in contract to limit exposure.</div>
         </div>
@@ -717,13 +936,13 @@ footer .data-disclaimer{font-size:10.5px;color:var(--steel-light);margin-top:6px
     <div class="challenge-card">
       <div class="challenge-title">Select Disruption Scenario to Simulate</div>
       <div class="challenge-buttons">
-        <button class="btn-challenge danger" id="btn-cyclone" onclick="handleChallenge('cyclone')">⚠️ Cyclone Warning (Odisha Coast)</button>
-        <button class="btn-challenge danger" id="btn-port" onclick="handleChallenge('port')">🚫 Primary Port Blocked</button>
-        <button class="btn-challenge danger" id="btn-freight" onclick="handleChallenge('freight')">📈 Freight Spike +20%</button>
-        <button class="btn-challenge danger" id="btn-bunker" onclick="handleChallenge('bunker')">⛽ Bunker Spike +15%</button>
-        <button class="btn-challenge danger" id="btn-vessel" onclick="handleChallenge('vessel')">🚢 Vessel Unavailable</button>
-        <button class="btn-challenge danger" id="btn-monsoon" onclick="handleChallenge('monsoon')">🌧️ Monsoon Delay</button>
-        <button class="btn-challenge btn-reset" onclick="resetBaseline()">🔄 Reset to Baseline</button>
+        <button class="btn-challenge danger" id="btn-cyclone" onclick="handleChallenge('cyclone')">Cyclone Warning (Odisha Coast)</button>
+        <button class="btn-challenge danger" id="btn-port" onclick="handleChallenge('port')">Primary Port Blocked</button>
+        <button class="btn-challenge danger" id="btn-freight" onclick="handleChallenge('freight')">Freight Spike +20%</button>
+        <button class="btn-challenge danger" id="btn-bunker" onclick="handleChallenge('bunker')">Bunker Spike +15%</button>
+        <button class="btn-challenge danger" id="btn-vessel" onclick="handleChallenge('vessel')">Vessel Unavailable</button>
+        <button class="btn-challenge danger" id="btn-monsoon" onclick="handleChallenge('monsoon')">Monsoon Delay</button>
+        <button class="btn-challenge btn-reset" onclick="resetBaseline()">Reset to Baseline</button>
       </div>
       <div class="diff-banner" id="diffBanner"></div>
     </div>
@@ -732,20 +951,20 @@ footer .data-disclaimer{font-size:10.5px;color:var(--steel-light);margin-top:6px
     <div class="scenario-viz" id="scenarioViz">
       <div class="scenario-phases">
         <div class="scenario-phase before">
-          <div class="scenario-phase-label">📋 Baseline (Before)</div>
+          <div class="scenario-phase-label">Baseline (Before)</div>
           <div class="scenario-phase-route" id="viz-before-route">—</div>
           <div class="scenario-phase-cost">Cost: <span id="viz-before-cost">—</span>/MT</div>
           <div class="scenario-phase-cost">Risk: <span id="viz-before-risk">—</span>/100</div>
         </div>
         <div class="scenario-arrow">→</div>
         <div class="scenario-phase during">
-          <div class="scenario-phase-label">⚠ Active Disruption</div>
+          <div class="scenario-phase-label">Active Disruption</div>
           <div class="scenario-phase-route" id="viz-event-label" style="font-size:12px;">—</div>
           <div class="scenario-phase-cost" id="viz-event-desc" style="font-size:11px;">—</div>
         </div>
         <div class="scenario-arrow">→</div>
         <div class="scenario-phase after">
-          <div class="scenario-phase-label">✅ After Re-optimization</div>
+          <div class="scenario-phase-label">✓ After Re-optimization</div>
           <div class="scenario-phase-route" id="viz-after-route">—</div>
           <div class="scenario-phase-cost">Cost: <span id="viz-after-cost">—</span>/MT</div>
           <div class="scenario-phase-cost">Delta: <span id="viz-after-delta">—</span></div>
@@ -844,135 +1063,264 @@ footer .data-disclaimer{font-size:10.5px;color:var(--steel-light);margin-top:6px
 
 <!-- FOOTER (always visible) -->
 
-<!-- ===================== DATA SOURCES & BENCHMARK REFERENCES ===================== -->
-<div class="content-container" id="dataSourcesSection" style="margin-top:28px;margin-bottom:28px;">
-  <div style="background:#FFF;border:1px solid var(--steel-border);border-radius:var(--radius-lg);padding:24px 28px;box-shadow:var(--shadow-sm);">
-    <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:14px;margin-bottom:20px;border-bottom:1px solid var(--steel-border);padding-bottom:16px;">
+<!-- ===== PANEL: ABOUT, DATA & GOVERNANCE ===== -->
+<div class="panel" id="panel-about">
+  <div class="section">
+
+    <div class="about-hero">
+      <h2>About LOHA DRISHTI</h2>
+      <p>
+        A decision-support system for bulk raw-material chartering at Steel Authority of India
+        Limited. For a given cargo parcel it evaluates every feasible combination of vessel class
+        and discharge port, prices the full landed cost, scores operational risk, and returns a
+        ranked recommendation an officer can act on and defend. Built for Problem Statement 26006
+        under the Ministry of Steel.
+      </p>
+      <div class="about-hero-meta">
+        <div>Problem Statement<b>PS 26006</b></div>
+        <div>Administrative Ministry<b>Ministry of Steel</b></div>
+        <div>Implementing Body<b>SAIL Logistics</b></div>
+        <div>Platform Version<b>2.3.0</b></div>
+      </div>
+    </div>
+
+    <div class="section-header">
       <div>
-        <div style="display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;letter-spacing:0.06em;color:var(--saffron-dark);background:var(--saffron-bg);padding:3px 10px;border-radius:20px;border:1px solid var(--saffron-border);margin-bottom:6px;text-transform:uppercase;">
-          📚 Data Governance &amp; Provenance
-        </div>
-        <h3 style="margin:0;font-size:19px;font-family:'Space Grotesk';color:var(--navy-deep);">Data Sources, Methodology &amp; Benchmark References</h3>
-        <p style="margin:4px 0 0;font-size:12.5px;color:var(--steel-muted);">Comprehensive disclosure of all benchmark indices, maritime regulatory standards, port tariffs, and synthetic simulation models used across LOHA-DRISHTI.</p>
+        <h2>How a Recommendation Is Produced</h2>
+        <p>Each stage is auditable. Figures shown on screen are returned by the service, not computed in the browser.</p>
       </div>
-      <div style="display:flex;gap:8px;">
-        <span style="font-size:11px;font-weight:700;padding:4px 10px;border-radius:6px;background:var(--green-bg);color:var(--green);border:1px solid var(--green-border);">✓ 4 PUBLIC BENCHMARKS</span>
-        <span style="font-size:11px;font-weight:700;padding:4px 10px;border-radius:6px;background:var(--blue-bg);color:var(--blue);border:1px solid var(--blue-border);">⚙ 2 CALIBRATED BASELINES</span>
-        <span style="font-size:11px;font-weight:700;padding:4px 10px;border-radius:6px;background:var(--saffron-bg);color:var(--saffron-dark);border:1px solid var(--saffron-border);">⚡ SYNTHETIC STRESS TESTS</span>
+      <span class="section-tag">Methodology</span>
+    </div>
+
+    <div class="about-grid">
+      <div class="about-card">
+        <div class="about-kicker">Stage 01</div>
+        <h4>Feasibility Screening</h4>
+        <p>Every vessel class is tested against every discharge berth. A pairing is rejected where
+        the laden draft exceeds the berth's usable draft beyond the lighterable margin, or where the
+        length-overall limit cannot accept the class. Part-loaded vessels float higher, so sailing
+        draft is scaled by utilisation rather than assumed at scantling.</p>
+      </div>
+      <div class="about-card">
+        <div class="about-kicker">Stage 02</div>
+        <h4>Landed Cost Build-Up</h4>
+        <p>Cost is assembled component by component and reported in full:</p>
+        <ul>
+          <li>Ocean freight, predicted per tonne by the trained model</li>
+          <li>Deadfreight on booked space left unfilled beyond tolerance</li>
+          <li>Vessel hire across sea days and time in port</li>
+          <li>Port dues, and demurrage beyond agreed laytime</li>
+          <li>Lightering where a berth is draft-restricted</li>
+          <li>Inland rail evacuation to the receiving plant</li>
+        </ul>
+      </div>
+      <div class="about-card">
+        <div class="about-kicker">Stage 03</div>
+        <h4>Risk Scoring</h4>
+        <p>A 0&ndash;100 index blends berth congestion (30%), seasonal monsoon and cyclone exposure
+        (25%), freight-market volatility (25%) and under-keel margin (20%). Options are then ranked
+        on risk-adjusted landed cost, so a marginally cheaper berth does not win on price alone when
+        it carries materially higher exposure.</p>
+      </div>
+      <div class="about-card">
+        <div class="about-kicker">Stage 04</div>
+        <h4>Disruption Testing</h4>
+        <p>The selected strategy is re-priced under cyclone alerts, monsoon delay, primary port
+        closure, freight and bunker spikes, and tonnage unavailability. Each run reports the cost
+        delta against baseline together with a mitigation.</p>
       </div>
     </div>
 
-    <!-- 3 PILLARS GRID -->
-    <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(320px, 1fr));gap:18px;margin-bottom:24px;">
-      <!-- CARD 1 -->
-      <div style="background:var(--bg-subtle);border:1px solid var(--steel-border);border-radius:10px;padding:18px;">
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
-          <span style="font-size:16px;">🌐</span>
-          <h4 style="margin:0;font-size:14px;color:var(--navy-deep);font-family:'Space Grotesk';">1. Public &amp; Regulatory Benchmarks</h4>
-          <span style="margin-left:auto;font-size:10px;font-weight:700;background:var(--green-bg);color:var(--green);padding:2px 8px;border-radius:10px;border:1px solid var(--green-border);">REAL / PUBLIC</span>
-        </div>
-        <ul style="font-size:12px;color:var(--steel-dark);line-height:1.65;padding-left:18px;margin:0;">
-          <li><b>Baltic Dry Index (BDI / C5 Capesize):</b> Real-world dry-bulk freight benchmark standards published by the Baltic Exchange.</li>
-          <li><b>Major Port Scale of Rates (SOR):</b> Vessel handling charges, berth hire, and pilotage from the Tariff Authority for Major Ports (TAMP) / Indian Ports Association (IPA).</li>
-          <li><b>Admiralty Maritime Distance Tables:</b> Nautical mile (nm) distances and coordinates published by the International Hydrographic Organization (IHO) and NGA.</li>
-          <li><b>Indian Railways FOIS Freight Circulars:</b> Distance-based rail freight tariff tables for coking coal and iron ore evacuation to SAIL steel plants.</li>
-        </ul>
+    <div class="section-header">
+      <div>
+        <h2>Data Governance &amp; Provenance</h2>
+        <p>Every figure carries a classification. Nothing on this platform is presented as live operational data.</p>
       </div>
+      <span class="section-tag">Transparency</span>
+    </div>
 
-      <!-- CARD 2 -->
-      <div style="background:var(--bg-subtle);border:1px solid var(--steel-border);border-radius:10px;padding:18px;">
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
-          <span style="font-size:16px;">📊</span>
-          <h4 style="margin:0;font-size:14px;color:var(--navy-deep);font-family:'Space Grotesk';">2. Calibrated Industry Baselines</h4>
-          <span style="margin-left:auto;font-size:10px;font-weight:700;background:var(--blue-bg);color:var(--blue);padding:2px 8px;border-radius:10px;border:1px solid var(--blue-border);">CALIBRATED</span>
-        </div>
-        <ul style="font-size:12px;color:var(--steel-dark);line-height:1.65;padding-left:18px;margin:0;">
-          <li><b>FOB Coking Coal Benchmark Prices:</b> Historical commodity price corridors derived from S&amp;P Global Platts and Argus Media ($240–$285/MT).</li>
-          <li><b>Marine Fuel Prices (0.5% VLSFO):</b> Bunkering spot prices benchmarked against Singapore and Fujairah bunkering ports ($580–$660/MT).</li>
-          <li><b>Vessel Specifications &amp; Drafts:</b> Standard naval architecture dimensions for Handysize, Supramax, Panamax, and Capesize bulk carriers.</li>
-          <li><b>Seasonal Monsoon Delay Factors:</b> Historical meteorological downtime distributions for Bay of Bengal ports (June–September).</li>
-        </ul>
+    <div class="about-grid">
+      <div class="about-card">
+        <div class="about-kicker"><span class="tag tag-public">Public / Regulatory</span></div>
+        <h4>Published Benchmarks</h4>
+        <p>Port draft, length-overall limits, mechanised handling rates and statutory tariff
+        structures follow figures published by the Ministry of Ports, Shipping and Waterways and the
+        Indian Ports Association. Freight benchmarks follow published dry-bulk indices.</p>
       </div>
-
-      <!-- CARD 3 -->
-      <div style="background:var(--bg-subtle);border:1px solid var(--steel-border);border-radius:10px;padding:18px;">
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
-          <span style="font-size:16px;">🧪</span>
-          <h4 style="margin:0;font-size:14px;color:var(--navy-deep);font-family:'Space Grotesk';">3. Synthetic &amp; Stress Simulation</h4>
-          <span style="margin-left:auto;font-size:10px;font-weight:700;background:var(--saffron-bg);color:var(--saffron-dark);padding:2px 8px;border-radius:10px;border:1px solid var(--saffron-border);">SIMULATED</span>
-        </div>
-        <ul style="font-size:12px;color:var(--steel-dark);line-height:1.65;padding-left:18px;margin:0;">
-          <li><b>Simulation Requisition Parcels:</b> Simulated SAIL procurement batches (25,000–180,000 MT) for Rourkela, Bhilai, Durgapur, Bokaro, and Burnpur.</li>
-          <li><b>Disruption Injection Matrix:</b> Synthetic scenario testing for Cyclone Warnings (Odisha Coast), Primary Port Closures, and Freight Spikes (+20%).</li>
-          <li><b>Minimax-Regret Score Engine:</b> Multi-scenario cost and supply continuity optimizer designed for automated decision resilience.</li>
-          <li><b>ML Gradient Boosting Regressor:</b> Trained on 1,500 calibrated voyage records with 8 feature encodings ($R^2 = 0.9891$).</li>
-        </ul>
+      <div class="about-card">
+        <div class="about-kicker"><span class="tag tag-calib">Calibrated Baseline</span></div>
+        <h4>Derived Parameters</h4>
+        <p>Bunker price corridors, rail evacuation tariffs, demurrage rates and laytime conventions
+        are calibrated against published ranges and held as configurable constants in the service
+        rather than hard-coded into the interface.</p>
+      </div>
+      <div class="about-card">
+        <div class="about-kicker"><span class="tag tag-synth">Synthetic</span></div>
+        <h4>Model Training Data</h4>
+        <p>The freight-rate model is a gradient-boosted regressor trained on 1,500 calibrated voyage
+        records across four origin lanes. The dataset is synthetic and benchmark-calibrated. Every
+        API response carrying a prediction declares this in a <span class="mono">data_source</span>
+        field.</p>
       </div>
     </div>
 
-    <!-- REFERENCE TABLE -->
-    <div style="overflow-x:auto;">
-      <table style="width:100%;border-collapse:collapse;text-align:left;font-size:12px;">
+    <div class="about-card" style="margin-bottom:20px;">
+      <h4>Statement on Data Limitations</h4>
+      <p style="margin-top:8px;">
+        This is a prototype. It does not connect to SAIL procurement systems, does not receive live
+        AIS vessel positions, and does not quote real charter rates. The historical leg of the
+        freight chart is the model's own response for past dates, not observed market data. Where
+        the decision service cannot be reached, the interface falls back to a local approximation
+        and marks itself <b>Offline Estimate</b> in the header, so an estimate is never presented as
+        a model output. Figures are suitable for demonstrating method, not for executing charters.
+      </p>
+    </div>
+
+    <div class="section-header">
+      <div>
+        <h2>Reference Register</h2>
+        <p>Datasets, reference authorities and how each is applied in the platform.</p>
+      </div>
+      <span class="section-tag">Sources</span>
+    </div>
+
+    <div style="overflow-x:auto;border:1px solid var(--gov-line);border-radius:var(--radius);">
+      <table class="gov-table">
         <thead>
-          <tr style="background:var(--bg-subtle);border-bottom:2px solid var(--steel-border);">
-            <th style="padding:10px 12px;font-weight:700;color:var(--navy-deep);font-family:'Space Grotesk';">Dataset / Metric</th>
-            <th style="padding:10px 12px;font-weight:700;color:var(--navy-deep);font-family:'Space Grotesk';">Primary Reference Authority</th>
-            <th style="padding:10px 12px;font-weight:700;color:var(--navy-deep);font-family:'Space Grotesk';">Data Classification</th>
-            <th style="padding:10px 12px;font-weight:700;color:var(--navy-deep);font-family:'Space Grotesk';">Frequency / Baseline</th>
-            <th style="padding:10px 12px;font-weight:700;color:var(--navy-deep);font-family:'Space Grotesk';">System Application</th>
+          <tr>
+            <th>Dataset / Metric</th>
+            <th>Primary Reference Authority</th>
+            <th>Classification</th>
+            <th>Frequency / Baseline</th>
+            <th>System Application</th>
           </tr>
         </thead>
         <tbody>
-          <tr style="border-bottom:1px solid var(--steel-border);">
-            <td style="padding:10px 12px;"><b>Baltic Capesize Index (C5 / C3)</b></td>
-            <td style="padding:10px 12px;">Baltic Exchange / S&amp;P Global Commodity Insights</td>
-            <td style="padding:10px 12px;"><span style="background:var(--green-bg);color:var(--green);padding:2px 8px;border-radius:10px;font-weight:700;font-size:10.5px;">Public Benchmark</span></td>
-            <td style="padding:10px 12px;color:var(--steel-muted);">Daily Market Index</td>
-            <td style="padding:10px 12px;">Freight Forecasting &amp; P10/P50/P90 Confidence Bands</td>
-          </tr>
-          <tr style="border-bottom:1px solid var(--steel-border);">
-            <td style="padding:10px 12px;"><b>Indian Major Ports Draft &amp; Tariff</b></td>
-            <td style="padding:10px 12px;">Ministry of Ports, Shipping and Waterways / IPA</td>
-            <td style="padding:10px 12px;"><span style="background:var(--green-bg);color:var(--green);padding:2px 8px;border-radius:10px;font-weight:700;font-size:10.5px;">Regulatory Tariff</span></td>
-            <td style="padding:10px 12px;color:var(--steel-muted);">Statutory SOR 2024–26</td>
-            <td style="padding:10px 12px;">Port Compatibility, Berth Charges &amp; Demurrage Calculations</td>
-          </tr>
-          <tr style="border-bottom:1px solid var(--steel-border);">
-            <td style="padding:10px 12px;"><b>Nautical Distances &amp; Waypoints</b></td>
-            <td style="padding:10px 12px;">Admiralty Maritime Distance Tables / IHO</td>
-            <td style="padding:10px 12px;"><span style="background:var(--green-bg);color:var(--green);padding:2px 8px;border-radius:10px;font-weight:700;font-size:10.5px;">Standard Reference</span></td>
-            <td style="padding:10px 12px;color:var(--steel-muted);">Static Distance Matrix</td>
-            <td style="padding:10px 12px;">Interactive Map Route Paths &amp; Voyage Transit Days</td>
-          </tr>
-          <tr style="border-bottom:1px solid var(--steel-border);">
-            <td style="padding:10px 12px;"><b>Indian Railways Steel Plant Tariffs</b></td>
-            <td style="padding:10px 12px;">Railway Board / FOIS (Freight Operations Information System)</td>
-            <td style="padding:10px 12px;"><span style="background:var(--blue-bg);color:var(--blue);padding:2px 8px;border-radius:10px;font-weight:700;font-size:10.5px;">Calibrated Model</span></td>
-            <td style="padding:10px 12px;color:var(--steel-muted);">Trainload Class 140 / 150</td>
-            <td style="padding:10px 12px;">Inland Evacuation &amp; Total Landed Cost (TLC) Computation</td>
+          <tr>
+            <td><b>Baltic Capesize Index (C5 / C3)</b></td>
+            <td>Baltic Exchange / S&amp;P Global Commodity Insights</td>
+            <td><span class="tag tag-public">Public Benchmark</span></td>
+            <td>Daily Market Index</td>
+            <td>Freight Forecasting &amp; P10/P50/P90 Confidence Bands</td>
           </tr>
           <tr>
-            <td style="padding:10px 12px;"><b>SAIL Requisition &amp; Disruption Scenarios</b></td>
-            <td style="padding:10px 12px;">LOHA-DRISHTI Simulation Engine (SIH PS 26006)</td>
-            <td style="padding:10px 12px;"><span style="background:var(--saffron-bg);color:var(--saffron-dark);padding:2px 8px;border-radius:10px;font-weight:700;font-size:10.5px;">Synthetic</span></td>
-            <td style="padding:10px 12px;color:var(--steel-muted);">Parameterized Generator</td>
-            <td style="padding:10px 12px;">Interactive Hackathon Demonstrator &amp; What-If Engine</td>
+            <td><b>Indian Major Ports Draft &amp; Tariff</b></td>
+            <td>Ministry of Ports, Shipping and Waterways / IPA</td>
+            <td><span class="tag tag-calib">Regulatory Tariff</span></td>
+            <td>Statutory SOR 2024–26</td>
+            <td>Port Compatibility, Berth Charges &amp; Demurrage Calculations</td>
+          </tr>
+          <tr>
+            <td><b>Nautical Distances &amp; Waypoints</b></td>
+            <td>Admiralty Maritime Distance Tables / IHO</td>
+            <td><span class="tag tag-calib">Standard Reference</span></td>
+            <td>Static Distance Matrix</td>
+            <td>Interactive Map Route Paths &amp; Voyage Transit Days</td>
+          </tr>
+          <tr>
+            <td><b>Indian Railways Steel Plant Tariffs</b></td>
+            <td>Railway Board / FOIS (Freight Operations Information System)</td>
+            <td><span class="tag tag-calib">Calibrated Model</span></td>
+            <td>Trainload Class 140 / 150</td>
+            <td>Inland Evacuation &amp; Total Landed Cost (TLC) Computation</td>
+          </tr>
+          <tr>
+            <td><b>SAIL Requisition &amp; Disruption Scenarios</b></td>
+            <td>LOHA-DRISHTI Simulation Engine (SIH PS 26006)</td>
+            <td><span class="tag tag-synth">Synthetic</span></td>
+            <td>Parameterized Generator</td>
+            <td>Interactive Hackathon Demonstrator &amp; What-If Engine</td>
           </tr>
         </tbody>
       </table>
     </div>
+
+    <div class="about-grid" style="margin-top:20px;">
+      <div class="about-card">
+        <div class="about-kicker">Accessibility</div>
+        <h4>Compliance Notes</h4>
+        <p>Text size can be adjusted from the utility strip above. The interface provides a
+        skip-to-content link, keyboard-reachable navigation, and colour contrast that does not rely
+        on hue alone to convey status. Motion is reduced automatically where the operating system
+        requests it.</p>
+      </div>
+      <div class="about-card">
+        <div class="about-kicker">Verification</div>
+        <h4>Assurance</h4>
+        <p>A live test battery runs in-process and is published on the
+        <a href="/verification" style="color:var(--blue);">System Verification</a> page, covering
+        authentication, database integrity, the model pipeline and the decision engine. The
+        OpenAPI specification is available at <a href="/docs" style="color:var(--blue);">/docs</a>.</p>
+      </div>
+    </div>
+
   </div>
 </div>
 
-<footer>
-  LOHA DRISHTI · SIH Finalist Prototype for PS 26006 (Ministry of Steel / SAIL)<br>
-  Designed by Senior Indian Logistics &amp; Data Science Team · <span class="data-disclaimer">⚠ All freight rates, cost figures, port wait times, vessel data, and savings are derived from a DETERMINISTIC SYNTHETIC dry-bulk model. No live SAIL operational data, real vessel positions, live freight quotes, or actual savings are claimed or represented.</span>
+<footer class="gov-footer">
+  <div class="gov-footer-inner">
+    <div class="gov-footer-cols">
+      <div>
+        <h5>Decision Support</h5>
+        <ul>
+          <li><a onclick="switchPanel('command')">Command Centre</a></li>
+          <li><a onclick="switchPanel('intelligence')">Freight Intelligence</a></li>
+          <li><a onclick="switchPanel('scenarios')">What-If Simulator</a></li>
+        </ul>
+      </div>
+      <div>
+        <h5>Infrastructure</h5>
+        <ul>
+          <li><a onclick="switchPanel('ports')">Port Profiles</a></li>
+          <li><a onclick="switchPanel('vessels')">Vessel Fit</a></li>
+          <li><a onclick="switchPanel('international-waterways')">International Waterways</a></li>
+        </ul>
+      </div>
+      <div>
+        <h5>Transparency</h5>
+        <ul>
+          <li><a onclick="switchPanel('about')">About the Platform</a></li>
+          <li><a onclick="switchPanel('about')">Data Sources &amp; Governance</a></li>
+          <li><a href="/verification">System Verification</a></li>
+          <li><a href="/docs">API Documentation</a></li>
+        </ul>
+      </div>
+      <div>
+        <h5>Organisation</h5>
+        <ul>
+          <li>Ministry of Steel</li>
+          <li>Steel Authority of India Limited</li>
+          <li>Problem Statement 26006</li>
+        </ul>
+      </div>
+    </div>
+    <div class="gov-footer-base">
+      <div class="gov-footer-note">
+        <b>Disclaimer.</b> All freight rates, cost figures, port waiting times, vessel data and
+        savings shown are produced by a deterministic synthetic dry-bulk model. No live SAIL
+        operational data, real-time vessel positions, live freight quotations or realised savings
+        are claimed or represented.
+      </div>
+      <div>LOHA DRISHTI &middot; Prototype for PS 26006<br>Ministry of Steel / SAIL</div>
+    </div>
+  </div>
 </footer>
+
+</main>
+</div><!-- /.app-shell -->
+
+<!-- ===== AI COPILOT LAUNCHER ===== -->
+<button class="copilot-fab" id="copilotFab" onclick="openCopilot()" aria-label="Open AI Copilot">
+  <svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 00-9 9c0 1.6.4 3.1 1.2 4.4L3 21l4.8-1.2A9 9 0 1012 3z"/><path d="M9 11h.01M12 11h.01M15 11h.01"/></svg>
+  <span class="fab-dot" aria-hidden="true"></span>
+</button>
+<span class="copilot-fab-label" aria-hidden="true">Ask the AI Copilot</span>
+
 
 <!-- EDIT CARGO DRAWER (LEFT) -->
 <div class="drawer-left" id="editCargoDrawer">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
-    <h3 style="margin:0;font-size:17px;color:var(--navy-deep);">✏️ Edit Cargo Requirements</h3>
+    <h3 style="margin:0;font-size:17px;color:var(--navy-deep);">Edit Cargo Requirements</h3>
     <button class="close-btn" onclick="closeDrawerById('editCargoDrawer')">✕</button>
   </div>
 
@@ -1029,7 +1377,7 @@ footer .data-disclaimer{font-size:10.5px;color:var(--steel-light);margin-top:6px
     </div>
 
     <div style="display:flex;flex-direction:column;gap:8px;margin-top:6px;">
-      <button class="btn-optimize" style="padding:12px;justify-content:center;" id="drawerSaveBtn">⚡ APPLY &amp; OPTIMIZE STRATEGY</button>
+      <button class="btn-optimize" style="padding:12px;justify-content:center;" id="drawerSaveBtn">Apply &amp; Re-optimise</button>
       <button class="icon-btn" style="justify-content:center;" onclick="closeDrawerById('editCargoDrawer')">Cancel</button>
     </div>
   </div>
@@ -1038,12 +1386,12 @@ footer .data-disclaimer{font-size:10.5px;color:var(--steel-light);margin-top:6px
 <!-- NOTIFICATION DRAWER (RIGHT) -->
 <div class="drawer-right" id="notifyDrawer">
   <div class="drawer-header">
-    <div style="font-weight:700;font-family:'Space Grotesk';">Live Risk &amp; Market Alerts 🔔</div>
+    <div style="font-weight:700;font-family:'Space Grotesk';">Live Risk &amp; Market Alerts</div>
     <button class="close-btn" style="color:#FFF;" onclick="closeDrawerById('notifyDrawer')">✕</button>
   </div>
   <div class="drawer-body">
     <div style="background:var(--saffron-bg);border:1px solid var(--saffron-border);padding:10px 12px;border-radius:8px;font-size:12px;">
-      <b style="color:var(--saffron-dark);">⚠️ Odisha Coast Monsoon Active</b><br>
+      <b style="color:var(--saffron-dark);">Odisha Coast Monsoon Active</b><br>
       Paradip &amp; Dhamra wait times elevated (+1.7× delay multiplier applied in model).
       <div style="font-size:10.5px;color:var(--steel-muted);margin-top:4px;">Source: SYNTHETIC · Aug 2026</div>
     </div>
@@ -1053,7 +1401,7 @@ footer .data-disclaimer{font-size:10.5px;color:var(--steel-light);margin-top:6px
       <div style="font-size:10.5px;color:var(--steel-muted);margin-top:4px;">Source: SYNTHETIC · Aug 2026</div>
     </div>
     <div style="background:var(--red-bg);border:1px solid var(--red-border);padding:10px 12px;border-radius:8px;font-size:12px;">
-      <b style="color:var(--red);">🚢 Capesize Spot Tightening</b><br>
+      <b style="color:var(--red);">Capesize Spot Tightening</b><br>
       Baltic Capesize Index up 8.2% this week. Consider locking contract now.
       <div style="font-size:10.5px;color:var(--steel-muted);margin-top:4px;">Source: SYNTHETIC · Aug 2026</div>
     </div>
@@ -1064,7 +1412,7 @@ footer .data-disclaimer{font-size:10.5px;color:var(--steel-light);margin-top:6px
 <div class="drawer-right" id="copilotDrawer">
   <div class="drawer-header">
     <div>
-      <div style="font-weight:700;font-family:'Space Grotesk';font-size:15px;">❓ Questions &amp; AI Copilot 🧠</div>
+      <div style="font-weight:700;font-family:'Space Grotesk';font-size:15px;">Questions &amp; AI Copilot</div>
       <div style="font-size:11px;color:rgba(255,255,255,0.8);">Ask Any Maritime, Cost, Port, Vessel, or Strategy Question</div>
     </div>
     <button class="close-btn" style="color:#FFF;" onclick="closeDrawerById('copilotDrawer')">✕</button>
@@ -1077,30 +1425,30 @@ footer .data-disclaimer{font-size:10.5px;color:var(--steel-light);margin-top:6px
         <li>Why a specific route or vessel class was selected</li>
         <li>How demurrage, port queues, and monsoon factors are calculated</li>
         <li>What happens during disruptions (Cyclone, Freight Spike)</li>
-        <li>Minimax-Regret mathematical logic and risk exposure</li>
+        <li>How options are ranked, and how risk exposure is scored</li>
       </ul>
     </div>
   </div>
-  <div id="copilotTyping" class="copilot-typing" style="display:none;padding:4px 14px;font-size:11px;color:var(--saffron-dark);">⚡ AI Copilot is analyzing logistics parameters...</div>
+  <div id="copilotTyping" class="copilot-typing" style="display:none;padding:4px 14px;font-size:11px;color:var(--saffron-dark);">AI Copilot is analyzing logistics parameters...</div>
   
   <!-- INTERACTIVE INPUT AREA -->
   <div style="padding:10px 14px;border-top:1px solid var(--steel-border);background:var(--bg-main);display:flex;gap:8px;">
     <input type="text" id="copilotCustomInput" placeholder="Type your question here (e.g. Why Dhamra over Haldia?)..." style="flex:1;padding:9px 12px;border:1px solid var(--steel-border);border-radius:6px;font-size:12px;box-sizing:border-box;" onkeydown="if(event.key==='Enter') submitCustomCopilotQuery()">
-    <button class="btn-optimize" style="padding:9px 14px;font-size:12px;justify-content:center;" onclick="submitCustomCopilotQuery()">Ask ➔</button>
+    <button class="btn-optimize" style="padding:9px 14px;font-size:12px;justify-content:center;" onclick="submitCustomCopilotQuery()">Ask →</button>
   </div>
 
   <!-- QUICK QUESTION PILLS -->
   <div class="copilot-prompts" style="padding:10px 14px;border-top:1px solid var(--steel-border);max-height:160px;overflow-y:auto;">
     <div style="font-size:10.5px;font-weight:700;color:var(--steel-muted);text-transform:uppercase;margin-bottom:6px;">Suggested Questions:</div>
-    <button class="prompt-btn" onclick="askCopilot('Why this vessel class?')">🚢 Why was this vessel class selected?</button>
-    <button class="prompt-btn" onclick="askCopilot('Why not Paradip port?')">⚓ Why not Paradip port?</button>
-    <button class="prompt-btn" onclick="askCopilot('Why not Haldia port?')">🏗️ Why is Haldia draft restricted?</button>
-    <button class="prompt-btn" onclick="askCopilot('What if freight spikes by 20%?')">📈 What if freight spikes by 20%?</button>
-    <button class="prompt-btn" onclick="askCopilot('How does Minimax-Regret work?')">📐 How does the Minimax-Regret math work?</button>
-    <button class="prompt-btn" onclick="askCopilot('How is the Risk Index calculated?')">🛡️ How is the Risk Index calculated?</button>
-    <button class="prompt-btn" onclick="askCopilot('What is Supply Continuity score?')">📦 What is Supply Continuity confidence?</button>
-    <button class="prompt-btn" onclick="askCopilot('How is Demurrage computed?')">⏳ How is Demurrage cost calculated?</button>
-    <button class="prompt-btn" onclick="askCopilot('What is the best route for Rourkela?')">🏭 What is the optimal route for Rourkela?</button>
+    <button class="prompt-btn" onclick="askCopilot('Why this vessel class?')">Why was this vessel class selected?</button>
+    <button class="prompt-btn" onclick="askCopilot('Why not Paradip port?')">Why not Paradip port?</button>
+    <button class="prompt-btn" onclick="askCopilot('Why not Haldia port?')">Why is Haldia draft restricted?</button>
+    <button class="prompt-btn" onclick="askCopilot('What if freight spikes by 20%?')">What if freight spikes by 20%?</button>
+    <button class="prompt-btn" onclick="askCopilot('How does Minimax-Regret work?')">How are competing strategies ranked?</button>
+    <button class="prompt-btn" onclick="askCopilot('How is the Risk Index calculated?')">How is the Risk Index calculated?</button>
+    <button class="prompt-btn" onclick="askCopilot('What is Supply Continuity score?')">What is Supply Continuity confidence?</button>
+    <button class="prompt-btn" onclick="askCopilot('How is Demurrage computed?')">How is Demurrage cost calculated?</button>
+    <button class="prompt-btn" onclick="askCopilot('What is the best route for Rourkela?')">What is the optimal route for Rourkela?</button>
   </div>
 </div>
 
@@ -1108,19 +1456,19 @@ footer .data-disclaimer{font-size:10.5px;color:var(--steel-light);margin-top:6px
 <div class="modal-overlay" id="searchModal">
   <div class="modal-box">
     <div class="modal-header">
-      <h3>Quick Jump &amp; Module Search 🔍</h3>
+      <h3>Quick Jump &amp; Module Search</h3>
       <button class="close-btn" onclick="closeModal('searchModal')">✕</button>
     </div>
     <input id="globalSearchInput" type="search" placeholder="Search waterway, vessel, port or region" oninput="runGlobalSearch(this.value)" style="width:100%;padding:10px 12px;border:1px solid var(--steel-border);border-radius:6px;font-size:12px;margin-bottom:10px;">
     <div id="globalSearchResults" style="display:none;margin-bottom:10px;"></div>
     <div style="display:flex;flex-direction:column;gap:7px;">
-      <button class="prompt-btn" onclick="closeModal('searchModal');switchPanel('command')">➔ Command Center (Executive Decision)</button>
-      <button class="prompt-btn" onclick="closeModal('searchModal');switchPanel('scenarios')">➔ What-If Disruption Simulator</button>
-      <button class="prompt-btn" onclick="closeModal('searchModal');switchPanel('command');setTimeout(()=>document.getElementById('battle-section').scrollIntoView({behavior:'smooth'}),300)">➔ Strategy Battle Comparison Table</button>
-      <button class="prompt-btn" onclick="closeModal('searchModal');switchPanel('intelligence')">➔ Freight Intelligence &amp; Forecast</button>
-      <button class="prompt-btn" onclick="closeModal('searchModal');switchPanel('ports')">➔ Port DNA Profiles</button>
-      <button class="prompt-btn" onclick="closeModal('searchModal');switchPanel('vessels')">➔ Vessel Class Compatibility</button>
-      <button class="prompt-btn" onclick="closeModal('searchModal');openCopilot()">➔ AI Copilot</button>
+      <button class="prompt-btn" onclick="closeModal('searchModal');switchPanel('command')">→ Command Centre (Executive Decision)</button>
+      <button class="prompt-btn" onclick="closeModal('searchModal');switchPanel('scenarios')">→ What-If Disruption Simulator</button>
+      <button class="prompt-btn" onclick="closeModal('searchModal');switchPanel('command');setTimeout(()=>document.getElementById('battle-section').scrollIntoView({behavior:'smooth'}),300)">→ Strategy Battle Comparison Table</button>
+      <button class="prompt-btn" onclick="closeModal('searchModal');switchPanel('intelligence')">→ Freight Intelligence &amp; Forecast</button>
+      <button class="prompt-btn" onclick="closeModal('searchModal');switchPanel('ports')">→ Port DNA Profiles</button>
+      <button class="prompt-btn" onclick="closeModal('searchModal');switchPanel('vessels')">→ Vessel Class Compatibility</button>
+      <button class="prompt-btn" onclick="closeModal('searchModal');openCopilot()">→ AI Copilot</button>
     </div>
   </div>
 </div>
@@ -1129,7 +1477,7 @@ footer .data-disclaimer{font-size:10.5px;color:var(--steel-light);margin-top:6px
 <div class="modal-overlay" id="riskModal">
   <div class="modal-box">
     <div class="modal-header">
-      <h3>Risk Index Score Breakdown 🛡️</h3>
+      <h3>Risk Index Score Breakdown</h3>
       <button class="close-btn" onclick="closeModal('riskModal')">✕</button>
     </div>
     <div style="font-size:13px;line-height:1.6;color:var(--steel-dark);" id="riskModalContent">
@@ -1147,7 +1495,7 @@ footer .data-disclaimer{font-size:10.5px;color:var(--steel-light);margin-top:6px
 <div class="modal-overlay" id="continuityModal">
   <div class="modal-box">
     <div class="modal-header">
-      <h3>Supply Continuity Score 📦</h3>
+      <h3>Supply Continuity Score</h3>
       <button class="close-btn" onclick="closeModal('continuityModal')">✕</button>
     </div>
     <div style="font-size:13px;line-height:1.6;color:var(--steel-dark);" id="continuityModalContent">
@@ -1160,7 +1508,7 @@ footer .data-disclaimer{font-size:10.5px;color:var(--steel-light);margin-top:6px
       <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px;">
         <div style="background:var(--bg-subtle);border:1px solid var(--steel-border);border-radius:8px;padding:10px 12px;">
           <div style="display:flex;justify-content:space-between;font-weight:600;font-size:12px;color:var(--navy-deep);">
-            <span>⚓ 1. Deep-Water Berth Availability (40%)</span>
+            <span>1. Deep-Water Berth Availability (40%)</span>
             <span style="color:var(--green);font-weight:700;">HIGH RELIABILITY</span>
           </div>
           <p style="font-size:11px;color:var(--steel-muted);margin:3px 0 0;">Dedicated mechanized bulk berths at Dhamra & Gangavaram prevent multi-day anchor hold-ups.</p>
@@ -1168,7 +1516,7 @@ footer .data-disclaimer{font-size:10.5px;color:var(--steel-light);margin-top:6px
 
         <div style="background:var(--bg-subtle);border:1px solid var(--steel-border);border-radius:8px;padding:10px 12px;">
           <div style="display:flex;justify-content:space-between;font-weight:600;font-size:12px;color:var(--navy-deep);">
-            <span>⛈️ 2. Weather & Cyclone Resilience (30%)</span>
+            <span>2. Weather & Cyclone Resilience (30%)</span>
             <span style="color:var(--green);font-weight:700;">BUFFERED</span>
           </div>
           <p style="font-size:11px;color:var(--steel-muted);margin:3px 0 0;">Engine selects all-weather deep water ports with backup road/rail diversion pathways.</p>
@@ -1176,7 +1524,7 @@ footer .data-disclaimer{font-size:10.5px;color:var(--steel-light);margin-top:6px
 
         <div style="background:var(--bg-subtle);border:1px solid var(--steel-border);border-radius:8px;padding:10px 12px;">
           <div style="display:flex;justify-content:space-between;font-weight:600;font-size:12px;color:var(--navy-deep);">
-            <span>📐 3. Minimax-Regret Multi-Scenario Margin (20%)</span>
+            <span>3. Multi-Scenario Resilience Margin (20%)</span>
             <span style="color:var(--green);font-weight:700;">OPTIMIZED</span>
           </div>
           <p style="font-size:11px;color:var(--steel-muted);margin:3px 0 0;">Selected strategy guarantees the minimum financial loss in the event of freight spikes or port disruptions.</p>
@@ -1184,7 +1532,7 @@ footer .data-disclaimer{font-size:10.5px;color:var(--steel-light);margin-top:6px
 
         <div style="background:var(--bg-subtle);border:1px solid var(--steel-border);border-radius:8px;padding:10px 12px;">
           <div style="display:flex;justify-content:space-between;font-weight:600;font-size:12px;color:var(--navy-deep);">
-            <span>🚆 4. Inland Rail Wagon Turnaround (10%)</span>
+            <span>4. Inland Rail Wagon Turnaround (10%)</span>
             <span style="color:var(--green);font-weight:700;">DIRECT FOIS RAKE</span>
           </div>
           <p style="font-size:11px;color:var(--steel-muted);margin:3px 0 0;">Direct rake loading at port railheads ensures smooth dispatch to SAIL plant silos.</p>
@@ -1192,7 +1540,7 @@ footer .data-disclaimer{font-size:10.5px;color:var(--steel-light);margin-top:6px
       </div>
 
       <div style="background:var(--bg-subtle);padding:10px;border-radius:6px;font-size:11.5px;color:var(--steel-dark);border:1px solid var(--steel-border);">
-        💡 <b>Recommendation:</b> Maintain a minimum <b>15-day raw material yard buffer</b> during monsoon months (June–September) to guarantee uninterrupted hot-metal production.
+        <b>Recommendation:</b>Maintain a minimum<b>15-day raw material yard buffer</b>during monsoon months (June–September) to guarantee uninterrupted hot-metal production.
       </div>
     </div>
   </div>
@@ -1202,14 +1550,14 @@ footer .data-disclaimer{font-size:10.5px;color:var(--steel-light);margin-top:6px
 <div class="modal-overlay" id="exportModal">
   <div class="modal-box" style="max-width:720px;">
     <div class="modal-header">
-      <h3>Executive Strategy Report 📄</h3>
+      <h3>Executive Strategy Report</h3>
       <button class="close-btn" onclick="closeModal('exportModal')">✕</button>
     </div>
     <div id="exportReportBody" style="font-size:13px;line-height:1.7;color:var(--navy-deep);background:var(--bg-subtle);padding:16px;border-radius:8px;border:1px solid var(--steel-border);margin-bottom:14px;">
       <h4>SAIL MARITIME CARGO CHARTERING STRATEGY REPORT</h4>
       <p>Run optimization first to populate the executive report.</p>
     </div>
-    <button class="btn-optimize" onclick="window.print();">🖨️ PRINT / DOWNLOAD REPORT</button>
+    <button class="btn-optimize" onclick="window.print();">Print / Download Report</button>
   </div>
 </div>
 
@@ -1248,27 +1596,27 @@ footer .data-disclaimer{font-size:10.5px;color:var(--steel-light);margin-top:6px
       </div>
 
       <button id="btnModalLogin" onclick="submitModalLogin()" class="btn-optimize" style="width:100%;padding:10px;justify-content:center;font-size:13px;">
-        🔒 AUTHENTICATE &amp; SIGN IN
+        Authenticate &amp; Sign In
       </button>
 
       <!-- 1-CLICK QUICK ACCESS -->
       <div style="margin-top:16px;padding-top:12px;border-top:1px solid var(--steel-border);">
-        <div style="font-size:11px;font-weight:700;color:var(--saffron-dark);text-transform:uppercase;margin-bottom:6px;">⚡ 1-Click Pre-loaded Roles</div>
+        <div style="font-size:11px;font-weight:700;color:var(--saffron-dark);text-transform:uppercase;margin-bottom:6px;">Pre-loaded Roles</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
           <button type="button" class="prompt-btn" style="text-align:left;padding:6px 8px;" onclick="modalQuickFill('admin@sail.gov.in','12345','Chief Logistics Officer')">
-            <strong style="color:var(--navy-deep);font-size:11px;">👤 Admin (CLO)</strong>
+            <strong style="color:var(--navy-deep);font-size:11px;">Admin (CLO)</strong>
             <div style="font-size:9.5px;color:var(--steel-muted);">admin@sail.gov.in</div>
           </button>
           <button type="button" class="prompt-btn" style="text-align:left;padding:6px 8px;" onclick="modalQuickFill('analyst@sail.gov.in','12345','Senior Chartering Analyst')">
-            <strong style="color:var(--navy-deep);font-size:11px;">📊 Analyst</strong>
+            <strong style="color:var(--navy-deep);font-size:11px;">Analyst</strong>
             <div style="font-size:9.5px;color:var(--steel-muted);">analyst@sail.gov.in</div>
           </button>
           <button type="button" class="prompt-btn" style="text-align:left;padding:6px 8px;" onclick="modalQuickFill('officer@sail.gov.in','12345','Procurement Officer')">
-            <strong style="color:var(--navy-deep);font-size:11px;">📦 Officer</strong>
+            <strong style="color:var(--navy-deep);font-size:11px;">Officer</strong>
             <div style="font-size:9.5px;color:var(--steel-muted);">officer@sail.gov.in</div>
           </button>
           <button type="button" class="prompt-btn" style="text-align:left;padding:6px 8px;border-color:var(--saffron-border);background:var(--saffron-bg);" onclick="modalQuickFill('guest@sail.gov.in','12345','Guest Officer')">
-            <strong style="color:var(--saffron-dark);font-size:11px;">🚀 Instant Guest</strong>
+            <strong style="color:var(--saffron-dark);font-size:11px;">Instant Guest</strong>
             <div style="font-size:9.5px;color:var(--saffron);">Direct Entry</div>
           </button>
         </div>
@@ -1823,17 +2171,17 @@ const WATERFALL_COLORS={
 function renderWaterfallBars(base,qty){
   const mult=isTotalCostMode?qty:1;
   const items=[
-    {key:'fob',         icon:"📦", label:"Cargo FOB Price", desc:"Base commodity cost at load port"},
-    {key:'freight',     icon:"🚢", label:"Ocean Freight", desc:"Vessel chartering / voyage fixture"},
-    {key:'vesselHire',         icon:"🚢", label:"Vessel Hire", desc:"Daily hire across sea days plus time in port"},
-    {key:'deadfreight',        icon:"📦", label:"Deadfreight", desc:"Booked space left unfilled beyond tolerance"},
-    {key:'lightering',         icon:"⛴", label:"Lightering", desc:"Barge transhipment where the berth is draft-limited"},
-    {key:'loadPortCharge',     icon:"⚓", label:"Load Port Charges", desc:"Stevedoring, pilotage, tugs at origin"},
-    {key:'dischargePortCharge',icon:"🏗️", label:"Discharge Port Charges", desc:"TAMP statutory berth hire & wharfage"},
-    {key:'demurrageExpected',  icon:"⏳", label:"Demurrage Risk", desc:"Queue delay beyond free laytime"},
-    {key:'insurance',  icon:"🛡️", label:"Marine & War Risk Insurance", desc:"Cargo loss & transit risk premium"},
-    {key:'evac',       icon:"🚆", label:"Inland Rail Evacuation", desc:"FOIS freight to destination plant"},
-    {key:'financing',  icon:"💳", label:"Working Capital Financing", desc:"Transit inventory holding cost"},
+    {key:'fob',         icon:"", label:"Cargo FOB Price", desc:"Base commodity cost at load port"},
+    {key:'freight',     icon:"", label:"Ocean Freight", desc:"Vessel chartering / voyage fixture"},
+    {key:'vesselHire',         icon:"", label:"Vessel Hire", desc:"Daily hire across sea days plus time in port"},
+    {key:'deadfreight',        icon:"", label:"Deadfreight", desc:"Booked space left unfilled beyond tolerance"},
+    {key:'lightering',         icon:"", label:"Lightering", desc:"Barge transhipment where the berth is draft-limited"},
+    {key:'loadPortCharge',     icon:"", label:"Load Port Charges", desc:"Stevedoring, pilotage, tugs at origin"},
+    {key:'dischargePortCharge',icon:"", label:"Discharge Port Charges", desc:"TAMP statutory berth hire & wharfage"},
+    {key:'demurrageExpected',  icon:"", label:"Demurrage Risk", desc:"Queue delay beyond free laytime"},
+    {key:'insurance',  icon:"", label:"Marine & War Risk Insurance", desc:"Cargo loss & transit risk premium"},
+    {key:'evac',       icon:"", label:"Inland Rail Evacuation", desc:"FOIS freight to destination plant"},
+    {key:'financing',  icon:"", label:"Working Capital Financing", desc:"Transit inventory holding cost"},
   ];
   const totalVal=base.total*mult;
   const container=document.getElementById('waterfallBars');
@@ -1851,7 +2199,7 @@ function renderWaterfallBars(base,qty){
     return `
     <div class="waterfall-row" title="${item.desc}">
       <div class="waterfall-label" style="display:flex;align-items:center;gap:6px;">
-        <span>${item.icon}</span>
+        
         <span>${item.label}</span>
       </div>
       <div class="waterfall-track">
@@ -1864,13 +2212,13 @@ function renderWaterfallBars(base,qty){
     </div>`;
   }).join('') + `
     <div class="waterfall-row" style="font-weight:700;margin-top:10px;border-top:2px solid var(--steel-border);padding-top:8px;background:var(--bg-subtle);border-radius:6px;padding:8px 10px;">
-      <div class="waterfall-label" style="font-size:12.5px;color:var(--navy-deep);">💰 TOTAL LANDED PROCUREMENT COST</div>
+      <div class="waterfall-label" style="font-size:12.5px;color:var(--navy-deep);">Total Landed Procurement Cost</div>
       <div></div>
       <div class="waterfall-val" style="color:var(--saffron-dark);font-size:14px;font-weight:700;">${usd(totalVal)} ${isTotalCostMode ? '' : '/ MT'}</div>
     </div>`;
 }
 
-/* ======= CHARTER CONTRACT STRATEGY ======= */
+/* ======= Charter Contract Strategy ======= */
 function renderCharterStrategy(result, inputs){
   const host=document.getElementById('charterStrategyHost');
   if(!host || !result || !inputs) return;
@@ -1908,7 +2256,7 @@ function renderCharterStrategy(result, inputs){
     `${recommended.voyages} planned voyages cover the fixed ${fmt(totalCargo)} MT requirement with a ${inputs.days}-day delivery window per voyage.`
   ];
   const cards=options.map(option=>`<div class="charter-option${option.key===recommended.key?' recommended':''}"><h4>${option.label}${option.key===recommended.key?' <span class="winner-badge">RECOMMENDED</span>':''}</h4><div class="charter-option-grid"><div><span>Forecast Freight</span><strong>${usd(option.rate)}/MT</strong></div><div><span>Duration</span><strong>${option.months} month${option.months>1?'s':''}</strong></div><div><span>Voyages</span><strong>${option.voyages}</strong></div><div><span>Total Cargo</span><strong>${fmt(option.totalCargo)} MT</strong></div><div><span>Cargo / Voyage</span><strong>${fmt(option.cargoPerVoyage)} MT</strong></div><div><span>Vessel</span><strong>${vessel.name}</strong></div><div><span>Route</span><strong>${origin.short} → ${port.name}</strong></div><div><span>Total Freight Cost</span><strong>₹${fmt(option.freightCostInr)} Cr</strong></div><div><span>Other Logistics</span><strong>₹${fmt(option.otherCostInr)} Cr</strong></div><div><span>Total Contract Cost</span><strong>₹${fmt(option.totalInr)} Cr</strong></div><div><span>Savings vs Spot</span><strong>${option.savingsInr>0?'₹'+fmt(option.savingsInr)+' Cr ('+option.savingsPct.toFixed(2)+'%)':'— (0.00%)'}</strong></div><div><span>Risk / Continuity</span><strong>${riskLabel(option.risk)} / ${option.continuity}</strong></div><div><span>Utilization</span><strong>${option.utilization}%</strong></div><div><span>Delivery Window</span><strong>${inputs.days} days/voyage</strong></div><div><span>Market Window</span><strong>${option.window}</strong></div></div></div>`).join('');
-  host.innerHTML=`<section class="charter-strategy-section"><div class="charter-strategy-header"><div><h3>📑 CHARTER CONTRACT STRATEGY</h3><p>Moving from single-voyage spot exposure toward continuity-led multiple-voyage coverage. Totals: ₹ Cr at $1 = ₹${FX_INR_PER_USD}.</p></div><span class="data-tag">CALCULATED FROM ACTIVE RESULT</span></div><div class="charter-strategy-grid">${cards}</div><div class="charter-recommended"><h4>RECOMMENDED CHARTER STRATEGY → ${recommended.label}</h4><p><b>WHY THIS STRATEGY?</b> ${reasonList.join(' ')}</p></div></section>`;
+  host.innerHTML=`<section class="charter-strategy-section"><div class="charter-strategy-header"><div><h3>Charter Contract Strategy</h3><p>Moving from single-voyage spot exposure toward continuity-led multiple-voyage coverage. Totals: ₹ Cr at $1 = ₹${FX_INR_PER_USD}.</p></div><span class="data-tag">CALCULATED FROM ACTIVE RESULT</span></div><div class="charter-strategy-grid">${cards}</div><div class="charter-recommended"><h4>RECOMMENDED CHARTER STRATEGY → ${recommended.label}</h4><p><b>WHY THIS STRATEGY?</b>${reasonList.join(' ')}</p></div></section>`;
 }
 
 /* ======= DECISION CARD RENDERER ======= */
@@ -1925,7 +2273,7 @@ function renderDecisionCard(result,inputs,targetId='decisionCardHost'){
   const regretRows=result.candidates.slice(0,4).map((c,i)=>{
     const isWin=i===0;
     return `<tr class="${isWin?'regret-winner':''}">
-      <td>${isWin?'✅ '+ORIGINS[c.originKey].short:ORIGINS[c.originKey].short} → ${PORTS[c.portKey].name}</td>
+      <td>${isWin?'✓ '+ORIGINS[c.originKey].short:ORIGINS[c.originKey].short} → ${PORTS[c.portKey].name}</td>
       ${scenarios.map(sc=>`<td class="mono" style="text-align:right;">${usd(c.regrets[scenarios.indexOf(sc)])}</td>`).join('')}
       <td class="mono" style="text-align:right;font-weight:700;color:${isWin?'var(--green)':'var(--red)'};">${usd(c.maxRegret)}</td>
     </tr>`;
@@ -1937,7 +2285,7 @@ function renderDecisionCard(result,inputs,targetId='decisionCardHost'){
   <div class="decision-card">
     <div class="decision-header">
       <div class="title-area">
-        <h3>RECOMMENDED: ${ORIGINS[w.originKey].short} ➔ ${PORTS[w.portKey].name}</h3>
+        <h3>Recommended: ${ORIGINS[w.originKey].short} → ${PORTS[w.portKey].name}</h3>
         <div class="subtitle">Via ${vc.name} Class · ${PLANT_LABEL[inputs.plant]} · ${fmt(inputs.qty)} MT ${CARGO_LABEL[inputs.cargoType]} · ${inputs.days}d window</div>
       </div>
       <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;">
@@ -1959,12 +2307,12 @@ function renderDecisionCard(result,inputs,targetId='decisionCardHost'){
         <div class="kpi-sub">${usd(totalCostUSD)} USD</div>
       </div>
       <div class="kpi-card">
-        <div class="kpi-label">Risk Index <span class="gauge-info-btn" onclick="openRiskModal()" style="font-size:10px;">ℹ</span></div>
+        <div class="kpi-label">Risk Index <span class="gauge-info-btn" onclick="openRiskModal()" style="font-size:10px;"></span></div>
         <div class="kpi-value ${riskClass(result.risk)}">${result.risk}/100</div>
-        <div class="kpi-sub">${result.risk<40?'LOW RISK ✓':result.risk<60?'MODERATE RISK':'HIGH RISK ⚠'}</div>
+        <div class="kpi-sub">${result.risk<40?'LOW RISK ✓':result.risk<60?'MODERATE RISK':'HIGH RISK '}</div>
       </div>
       <div class="kpi-card">
-        <div class="kpi-label">Supply Continuity <span class="gauge-info-btn" onclick="openModal('continuityModal')" style="font-size:10px;">ℹ</span></div>
+        <div class="kpi-label">Supply Continuity <span class="gauge-info-btn" onclick="openModal('continuityModal')" style="font-size:10px;"></span></div>
         <div class="kpi-value" style="color:var(--green);">${result.continuity}/100</div>
         <div class="kpi-sub">Plant Delivery Confidence</div>
       </div>
@@ -1980,7 +2328,7 @@ function renderDecisionCard(result,inputs,targetId='decisionCardHost'){
       <div class="gauge-card">
         <div class="gauge-header">
           <span class="gauge-title">Risk Exposure Gauge</span>
-          <button class="gauge-info-btn" onclick="openRiskModal()">Breakdown ℹ</button>
+          <button class="gauge-info-btn" onclick="openRiskModal()">Breakdown</button>
         </div>
         <div class="gauge-track">
           <div class="gauge-fill" style="width:${result.risk}%;background:${result.risk>60?'var(--red)':result.risk>35?'var(--saffron)':'var(--green)'};"></div>
@@ -1993,7 +2341,7 @@ function renderDecisionCard(result,inputs,targetId='decisionCardHost'){
       <div class="gauge-card">
         <div class="gauge-header">
           <span class="gauge-title">Steel Supply Continuity Gauge</span>
-          <button class="gauge-info-btn" onclick="openModal('continuityModal')">Breakdown ℹ</button>
+          <button class="gauge-info-btn" onclick="openModal('continuityModal')">Breakdown</button>
         </div>
         <div class="gauge-track">
           <div class="gauge-fill" style="width:${result.continuity}%;background:var(--green);"></div>
@@ -2019,7 +2367,7 @@ function renderDecisionCard(result,inputs,targetId='decisionCardHost'){
 
     <!-- MINIMAX REGRET EXPLANATION -->
     <div class="regret-box">
-      <h4>📐 How Was This Decided? — Scenario Regret Matrix</h4>
+      <h4>How Was This Decided? — Scenario Regret Matrix</h4>
       <p style="font-size:12px;color:var(--steel-dark);margin:0 0 8px;">
         The recommendation is the origin-port-vessel combination with the lowest
         <b>risk-adjusted landed cost</b>: cost per tonne weighted by an index built from berth congestion,
@@ -2052,11 +2400,11 @@ function renderDecisionCard(result,inputs,targetId='decisionCardHost'){
             <li>Lowest landed cost across all feasible ports: <b>${usd(w.base.total)}/MT</b>.</li>
             <li>Reasonable queue: ${PORTS[w.portKey].waitDays}d avg. wait → low demurrage exposure.</li>
             <li>Evacuation distance to ${PLANT_LABEL[inputs.plant].split('(')[0].trim()}: ${PORTS[w.portKey].evacKm} km (rail).</li>
-            <li>${w.base.isMonsoon?'⚠ Active monsoon — delay multiplier applied in model.':'✓ Outside monsoon window — no weather delay factor.'}</li>
+            <li>${w.base.isMonsoon?' Active monsoon — delay multiplier applied in model.':'✓ Outside monsoon window — no weather delay factor.'}</li>
           </ul>
         </div>
         <div class="explain-box">
-          <h5>⚠ WHY ALTERNATIVES LOST?</h5>
+          <h5>Why Alternatives Lost?</h5>
           <ul>
             <li><b>Backup route (${ORIGINS[b.originKey].short} → ${PORTS[b.portKey].name}):</b> Higher landed cost by ${usd(savings)}/MT.</li>
             ${PORTS.paradip.name!==PORTS[w.portKey].name?`<li><b>Paradip:</b> ${PORTS.paradip.waitDays}d avg. wait adds demurrage risk. ${result.winner.base.isMonsoon?'Monsoon exposed.':''}</li>`:''}
@@ -2087,11 +2435,11 @@ function updateRiskModalContent(result,inputs){
   const draftDesc = draftMargin > 2.0 ? `Deep clearance (${p.draft}m port vs ${vc.draft}m vessel, +${draftMargin}m buffer)` : `Tight clearance (${p.draft}m port vs ${vc.draft}m vessel)`;
 
   const factors=[
-    {name:'1. Freight Market Volatility (25%)', score:Math.round(o.vol*100*0.5*2), icon:'📈', desc:`${o.short} corridor baseline volatility = ${(o.vol*100).toFixed(0)}%`},
-    {name:'2. Discharge Port Congestion (30%)', score:Math.round(p.waitDays*11), icon:'⏳', desc:`${p.name}: ${p.waitDays}d avg pre-berthing wait time`},
-    {name:'3. Monsoon & Cyclone Exposure (20%)', score:isMonsoon?35:8, icon:'⛈️', desc:isMonsoon?'Active Bay of Bengal monsoon window (delay factor 1.7×)':'Optimal calm weather window'},
-    {name:'4. Vessel Draft & Navigational Clearance (15%)', score:draftScore, icon:'🚢', desc:draftDesc},
-    {name:'5. Inland Rail Evacuation Distance (10%)', score:Math.round(p.evacKm/48), icon:'🚆', desc:`${p.evacKm} km freight haul to ${PLANT_LABEL[inputs.plant].split('(')[0].trim()}`},
+    {name:'1. Freight Market Volatility (25%)', score:Math.round(o.vol*100*0.5*2), icon:'', desc:`${o.short} corridor baseline volatility = ${(o.vol*100).toFixed(0)}%`},
+    {name:'2. Discharge Port Congestion (30%)', score:Math.round(p.waitDays*11), icon:'', desc:`${p.name}: ${p.waitDays}d avg pre-berthing wait time`},
+    {name:'3. Monsoon & Cyclone Exposure (20%)', score:isMonsoon?35:8, icon:'', desc:isMonsoon?'Active Bay of Bengal monsoon window (delay factor 1.7×)':'Optimal calm weather window'},
+    {name:'4. Vessel Draft & Navigational Clearance (15%)', score:draftScore, icon:'', desc:draftDesc},
+    {name:'5. Inland Rail Evacuation Distance (10%)', score:Math.round(p.evacKm/48), icon:'', desc:`${p.evacKm} km freight haul to ${PLANT_LABEL[inputs.plant].split('(')[0].trim()}`},
   ];
 
   const listEl=document.getElementById('riskFactorList');
@@ -2102,12 +2450,12 @@ function updateRiskModalContent(result,inputs){
           <span style="font-weight:700;color:var(--navy-deep);">Composite Operational Risk Score:</span>
           <span class="mono" style="font-size:15px;font-weight:700;color:${result.risk>60?'var(--red)':result.risk>35?'var(--saffron-dark)':'var(--green)'};">${result.risk} / 100</span>
         </div>
-        <div style="font-size:11.5px;color:var(--steel-muted);">Evaluation for <b>${o.short} ➔ ${p.name}</b> (${vc.name}) delivering to <b>${PLANT_LABEL[inputs.plant].split('(')[0].trim()}</b>.</div>
+        <div style="font-size:11.5px;color:var(--steel-muted);">Evaluation for <b>${o.short} → ${p.name}</b> (${vc.name}) delivering to <b>${PLANT_LABEL[inputs.plant].split('(')[0].trim()}</b>.</div>
       </div>
     ` + factors.map(f=>`
       <div style="background:#FFF;border:1px solid var(--steel-border);border-radius:8px;padding:10px 12px;margin-bottom:8px;">
         <div style="display:flex;justify-content:space-between;align-items:center;font-size:12.5px;font-weight:600;color:var(--navy-deep);margin-bottom:4px;">
-          <span>${f.icon} ${f.name}</span>
+          <span>${f.name}</span>
           <span class="mono" style="font-size:12px;font-weight:700;color:${f.score>60?'var(--red)':f.score>30?'var(--saffron-dark)':'var(--green)'};">${f.score}/100</span>
         </div>
         <div class="risk-factor-track" style="margin-bottom:4px;height:6px;">
@@ -2132,7 +2480,7 @@ function renderBattleTable(candidates, tbodyId='battleTableBody'){
     const cont=Math.round(100-c.maxRegret*1.5);
     return `<tr class="${i===0?'winner-row':''}">
       <td>#${i+1}</td>
-      <td><b>${ORIGINS[c.originKey].short} ➔ ${PORTS[c.portKey].name}</b> ${i===0?'<span class="winner-badge">BEST OVERALL</span>':''}</td>
+      <td><b>${ORIGINS[c.originKey].short} → ${PORTS[c.portKey].name}</b> ${i===0?'<span class="winner-badge">BEST OVERALL</span>':''}</td>
       <td>${VESSEL_CLASSES[c.vesselClassKey].name}</td>
       <td class="mono"><b>${usd(c.base.total)}</b></td>
       <td class="mono">${usd(c.base.demurrageExpected*c.base.expectedWaitDays>0?c.base.demurrageExpected:0)}/MT</td>
@@ -2173,27 +2521,27 @@ function handleChallenge(type){
 
   if(type==='cyclone'){
     blockedPorts=['paradip','dhamra'];
-    eventLabel='⚠️ Cyclone (Odisha Coast)';
+    eventLabel=' Cyclone (Odisha Coast)';
     eventDesc='Paradip & Dhamra blocked';
   } else if(type==='port'){
     blockedPorts=prevW?[prevW.portKey]:['paradip'];
-    eventLabel='🚫 Primary Port Blocked';
+    eventLabel=' Primary Port Blocked';
     eventDesc=`${prevW?PORTS[prevW.portKey].name:'Paradip'} unavailable`;
   } else if(type==='freight'){
     spikeMult=1.20;
-    eventLabel='📈 Freight Spike +20%';
+    eventLabel=' Freight Spike +20%';
     eventDesc='Ocean freight +20% across all routes';
   } else if(type==='bunker'){
     spikeMult=1.15;
-    eventLabel='⛽ Bunker Spike +15%';
+    eventLabel=' Bunker Spike +15%';
     eventDesc='Bunker surcharge applied across routes';
   } else if(type==='vessel'){
     blockedVessel=activeResult?.vesselClassKey||'capesize';
-    eventLabel='🚢 Vessel Class Unavailable';
+    eventLabel=' Vessel Class Unavailable';
     eventDesc=`${VESSEL_CLASSES[blockedVessel]?.name||'Capesize'} class removed`;
   } else if(type==='monsoon'){
     blockedPorts=['haldia','sandheads'];
-    eventLabel='🌧️ Monsoon Delay';
+    eventLabel=' Monsoon Delay';
     eventDesc='Northern ports congested; rerouting south';
   }
 
@@ -2202,7 +2550,7 @@ function handleChallenge(type){
   document.getElementById('btn-'+type)?.classList.add('active-scenario');
   activeScenarioType=type;
 
-  showLoading(`Simulating: ${eventLabel}`, 'Recalculating Minimax-Regret for scenario...');
+  showLoading(`Simulating: ${eventLabel}`, 'Re-ranking strategies under the disrupted scenario...');
 
   setTimeout(async ()=>{
     const newResult=await runDecisionEngine(activeInputs,blockedPorts,blockedVessel,999,spikeMult);
@@ -2243,7 +2591,7 @@ function handleChallenge(type){
 
     // Update diff banner
     const banner=document.getElementById('diffBanner');
-    banner.innerHTML=`<b>${eventLabel}</b> scenario applied.<br><b>New Best Route:</b> ${ORIGINS[newResult.winner.originKey].short} ➔ ${PORTS[newResult.winner.portKey].name} &nbsp;·&nbsp; <b>Cost Delta:</b> <span style="color:${delta>=0?'var(--red)':'var(--green)'};">${delta>=0?'+':''}${usd(delta)}/MT</span>`;
+    banner.innerHTML=`<b>${eventLabel}</b> scenario applied.<br><b>New Best Route:</b> ${ORIGINS[newResult.winner.originKey].short} → ${PORTS[newResult.winner.portKey].name} &nbsp;·&nbsp; <b>Cost Delta:</b> <span style="color:${delta>=0?'var(--red)':'var(--green)'};">${delta>=0?'+':''}${usd(delta)}/MT</span>`;
     banner.classList.add('show');
 
     // Switch to scenarios panel to show results
@@ -2279,7 +2627,7 @@ function renderPortGrid(){
     const inMonsoon=p.monsoon.includes(month);
     return `<div class="port-card">
       <div class="port-name">${p.name}</div>
-      <div class="port-code">UN/LOCODE: ${p.code} ${inMonsoon?'<span style="color:var(--saffron-dark);font-size:10px;font-weight:700;">⛈ MONSOON</span>':''}</div>
+      <div class="port-code">UN/LOCODE: ${p.code} ${inMonsoon?'<span style="color:var(--saffron-dark);font-size:10px;font-weight:700;">MONSOON</span>':''}</div>
       <dl class="port-specs">
         <dt>Max Draft</dt><dd>${p.draft} m</dd>
         <dt>Max LOA</dt><dd>${p.loa} m</dd>
@@ -2303,7 +2651,7 @@ function renderPortGrid(){
         <td>${p.berths}</td><td class="mono">${p.waitDays}d</td>
         <td class="mono">${fmt(p.mechRate)}</td><td class="mono">${p.evacKm}km</td>
         <td class="mono">${usd(p.demurrage)}</td>
-        <td>${inMon?'<span class="risk-high">HIGH ⛈</span>':'<span class="risk-low">LOW ✓</span>'}</td>
+        <td>${inMon?'<span class="risk-high">HIGH</span>':'<span class="risk-low">LOW ✓</span>'}</td>
       </tr>`;
     }).join('');
   }
@@ -2601,7 +2949,7 @@ async function runPipeline(){
   await delay(250);
   setStage(6,`Building risk matrix: freight volatility, monsoon, congestion, evac...`);
   await delay(250);
-  document.getElementById('loadingSubText').textContent='Stage 8/9: Minimax-Regret optimization...';
+  document.getElementById('loadingSubText').textContent='Stage 8/9: Ranking on risk-adjusted cost...';
   setStage(7,`Ranking candidates on risk-adjusted landed cost...`);
   await delay(280);
 
@@ -2615,7 +2963,7 @@ async function runPipeline(){
     return;
   }
 
-  setStage(8,`✅ Optimal Strategy: ${ORIGINS[result.winner.originKey].short} ➔ ${PORTS[result.winner.portKey].name} at ${usd(result.winner.base.total)}/MT.`);
+  setStage(8,`✓ Optimal Strategy: ${ORIGINS[result.winner.originKey].short} → ${PORTS[result.winner.portKey].name} at ${usd(result.winner.base.total)}/MT.`);
   renderDecisionCard(result,inputs,'decisionCardHost');
   renderCharterStrategy(result,inputs);
   drawBaseMap();
@@ -2643,24 +2991,64 @@ async function runPipeline(){
     <p><b>Backup Failover Route:</b> ${ORIGINS[result.backup.originKey].name} → ${PORTS[result.backup.portKey].name}</p>
     <p><b>Delivery Window:</b> ${inputs.days} days</p>
     <hr/>
-    <p style="font-size:11px;color:#888;">⚠ All values are SYNTHETIC — derived from deterministic dry-bulk model. Not real SAIL operational data.</p>`;
+    <p style="font-size:11px;color:#888;">All values are SYNTHETIC — derived from deterministic dry-bulk model. Not real SAIL operational data.</p>`;
 
   document.getElementById('decisionSection').scrollIntoView({behavior:'smooth'});
 }
 
 /* ======= PANEL SWITCHING ======= */
+/* Section metadata drives the rail, the breadcrumb and the document title so
+   they cannot drift apart. */
+const SECTIONS = {
+  'command':                 {label:'Command Centre',          group:'Decision Support'},
+  'intelligence':            {label:'Freight Intelligence',    group:'Decision Support'},
+  'scenarios':               {label:'What-If Simulator',       group:'Decision Support'},
+  'ports':                   {label:'Port Profiles',           group:'Infrastructure'},
+  'vessels':                 {label:'Vessel Fit',              group:'Infrastructure'},
+  'international-waterways': {label:'International Waterways', group:'Infrastructure'},
+  'about':                   {label:'About & Data Governance', group:'Transparency'}
+};
+
 function switchPanel(name){
-  const panels=['command','intelligence','scenarios','ports','vessels','international-waterways'];
-  panels.forEach(p=>{
+  if(!SECTIONS[name]) name = 'command';
+
+  Object.keys(SECTIONS).forEach(p=>{
     document.getElementById('panel-'+p)?.classList.remove('active');
-    document.getElementById('tab-'+p)?.classList.remove('active');
     document.getElementById('nav-'+p)?.classList.remove('active');
+    document.getElementById('nav-'+p)?.removeAttribute('aria-current');
   });
+
   document.getElementById('panel-'+name)?.classList.add('active');
-  document.getElementById('tab-'+name)?.classList.add('active');
-  document.getElementById('nav-'+name)?.classList.add('active');
+  const link = document.getElementById('nav-'+name);
+  if(link){ link.classList.add('active'); link.setAttribute('aria-current','page'); }
+
+  const meta = SECTIONS[name];
+  const group = document.getElementById('crumbGroup');
+  const current = document.getElementById('crumbCurrent');
+  if(group) group.textContent = meta.group;
+  if(current) current.textContent = meta.label;
+  document.title = meta.label + ' — LOHA DRISHTI';
+
   if(name==='international-waterways') initWaterwaysMap();
   window.scrollTo({top:0,behavior:'smooth'});
+}
+
+/* Text-size control in the utility strip, the way government portals expose it. */
+function setTextSize(size){
+  document.body.classList.remove('tsz-sm','tsz-lg');
+  if(size==='sm') document.body.classList.add('tsz-sm');
+  if(size==='lg') document.body.classList.add('tsz-lg');
+  document.querySelectorAll('.gov-strip .tsz').forEach(b=>{
+    b.setAttribute('aria-pressed', String(b.textContent.trim() ===
+      (size==='sm' ? 'A-' : size==='lg' ? 'A+' : 'A')));
+  });
+  try{ localStorage.setItem('ld_textsize', size); }catch(e){}
+}
+
+/* Pin the rail directly below the sticky header, whatever height it renders at. */
+function syncHeaderOffset(){
+  const header = document.querySelector('.gov-header');
+  if(header) document.documentElement.style.setProperty('--header-h', header.offsetHeight + 'px');
 }
 
 /* ======= DRAWER UTILS ======= */
@@ -2703,7 +3091,7 @@ function runGlobalSearch(query){
   const term=query.trim().toLowerCase();
   if(!term){resultsEl.style.display='none';resultsEl.innerHTML='';return;}
   const items=[
-    {label:'Command Center',text:'decision strategy cargo optimization',action:"closeModal('searchModal');switchPanel('command')"},
+    {label:'Command Centre',text:'decision strategy cargo optimization',action:"closeModal('searchModal');switchPanel('command')"},
     {label:'Freight Intelligence',text:'freight market forecast rate',action:"closeModal('searchModal');switchPanel('intelligence')"},
     {label:'What-If Simulator',text:'scenario disruption cyclone monsoon',action:"closeModal('searchModal');switchPanel('scenarios')"},
     {label:'Port DNA',text:'port infrastructure draft loa chennai paradip dhamra',action:"closeModal('searchModal');switchPanel('ports')"},
@@ -2712,7 +3100,7 @@ function runGlobalSearch(query){
   ];
   const matches=items.filter(item=>(item.label+' '+item.text).includes(term));
   resultsEl.style.display='block';
-  resultsEl.innerHTML=matches.length ? matches.map(item=>'<button class="prompt-btn" style="width:100%;text-align:left;margin-bottom:5px" onclick="'+item.action+'">🔎 '+item.label+'</button>').join('') : '<div style="padding:10px;background:var(--bg-subtle);border:1px solid var(--steel-border);border-radius:6px;font-size:11px;color:var(--steel-muted);">No matching dashboard data found.</div>';
+  resultsEl.innerHTML=matches.length ? matches.map(item=>'<button class="prompt-btn" style="width:100%;text-align:left;margin-bottom:5px" onclick="'+item.action+'">'+item.label+'</button>').join('') : '<div style="padding:10px;background:var(--bg-subtle);border:1px solid var(--steel-border);border-radius:6px;font-size:11px;color:var(--steel-muted);">No matching dashboard data found.</div>';
 }
 
 function openWaterwaysFromGlobalSearch(){
@@ -2767,9 +3155,9 @@ async function askCopilot(query){
     const spikeAmount = w.base.freight * 0.20;
     reply = `If dry-bulk freight rates spike by +20%, ocean freight increases from ${usd(w.base.freight)}/MT to <b>${usd(w.base.freight*1.20)}/MT</b> (+${usd(spikeAmount)}/MT). For your ${fmt(inputs.qty)} MT parcel, this adds <b>${usd(spikeAmount*inputs.qty)}</b> to procurement cost. We recommend executing a <b>3-voyage forward contract (COA)</b> to lock in current rates.`;
   } else if(q.includes('regret') || q.includes('minimax') || q.includes('how decided') || q.includes('methodology')){
-    reply = `The <b>Minimax-Regret Engine</b> evaluates all feasible origin-port combinations across 4 scenarios: <i>Normal Market, Monsoon Delay, Port Congestion Spike, and Freight Spike (+20%)</i>. For each route, it computes the worst-case financial regret. The winning strategy (<b>${o.short} ➔ ${p.name}</b>) has the <b>lowest maximum regret of ${usd(w.maxRegret)}/MT</b>, ensuring maximum resilience against market shocks.`;
+    reply = `The <b>Minimax-Regret Engine</b> evaluates all feasible origin-port combinations across 4 scenarios: <i>Normal Market, Monsoon Delay, Port Congestion Spike, and Freight Spike (+20%)</i>. For each route, it computes the worst-case financial regret. The winning strategy (<b>${o.short} → ${p.name}</b>) has the <b>lowest maximum regret of ${usd(w.maxRegret)}/MT</b>, ensuring maximum resilience against market shocks.`;
   } else if(q.includes('risk') || q.includes('index')){
-    reply = `The <b>Operational Risk Index is ${res.risk}/100</b> (${res.risk<40?'Low Risk ✓':'Moderate Risk'}). It is computed across 5 weighted dimensions: Freight Volatility (25%), Port Queue (30%), Monsoon Exposure (20%), Draft Buffer (15%), and Inland Evacuation Distance (10%). Click <b>Breakdown ℹ</b> on the Risk Gauge for the full breakdown.`;
+    reply = `The<b>Operational Risk Index is ${res.risk}/100</b>(${res.risk<40?'Low Risk ✓':'Moderate Risk'}). It is computed across 5 weighted dimensions: Freight Volatility (25%), Port Queue (30%), Monsoon Exposure (20%), Draft Buffer (15%), and Inland Evacuation Distance (10%). Click <b>Breakdown</b> on the Risk Gauge for the full breakdown.`;
   } else if(q.includes('continuity') || q.includes('supply') || q.includes('plant') || q.includes('buffer')){
     reply = `The <b>Supply Continuity Confidence is ${res.continuity}/100</b>. It models the certainty of uninterrupted delivery to the blast furnace silos at <b>${PLANT_LABEL[inputs.plant]}</b>. We recommend maintaining a <b>15-day raw material yard buffer</b> during active voyages.`;
   } else if(q.includes('demurrage') || q.includes('queue') || q.includes('wait')){
@@ -2780,7 +3168,7 @@ async function askCopilot(query){
     reply = `For <b>${PLANT_LABEL[inputs.plant]}</b>, the engine calculated an inland rail haulage of <b>${p.evacKm} km</b> from ${p.name}. Freight is hauled via Indian Railways FOIS Class 140 trainloads at an evacuation cost of <b>${usd(w.base.evac)}/MT</b>.`;
   } else {
     reply = `Here is the current operational brief:<br>
-    • <b>Winning Strategy:</b> ${o.short} ➔ ${p.name} via ${vc.name}<br>
+    • <b>Winning Strategy:</b> ${o.short} → ${p.name} via ${vc.name}<br>
     • <b>Landed Cost:</b> ${usd(w.base.total)}/MT (₹${fmt(((w.base.total*inputs.qty*83.5)/10000000))} Cr total)<br>
     • <b>Risk Index:</b> ${res.risk}/100 &nbsp;|&nbsp; <b>Supply Continuity:</b> ${res.continuity}/100<br>
     Feel free to ask specific questions about port depths, freight spikes, vessel fit, or rail evacuation.`;
@@ -2816,6 +3204,16 @@ document.addEventListener('keydown',(e)=>{
 
 /* ======= INITIAL RENDER ======= */
 buildStepper();
+
+/* Restore the reader's text-size choice and keep the rail aligned to the header. */
+(function initShell(){
+  let saved = 'md';
+  try{ saved = localStorage.getItem('ld_textsize') || 'md'; }catch(e){}
+  setTextSize(saved);
+  syncHeaderOffset();
+  window.addEventListener('resize', syncHeaderOffset);
+  if(document.fonts && document.fonts.ready) document.fonts.ready.then(syncHeaderOffset);
+})();
 
 /* Pull ports/vessels from the database before anything is computed, so the
    dashboard and the decision service agree on the reference figures. */
@@ -2913,7 +3311,7 @@ function updateMarketPressureGauge(result, inputs, disruptionType=null){
 
   // Dynamic States: LOW / STABLE (<36), BALANCED (36-54), ELEVATED (55-72), CRITICAL (>72)
   if(overall >= 73){
-    labelEl.textContent = 'CRITICAL SPIKE ⚠';
+    labelEl.textContent = 'CRITICAL SPIKE ';
     labelEl.style.color = 'var(--red)';
     if(sigTextEl) {
       sigTextEl.textContent = 'EMERGENCY DEFENSIVE COA / ROUTE DIVERSION';
@@ -2923,7 +3321,7 @@ function updateMarketPressureGauge(result, inputs, disruptionType=null){
       sigDescEl.textContent = 'Severe market volatility active. Reroute vessels away from disrupted berths to deep-water ports immediately.';
     }
   } else if(overall >= 55){
-    labelEl.textContent = 'ELEVATED PRESSURE 📈';
+    labelEl.textContent = 'ELEVATED PRESSURE ';
     labelEl.style.color = 'var(--saffron-dark)';
     if(sigTextEl) {
       sigTextEl.textContent = '3-VOYAGE FORWARD CONTRACT RECOMMENDED';
@@ -2933,7 +3331,7 @@ function updateMarketPressureGauge(result, inputs, disruptionType=null){
       sigDescEl.textContent = 'Spot rate volatility elevated. Lock in multi-voyage contract to cap procurement cost exposure.';
     }
   } else if(overall >= 36){
-    labelEl.textContent = 'BALANCED MARKET ⚖';
+    labelEl.textContent = 'BALANCED MARKET ';
     labelEl.style.color = 'var(--saffron)';
     if(sigTextEl) {
       sigTextEl.textContent = 'BALANCED SPOT / CONTRACT PORTFOLIO';
@@ -2972,7 +3370,7 @@ function updateTopbarAuthDisplay(){
   }
 
   if(token){
-    authBtn.innerHTML = `👤 <b>${role}</b> <span style="font-size:10px;color:var(--steel-muted);margin-left:4px;">(Sign Out)</span>`;
+    authBtn.innerHTML = `<b>${role}</b> <span style="font-size:10px;color:var(--steel-muted);margin-left:4px;">(Sign Out)</span>`;
     authBtn.title = `Signed in as ${email} · Click to Sign Out / Switch Role`;
     authBtn.style.cssText = 'background:var(--green-bg);border-color:var(--green-border);color:var(--green);font-weight:600;font-size:12px;';
     authBtn.onclick = function(){
@@ -2984,7 +3382,7 @@ function updateTopbarAuthDisplay(){
       }
     };
   } else {
-    authBtn.innerHTML = `🔐 Sign In / Officer Access`;
+    authBtn.innerHTML = ` Sign In / Officer Access`;
     authBtn.title = 'Authenticate with SAIL Enterprise Credentials';
     authBtn.style.cssText = 'background:var(--saffron-bg);border-color:var(--saffron-border);color:var(--saffron-dark);font-weight:700;font-size:12px;';
     authBtn.onclick = function(){ openModal('signinModal'); };
@@ -3043,7 +3441,7 @@ async function submitModalLogin(){
       localStorage.setItem('ld_token', data.access_token);
       localStorage.setItem('ld_role', data.role || 'Chief Logistics Officer');
       localStorage.setItem('ld_email', email);
-      showModalAuthAlert('✅ Authentication successful! Session active.', true);
+      showModalAuthAlert('✓ Authentication successful! Session active.', true);
       setTimeout(()=>{
         closeModal('signinModal');
         updateTopbarAuthDisplay();
@@ -3053,13 +3451,13 @@ async function submitModalLogin(){
          mint a local token and open the dashboard anyway. */
       let detail = 'Incorrect email or password.';
       try { detail = (await res.json()).detail || detail; } catch(e){}
-      showModalAuthAlert('❌ ' + detail);
+      showModalAuthAlert('✗ ' + detail);
     }
   } catch(e){
-    showModalAuthAlert('⚠ Cannot reach the authentication server. Start the backend and try again.');
+    showModalAuthAlert(' Cannot reach the authentication server. Start the backend and try again.');
   } finally {
     btn.disabled = false;
-    btn.textContent = '🔒 AUTHENTICATE & SIGN IN';
+    btn.textContent = ' AUTHENTICATE & SIGN IN';
   }
 }
 
@@ -3078,7 +3476,7 @@ async function submitModalRegister(){
       body: JSON.stringify({name, email, password})
     });
     if(res.ok){
-      showModalAuthAlert('✅ Officer account created! Please sign in.', true);
+      showModalAuthAlert('✓ Officer account created! Please sign in.', true);
       switchModalAuthTab('signin');
       document.getElementById('modalLoginEmail').value = email;
     } else {
@@ -3138,7 +3536,7 @@ function initWaterwaysMap(){
   waterwaysLayers.strategic = L.layerGroup().addTo(waterwaysMap);
   waterwaysLayers.density = L.layerGroup().addTo(waterwaysMap);
   waterwaysLayers.vessels = L.markerClusterGroup({showCoverageOnHover:false, maxClusterRadius:42}).addTo(waterwaysMap);
-  L.control.layers(null, {'🌊 Waterways':waterwaysLayers.waterways,'🛳 Shipping Routes':waterwaysLayers.routes,'⚓ Ports':waterwaysLayers.ports,'📍 Strategic Locations':waterwaysLayers.strategic,'◉ Traffic Density':waterwaysLayers.density,'🚢 Vessels':waterwaysLayers.vessels}, {collapsed:false, position:'topright'}).addTo(waterwaysMap);
+  L.control.layers(null, {' Waterways':waterwaysLayers.waterways,' Shipping Routes':waterwaysLayers.routes,' Ports':waterwaysLayers.ports,' Strategic Locations':waterwaysLayers.strategic,'Traffic Density':waterwaysLayers.density,' Vessels':waterwaysLayers.vessels}, {collapsed:false, position:'topright'}).addTo(waterwaysMap);
   fetch('/api/waterways').then(response=>response.json()).then(data=>{
     waterwaysData = data.waterways || [];
     waterwayVessels = data.vessels || [];
@@ -3149,7 +3547,7 @@ function initWaterwaysMap(){
 
 function showWaterwaysError(message){ document.getElementById('waterwayDetailPanel').innerHTML='<h3>Map unavailable</h3><p style="font-size:11px;color:var(--red);margin:0;">'+message+'</p>'; }
 function trafficClass(status){ return status === 'HIGH' ? 'traffic-high' : status === 'MODERATE' ? 'traffic-moderate' : 'traffic-low'; }
-function trafficDot(status){ return status === 'HIGH' ? '🔴' : status === 'MODERATE' ? '🟡' : '🟢'; }
+function trafficDot(status){ return status === 'HIGH' ? '' : status === 'MODERATE' ? '' : ''; }
 
 function renderWaterways(){
   if(!waterwaysMap) return;
@@ -3164,8 +3562,8 @@ function renderWaterways(){
     const center = waterway.coordinates[Math.floor(waterway.coordinates.length / 2)];
     L.circle(center, {radius:Math.max(90000, count * 55000), color:waterway.traffic === 'HIGH' ? '#EF4444' : '#F59E0B', fillColor:waterway.traffic === 'HIGH' ? '#EF4444' : '#F59E0B', fillOpacity:.10, weight:1}).bindTooltip(waterway.name+' density: '+count+' vessel(s)').addTo(waterwaysLayers.density);
   });
-  Object.entries(waterwayPortCoordinates).forEach(([name, position])=>L.circleMarker(position,{radius:4,color:'#10B981',fillColor:'#10B981',fillOpacity:.9,weight:1}).bindPopup('<b>⚓ '+name+'</b><br><span style="color:#94A3B8">Strategic port · SYNTHETIC</span>').addTo(waterwaysLayers.ports));
-  [[31.26,32.31,'Suez Canal'],[9.08,-79.68,'Panama Canal'],[1.25,103.85,'Singapore Strait'],[26.35,56.55,'Strait of Hormuz'],[6.93,79.85,'Indian Ocean hub']].forEach(item=>L.marker([item[0],item[1]],{icon:L.divIcon({className:'strategic-pin',html:'📍',iconSize:[20,20],iconAnchor:[10,10]})}).bindTooltip(item[2]).addTo(waterwaysLayers.strategic));
+  Object.entries(waterwayPortCoordinates).forEach(([name, position])=>L.circleMarker(position,{radius:4,color:'#10B981',fillColor:'#10B981',fillOpacity:.9,weight:1}).bindPopup('<b>'+name+'</b><br><span style="color:#94A3B8">Strategic port · SYNTHETIC</span>').addTo(waterwaysLayers.ports));
+  [[31.26,32.31,'Suez Canal'],[9.08,-79.68,'Panama Canal'],[1.25,103.85,'Singapore Strait'],[26.35,56.55,'Strait of Hormuz'],[6.93,79.85,'Indian Ocean hub']].forEach(item=>L.marker([item[0],item[1]],{icon:L.divIcon({className:'strategic-pin',html:'',iconSize:[20,20],iconAnchor:[10,10]})}).bindTooltip(item[2]).addTo(waterwaysLayers.strategic));
   renderWaterwayVessels(); renderWaterwaySummary();
   if(activeWaterwayId) selectWaterway(activeWaterwayId, false);
 }
@@ -3173,8 +3571,8 @@ function renderWaterways(){
 function renderWaterwayVessels(){
   waterwaysLayers.vessels.clearLayers();
   waterwayVessels.filter(v=>vesselTypeFilters.has(v.type) || (vesselTypeFilters.has('Other') && !['Cargo','Tanker','Passenger','Fishing','Container'].includes(v.type))).forEach(vessel=>{
-    const marker = L.marker(vessel.position, {icon:L.divIcon({className:'vessel-pin',html:'🚢',iconSize:[24,24],iconAnchor:[12,12]})});
-    marker.bindPopup('<b>🚢 '+vessel.name+'</b><br>MMSI: '+vessel.mmsi+' · IMO: '+vessel.imo+'<br>Type: '+vessel.type+' · Flag: '+vessel.flag+'<br>Speed: '+vessel.speed_knots+' kn · Heading: '+vessel.heading+'°<br>Destination: '+vessel.destination+'<br>ETA: '+vessel.eta+'<br>Position: '+vessel.position[0].toFixed(3)+', '+vessel.position[1].toFixed(3)+'<br>Last update: '+vessel.last_update+'<br><span style="color:#F59E0B;font-weight:700">SYNTHETIC</span>');
+    const marker = L.marker(vessel.position, {icon:L.divIcon({className:'vessel-pin',html:'',iconSize:[24,24],iconAnchor:[12,12]})});
+    marker.bindPopup('<b>'+vessel.name+'</b><br>MMSI: '+vessel.mmsi+' · IMO: '+vessel.imo+'<br>Type: '+vessel.type+' · Flag: '+vessel.flag+'<br>Speed: '+vessel.speed_knots+' kn · Heading: '+vessel.heading+'°<br>Destination: '+vessel.destination+'<br>ETA: '+vessel.eta+'<br>Position: '+vessel.position[0].toFixed(3)+', '+vessel.position[1].toFixed(3)+'<br>Last update: '+vessel.last_update+'<br><span style="color:#F59E0B;font-weight:700">SYNTHETIC</span>');
     marker.on('click',()=>showVesselDetails(vessel));
     waterwaysLayers.vessels.addLayer(marker);
   });
@@ -3183,7 +3581,7 @@ function renderWaterwayVessels(){
 function showVesselDetails(vessel){
   const panel=document.getElementById('waterwayDetailPanel');
   if(!panel) return;
-  panel.innerHTML='<h3>🚢 '+vessel.name+' <span class="traffic-badge traffic-moderate">MOVING</span></h3><div class="waterway-detail-grid"><div><span>MMSI</span><strong>'+vessel.mmsi+'</strong></div><div><span>IMO</span><strong>'+vessel.imo+'</strong></div><div><span>Type / Flag</span><strong>'+vessel.type+' · '+vessel.flag+'</strong></div><div><span>Speed / Heading</span><strong>'+vessel.speed_knots+' kn · '+vessel.heading+'°</strong></div><div><span>Destination</span><strong>'+vessel.destination+'</strong></div><div><span>ETA</span><strong>'+vessel.eta+'</strong></div><div><span>Latitude / Longitude</span><strong>'+vessel.position[0].toFixed(3)+' / '+vessel.position[1].toFixed(3)+'</strong></div><div><span>Associated Waterway</span><strong>'+((waterwaysData.find(w=>w.id===vessel.waterway_id)||{}).name||'—')+'</strong></div></div><p style="font-size:11px;color:var(--steel-dark);line-height:1.5;margin:12px 0 0"><b>Recent movement:</b> Course '+vessel.heading+'° at '+vessel.speed_knots+' knots. Track history is unavailable in SYNTHETIC mode.</p><div style="font-size:10px;color:var(--steel-muted);margin-top:9px"><b>Last AIS update:</b> '+vessel.last_update+'<br><b>Source: SYNTHETIC</b></div>';
+  panel.innerHTML='<h3>'+vessel.name+'<span class="traffic-badge traffic-moderate">MOVING</span></h3><div class="waterway-detail-grid"><div><span>MMSI</span><strong>'+vessel.mmsi+'</strong></div><div><span>IMO</span><strong>'+vessel.imo+'</strong></div><div><span>Type / Flag</span><strong>'+vessel.type+' · '+vessel.flag+'</strong></div><div><span>Speed / Heading</span><strong>'+vessel.speed_knots+' kn · '+vessel.heading+'°</strong></div><div><span>Destination</span><strong>'+vessel.destination+'</strong></div><div><span>ETA</span><strong>'+vessel.eta+'</strong></div><div><span>Latitude / Longitude</span><strong>'+vessel.position[0].toFixed(3)+' / '+vessel.position[1].toFixed(3)+'</strong></div><div><span>Associated Waterway</span><strong>'+((waterwaysData.find(w=>w.id===vessel.waterway_id)||{}).name||'—')+'</strong></div></div><p style="font-size:11px;color:var(--steel-dark);line-height:1.5;margin:12px 0 0"><b>Recent movement:</b>Course '+vessel.heading+'° at '+vessel.speed_knots+' knots. Track history is unavailable in SYNTHETIC mode.</p><div style="font-size:10px;color:var(--steel-muted);margin-top:9px"><b>Last AIS update:</b>'+vessel.last_update+'<br><b>Source: SYNTHETIC</b></div>';
 }
 
 function renderWaterwaySummary(){
@@ -3219,8 +3617,8 @@ function resetWaterwaysMap(){ if(waterwaysMap) waterwaysMap.setView([18,35],2.4)
   <div class="modal-box" style="max-width:720px;width:95%;">
     <div class="modal-header">
       <div>
-        <h3 style="margin:0;font-size:16px;font-family:'Space Grotesk';">🎬 LOHA-DRISHTI — Decision Workflow Animation</h3>
-        <p style="margin:2px 0 0;font-size:11px;color:var(--steel-muted);">Cargo Input ➔ Freight Analysis ➔ ML Forecasting ➔ Risk Analysis ➔ Strategy Recommendation</p>
+        <h3 style="margin:0;font-size:16px;font-family:'Space Grotesk';">LOHA-DRISHTI — Decision Workflow Animation</h3>
+        <p style="margin:2px 0 0;font-size:11px;color:var(--steel-muted);">Cargo Input → Freight Analysis → ML Forecasting → Risk Analysis → Strategy Recommendation</p>
       </div>
       <button class="close-btn" onclick="closeModal('demoAnimationModal')">✕</button>
     </div>
@@ -3237,7 +3635,7 @@ function resetWaterwaysMap(){ if(waterwaysMap) waterwaysMap.setView([18,35],2.4)
         </div>
 
         <div id="animStageBox" class="demo-stage-box" style="min-height:160px;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;">
-          <div id="animIcon" class="demo-icon demo-copy-in" style="font-size:42px;margin-bottom:8px;">📦</div>
+          <div id="animIcon" class="demo-icon demo-copy-in" style="font-size:42px;margin-bottom:8px;"></div>
           <div id="animTitle" class="demo-copy-in" style="font-family:'Space Grotesk';font-size:20px;font-weight:700;color:#FFF;">1. Cargo Input Intake</div>
           <div id="animDesc" class="demo-copy-in" style="font-size:13px;color:#94A3B8;max-width:500px;margin-top:6px;line-height:1.6;">
             80,000 MT Coking Coal requirement specified for Rourkela Steel Plant with 30-day delivery window.
@@ -3257,12 +3655,12 @@ function resetWaterwaysMap(){ if(waterwaysMap) waterwaysMap.setView([18,35],2.4)
       <!-- Controls -->
       <div style="display:flex;justify-content:space-between;align-items:center;margin-top:14px;flex-wrap:wrap;gap:10px;">
         <div style="display:flex;gap:8px;">
-          <button id="btnPlayAnim" class="icon-btn" onclick="toggleAnimPlay()">⏸ Pause</button>
-          <button class="icon-btn" onclick="restartAnim()">🔄 Replay</button>
-          <button class="icon-btn" onclick="nextAnimStep()">Next Stage ➔</button>
+          <button id="btnPlayAnim" class="icon-btn" onclick="toggleAnimPlay()">Pause</button>
+          <button class="icon-btn" onclick="restartAnim()">Replay</button>
+          <button class="icon-btn" onclick="nextAnimStep()">Next Stage →</button>
         </div>
         <div style="font-size:11.5px;color:var(--steel-muted);font-weight:600;">
-          ⏱ 20-Second Animated Presentation
+          20-second animated walkthrough
         </div>
       </div>
 
@@ -3282,11 +3680,11 @@ let animTimer = null;
 let isAnimPlaying = false;
 
 const animData = [
-  { step: "STAGE 1 / 5: CARGO INPUT", icon: "📦", title: "1. Cargo Requirement Input", desc: "User inputs 80,000 MT Coking Coal for Rourkela Steel Plant with 30-day laycan delivery window." },
-  { step: "STAGE 2 / 5: FREIGHT ANALYSIS", icon: "🌐", title: "2. Freight Corridor Analysis", desc: "Ingests voyage parameters across 4 global corridors (Australia, South Africa, Indonesia, USA) to 5 East Coast ports." },
-  { step: "STAGE 3 / 5: ML FORECASTING", icon: "🤖", title: "3. ML Freight Rate Forecasting", desc: "GradientBoosting ML pipeline computes P10/P50/P90 rate projections calibrated on BDI and bunker price dynamics (R²=0.989)." },
-  { step: "STAGE 4 / 5: RISK ANALYSIS", icon: "🛡️", title: "4. Multi-Factor Risk & Minimax Regret", desc: "Simulates 4 market disruption scenarios (Normal, Monsoon, Congestion, Freight Spike) to identify minimal worst-case regret." },
-  { step: "STAGE 5 / 5: STRATEGY RECOMMENDATION", icon: "🏆", title: "5. Optimal Strategy Recommendation", desc: "Selected Winner: Australia ➔ Dhamra Port via Panamax ($38.40/MT) with ₹25.6 Cr voyage value and 88/100 Supply Continuity." }
+  { step: "STAGE 1 / 5: CARGO INPUT", icon: "", title: "1. Cargo Requirement Input", desc: "User inputs 80,000 MT Coking Coal for Rourkela Steel Plant with 30-day laycan delivery window." },
+  { step: "STAGE 2 / 5: FREIGHT ANALYSIS", icon: "", title: "2. Freight Corridor Analysis", desc: "Ingests voyage parameters across 4 global corridors (Australia, South Africa, Indonesia, USA) to 5 East Coast ports." },
+  { step: "STAGE 3 / 5: ML FORECASTING", icon: "", title: "3. ML Freight Rate Forecasting", desc: "GradientBoosting ML pipeline computes P10/P50/P90 rate projections calibrated on BDI and bunker price dynamics (R²=0.989)." },
+  { step: "STAGE 4 / 5: RISK ANALYSIS", icon: "", title: "4. Multi-Factor Risk & Scenario Regret", desc: "Simulates 4 market disruption scenarios (Normal, Monsoon, Congestion, Freight Spike) to identify minimal worst-case regret." },
+  { step: "STAGE 5 / 5: STRATEGY RECOMMENDATION", icon: "", title: "5. Optimal Strategy Recommendation", desc: "Selected Winner: Australia → Dhamra Port via Panamax ($38.40/MT) with ₹25.6 Cr voyage value and 88/100 Supply Continuity." }
 ];
 
 function openDemoAnimation(){
@@ -3333,7 +3731,7 @@ function restartAnim(){
 function startAnimLoop(){
   if(animTimer) clearInterval(animTimer);
   isAnimPlaying = true;
-  document.getElementById('btnPlayAnim').textContent = '⏸ Pause';
+  document.getElementById('btnPlayAnim').textContent = 'Pause';
   animTimer = setInterval(()=>{
     animStep = (animStep + 1) % 5;
     updateAnimDisplay();
@@ -3344,7 +3742,7 @@ function toggleAnimPlay(){
   if(isAnimPlaying){
     clearInterval(animTimer);
     isAnimPlaying = false;
-    document.getElementById('btnPlayAnim').textContent = '▶ Play';
+    document.getElementById('btnPlayAnim').textContent = 'Play';
   } else {
     startAnimLoop();
   }
@@ -3430,7 +3828,7 @@ function updateMarketPressureGauge(result, inputs, disruptionType=null){
 
   // Dynamic States: LOW / STABLE (<36), BALANCED (36-54), ELEVATED (55-72), CRITICAL (>72)
   if(overall >= 73){
-    labelEl.textContent = 'CRITICAL SPIKE ⚠';
+    labelEl.textContent = 'CRITICAL SPIKE ';
     labelEl.style.color = 'var(--red)';
     if(sigTextEl) {
       sigTextEl.textContent = 'EMERGENCY DEFENSIVE COA / ROUTE DIVERSION';
@@ -3440,7 +3838,7 @@ function updateMarketPressureGauge(result, inputs, disruptionType=null){
       sigDescEl.textContent = 'Severe market volatility active. Reroute vessels away from disrupted berths to deep-water ports immediately.';
     }
   } else if(overall >= 55){
-    labelEl.textContent = 'ELEVATED PRESSURE 📈';
+    labelEl.textContent = 'ELEVATED PRESSURE ';
     labelEl.style.color = 'var(--saffron-dark)';
     if(sigTextEl) {
       sigTextEl.textContent = '3-VOYAGE FORWARD CONTRACT RECOMMENDED';
@@ -3450,7 +3848,7 @@ function updateMarketPressureGauge(result, inputs, disruptionType=null){
       sigDescEl.textContent = 'Spot rate volatility elevated. Lock in multi-voyage contract to cap procurement cost exposure.';
     }
   } else if(overall >= 36){
-    labelEl.textContent = 'BALANCED MARKET ⚖';
+    labelEl.textContent = 'BALANCED MARKET ';
     labelEl.style.color = 'var(--saffron)';
     if(sigTextEl) {
       sigTextEl.textContent = 'BALANCED SPOT / CONTRACT PORTFOLIO';
