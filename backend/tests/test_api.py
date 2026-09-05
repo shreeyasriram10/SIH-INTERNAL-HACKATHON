@@ -1,5 +1,6 @@
 import os
 import sys
+from datetime import date, timedelta
 
 import pytest
 from fastapi.testclient import TestClient
@@ -7,7 +8,7 @@ from fastapi.testclient import TestClient
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from main import app  # noqa: E402
-from services import decision_engine, model_registry  # noqa: E402
+from services import decision_engine, model_registry, rate_horizon  # noqa: E402
 
 DEMO_EMAIL = "admin@sail.gov.in"
 DEMO_PASSWORD = "12345"
@@ -370,3 +371,157 @@ class TestDatabaseAndSystem:
         body = r.json()
         assert len(body["waterways"]) >= 10
         assert len(body["vessels"]) >= 5
+
+
+# ---------- 8. ROLLING FORECAST WINDOW ----------
+class TestRateHorizonWindow:
+    """The chart window must be derived from the current date on every call,
+    and the forecast must join the historical leg without a step.
+
+    Both properties used to be broken: the window was drawn from a fixed
+    fraction of the chart width with today pinned to the left edge, and the
+    two legs were independent series.
+    """
+
+    MARKET = {
+        "origin": "Australia",
+        "distance_nm": 4500.0,
+        "bunker_price": 697.0,
+        "pressure_index": 52.5,
+    }
+
+    def build(self, today, horizon_days=30, history_days=14):
+        return rate_horizon.build_horizon(
+            today=today, horizon_days=horizon_days, history_days=history_days,
+            **self.MARKET
+        )
+
+    # --- rolling window --------------------------------------------------
+    def test_forecast_day_one_is_tomorrow(self):
+        today = date(2026, 3, 17)
+        window = self.build(today)
+        first = window["forecast"][0]
+        assert first["date"] == (today + timedelta(days=1)).isoformat()
+        assert first["day_offset"] == 1
+
+    def test_history_ends_today(self):
+        today = date(2026, 3, 17)
+        window = self.build(today)
+        last = window["history"][-1]
+        assert last["date"] == today.isoformat()
+        assert last["day_offset"] == 0
+
+    def test_window_shifts_forward_with_the_calendar(self):
+        """The regression guard: advancing the clock by one day must move every
+        point by exactly one day. A hardcoded or stored anchor fails here."""
+        today = date(2026, 3, 17)
+        first = self.build(today)
+        second = self.build(today + timedelta(days=1))
+
+        dates_a = [p["date"] for p in first["history"] + first["forecast"]]
+        dates_b = [p["date"] for p in second["history"] + second["forecast"]]
+        assert len(dates_a) == len(dates_b) == 44
+
+        for earlier, later in zip(dates_a, dates_b):
+            delta = date.fromisoformat(later) - date.fromisoformat(earlier)
+            assert delta == timedelta(days=1), f"{earlier} -> {later}"
+
+    def test_window_is_not_pinned_to_any_stored_date(self):
+        """Windows a year apart must not overlap at all."""
+        early = self.build(date(2026, 1, 10))
+        late = self.build(date(2027, 1, 10))
+        early_dates = {p["date"] for p in early["history"] + early["forecast"]}
+        late_dates = {p["date"] for p in late["history"] + late["forecast"]}
+        assert not (early_dates & late_dates)
+
+    def test_span_matches_the_requested_horizon(self):
+        today = date(2026, 3, 17)
+        for horizon in (7, 30, 90):
+            window = self.build(today, horizon_days=horizon)
+            forecast = window["forecast"]
+            assert len(forecast) == horizon
+            assert forecast[-1]["date"] == (today + timedelta(days=horizon)).isoformat()
+
+    def test_window_crosses_a_year_boundary_cleanly(self):
+        today = date(2026, 12, 20)
+        window = self.build(today, horizon_days=30)
+        assert window["forecast"][-1]["date"] == "2027-01-19"
+        assert all(p["rate_usd"] > 0 for p in window["forecast"])
+
+    # --- day-1 anchoring --------------------------------------------------
+    def test_day_one_equals_the_last_historical_value(self):
+        """The other regression guard: no step at the TODAY divider."""
+        window = self.build(date(2026, 3, 17))
+        assert window["forecast"][0]["rate_usd"] == window["history"][-1]["rate_usd"]
+
+    def test_the_join_is_not_a_visible_jump(self):
+        """The step across the divider must be no worse than an ordinary
+        day-to-day move, at every horizon."""
+        for horizon in (7, 30, 90):
+            window = self.build(date(2026, 7, 3), horizon_days=horizon)
+            history, forecast = window["history"], window["forecast"]
+            join = abs(forecast[0]["rate_usd"] - history[-1]["rate_usd"])
+
+            series = [p["rate_usd"] for p in history + forecast]
+            steps = [abs(b - a) for a, b in zip(series, series[1:])]
+            assert join <= max(steps) + 1e-9, f"horizon {horizon}: join {join}"
+            assert join == 0
+
+    def test_anchor_reports_what_it_did(self):
+        window = self.build(date(2026, 3, 17))
+        anchor = window["anchor"]
+        expected = anchor["last_historical_usd"] - anchor["model_day_one_raw_usd"]
+        assert anchor["offset_applied_usd"] == pytest.approx(expected, abs=0.011)
+
+    def test_offset_decays_so_the_tail_is_the_raw_model(self):
+        """Anchoring must not permanently displace the curve - the far end
+        should be the model's own level again."""
+        today = date(2026, 3, 17)
+        window = self.build(today, horizon_days=60)
+        tail = window["forecast"][-1]
+        raw = rate_horizon._seasonal_rates(
+            [date.fromisoformat(tail["date"])], **self.MARKET
+        )[0]
+        assert tail["rate_usd"] == pytest.approx(raw, abs=0.011)
+
+    def test_daily_series_is_smooth_not_month_stepped(self):
+        """The model only sees `month`, so an un-interpolated daily series
+        would be flat within a month and jump at the boundary."""
+        window = self.build(date(2026, 5, 20), horizon_days=60)
+        rates = [p["rate_usd"] for p in window["forecast"]]
+        assert len(set(rates)) > 10, "series looks like a month-wise step function"
+
+    def test_confidence_band_widens_with_distance(self):
+        window = self.build(date(2026, 3, 17), horizon_days=30)
+        forecast = window["forecast"]
+        near = forecast[0]["ci_upper_usd"] - forecast[0]["ci_lower_usd"]
+        far = forecast[-1]["ci_upper_usd"] - forecast[-1]["ci_lower_usd"]
+        assert far > near
+
+    # --- through the API --------------------------------------------------
+    def test_endpoint_anchors_to_the_server_clock(self, client):
+        r = client.post(
+            "/api/ml/rate-horizon",
+            json={"origin": "Australia", "horizon_days": 30, "history_days": 14},
+        )
+        assert r.status_code == 200
+        body = r.json()
+
+        today = date.today()
+        assert body["today"] == today.isoformat()
+        assert body["history"][-1]["date"] == today.isoformat()
+        assert body["forecast"][0]["date"] == (today + timedelta(days=1)).isoformat()
+        assert body["forecast"][0]["rate_usd"] == body["history"][-1]["rate_usd"]
+
+    def test_endpoint_takes_no_date_or_month_input(self):
+        """A start date or month field would let a caller pin the window."""
+        from routers.ml import RateHorizonRequest
+
+        fields = set(RateHorizonRequest.model_fields)
+        assert not (fields & {"month", "start_date", "today", "anchor_date"})
+
+    def test_endpoint_rejects_an_out_of_range_horizon(self, client):
+        r = client.post(
+            "/api/ml/rate-horizon", json={"origin": "Australia", "horizon_days": 5000}
+        )
+        assert r.status_code == 422

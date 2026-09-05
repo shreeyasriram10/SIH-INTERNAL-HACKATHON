@@ -12,7 +12,7 @@ from sqlalchemy.orm import Session
 import auth
 import models
 from database import get_db
-from services import model_registry
+from services import model_registry, rate_horizon
 from services.model_registry import FEATURES, META_PATH, MODEL_PATH, TARGET
 
 logger = logging.getLogger(__name__)
@@ -29,6 +29,19 @@ class ForecastRequest(BaseModel):
 
 class CurveRequest(ForecastRequest):
     horizons: list[int] = Field(default=[7, 14, 30, 60, 90], max_length=12)
+
+
+class RateHorizonRequest(BaseModel):
+    """The chart window. There is deliberately no month or start-date field:
+    the window is derived from the server's current date on every call, so it
+    rolls forward on its own instead of being pinned to a stored anchor."""
+
+    origin: str = Field(min_length=1, max_length=80)
+    distance_nm: float | None = Field(default=None, gt=0, le=25000)
+    bunker_price: float = Field(default=697.0, gt=0, le=5000)
+    pressure_index: float = Field(default=52.5, ge=0, le=100)
+    horizon_days: int = Field(default=30, ge=1, le=365)
+    history_days: int = Field(default=14, ge=1, le=180)
 
 
 def _confidence_interval(rate: float) -> tuple[float, float]:
@@ -170,7 +183,7 @@ def predict_freight(request: ForecastRequest, db: Session = Depends(get_db)):
     try:
         db.add(models.ForecastHistory(
             origin=request.origin,
-            horizon_days=30,
+            horizon_days=30,  # /predict is a single-point call; the chart uses /rate-horizon
             predicted_rate_usd=round(rate, 2),
             ci_lower_usd=ci_lower,
             ci_upper_usd=ci_upper,
@@ -245,3 +258,36 @@ def forecast_curve(request: CurveRequest):
         "generated_at": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC"),
         "points": points,
     }
+
+
+@router.post("/rate-horizon")
+def rate_horizon_series(request: RateHorizonRequest):
+    """Daily rate series for the dashboard's freight-rate chart.
+
+    The window is always [today - history_days + 1 ... today + horizon_days],
+    computed from the server clock at request time, and the first forecast day
+    is anchored to the last historical value so the two legs join cleanly at
+    the TODAY divider.
+    """
+    distance = request.distance_nm or model_registry.ORIGIN_DISTANCE_NM.get(
+        request.origin, 4500.0
+    )
+    try:
+        window = rate_horizon.build_horizon(
+            origin=request.origin,
+            distance_nm=distance,
+            bunker_price=request.bunker_price,
+            pressure_index=request.pressure_index,
+            horizon_days=request.horizon_days,
+            history_days=request.history_days,
+        )
+    except Exception as error:
+        logger.exception("Rate horizon failed")
+        raise HTTPException(status_code=500, detail=f"Rate horizon failed: {error}")
+
+    payload = model_registry.get_payload()
+    window["status"] = "SUCCESS"
+    window["distance_nm"] = distance
+    window["algorithm"] = payload.get("algorithm", "GradientBoostingRegressor")
+    window["generated_at"] = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
+    return window

@@ -55,9 +55,10 @@ backend/
   services/
     model_registry.py   Single cached owner of the freight model
     decision_engine.py  Vessel x port optimisation and risk scoring
+    rate_horizon.py     Rolling, day-1-anchored forecast window
   ml/train.py           Offline trainer -> model.pkl + model_metadata.json
   static/               The four served HTML pages
-  tests/test_api.py     42 tests
+  tests/test_api.py     57 tests
 ```
 
 The dashboard is a view over the API. Port and vessel figures are pulled from
@@ -114,6 +115,30 @@ response that carries a prediction says so in a `data_source` field. Origins are
 Australia, Indonesia, South Africa and USA; adding one to the UI without
 retraining would fall back to a default lane distance.
 
+### Rolling forecast window
+
+`POST /api/ml/rate-horizon` drives the Dry-Bulk Freight Rate Horizon chart. It
+returns a daily series spanning `[today - history_days + 1 ... today + horizon_days]`,
+derived from the server clock **on every call** — the request carries no month,
+start date or anchor field, so the window cannot be pinned and rolls forward on
+its own as the calendar advances. Day 1 of the forecast always means tomorrow.
+
+The first forecast point is anchored to the last historical value so the two
+legs meet exactly at the TODAY divider. The offset between the model's raw
+first prediction and that last value is applied in full on day 1 and decays
+linearly to zero across the horizon, so the join is seamless while the far end
+keeps the model's own level. `anchor` in the response reports the raw
+prediction, the offset applied and the method.
+
+Because the model's only time feature is `month`, a naive daily series would be
+flat within a month and step at the boundary. `services/rate_horizon.py`
+evaluates the model at the two months bracketing each date and blends them,
+which yields a smooth daily curve without touching the model or its features.
+
+The historical leg is the model's response for past dates, not observed market
+data — `FreightHistory` is not yet populated — and the response says so in
+`data_source`.
+
 `services/model_registry.py` owns the model. It is unpickled once per process
 and reloaded only when `model.pkl` changes on disk, and predictions are scored
 as a single batch. If the artifact is missing or was written by an incompatible
@@ -143,10 +168,11 @@ Copy `.env.example` and adjust.
 python -m pytest backend/tests -q
 ```
 
-42 tests covering page routing, authentication and authorization (including
+57 tests covering page routing, authentication and authorization (including
 that the demo password is *not* a bypass), reference data, the ML pipeline and
 caching, the decision engine's ranking, cost identity and vessel selection, the
-disruption scenarios, and the live system battery.
+disruption scenarios, the rolling forecast window and its day-1 anchoring, and
+the live system battery.
 
 `/api/system/run-tests` runs a subset in-process and is what the verification
 page displays.

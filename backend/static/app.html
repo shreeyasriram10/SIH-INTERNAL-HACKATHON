@@ -2352,70 +2352,174 @@ function renderVesselGrid(){
 }
 
 /* ======= FREIGHT CHART ======= */
-function drawFreightChart(horizonDays=30){
-  const svg=document.getElementById('forecastChart');
+/* =========================================================================
+   FREIGHT RATE HORIZON CHART
+
+   The window is not computed here. /api/ml/rate-horizon derives it from the
+   server's current date on every call, so "day 1" always means tomorrow
+   relative to whenever the request runs, and the whole window rolls forward
+   on its own. The service also anchors the first forecast point to the last
+   historical value, so the two legs meet exactly at the TODAY divider.
+
+   The synthetic path below is kept only for when the API is unreachable, and
+   it sets the header badge to OFFLINE ESTIMATE when it runs.
+   ========================================================================= */
+
+let horizonSeries = null;   // last window returned by the service
+
+function renderFreightChart(series){
+  const svg = document.getElementById('forecastChart');
   if(!svg) return;
+
   const W=600,H=220,padL=44,padR=20,padT=20,padB=30;
-  const chartW=W-padL-padR,chartH=H-padT-padB;
-  const pts=horizonDays;
+  const chartW=W-padL-padR, chartH=H-padT-padB;
 
-  // Generate synthetic trend
-  const rand=seededRand(horizonDays*1337+activeInputs.qty);
-  const baseFreight=activeResult?activeResult.winner.base.freight:16.5;
-  const yMin=baseFreight*0.7,yMax=baseFreight*1.45;
-  const yScale=v=>padT+chartH-(((v-yMin)/(yMax-yMin))*chartH);
-  const xScale=i=>padL+(i/Math.max(pts-1,1))*chartW;
+  const points = series.history.concat(series.forecast);
+  const pts = points.length;
+  if(!pts) return;
 
-  const p50Pts=[],p10Pts=[],p90Pts=[];
-  for(let i=0;i<pts;i++){
-    const t=i/pts;
-    const trend=baseFreight*(1+0.04*Math.sin(t*Math.PI*2.1)+0.02*(rand()-0.5));
-    const vol=baseFreight*0.15;
-    p50Pts.push(trend);
-    p10Pts.push(trend-vol*(0.8+0.4*t));
-    p90Pts.push(trend+vol*(0.8+0.4*t));
-  }
+  /* The divider sits at the real boundary between the two legs, not at a
+     fixed fraction of the width - the previous version pinned it to 45%,
+     which put "TODAY" days into the future on longer horizons. */
+  const splitIdx = series.history.length - 1;
 
-  const polyLine=pts_=>pts_.map((v,i)=>`${xScale(i)},${yScale(v)}`).join(' ');
-  const bandPath=()=>`M ${p10Pts.map((v,i)=>`${xScale(i)},${yScale(v)}`).join(' L ')} L ${[...p90Pts].reverse().map((v,i)=>`${xScale(pts-1-i)},${yScale(v)}`).join(' L ')} Z`;
+  const lows  = points.map(p => p.ci_lower_usd != null ? p.ci_lower_usd : p.rate_usd);
+  const highs = points.map(p => p.ci_upper_usd != null ? p.ci_upper_usd : p.rate_usd);
+  const rawMin = Math.min(...lows), rawMax = Math.max(...highs);
+  const pad = Math.max((rawMax - rawMin) * 0.15, 0.5);
+  const yMin = Math.max(0, rawMin - pad), yMax = rawMax + pad;
 
-  // Y axis labels
-  const yTicks=[yMin,(yMin+yMax)/2,yMax].map(v=>`
+  const yScale = v => padT + chartH - (((v - yMin) / Math.max(yMax - yMin, 1e-6)) * chartH);
+  const xScale = i => padL + (i / Math.max(pts - 1, 1)) * chartW;
+
+  const line = arr => arr.map(([i, v]) => `${xScale(i)},${yScale(v)}`).join(' ');
+
+  const histLine = line(points.slice(0, splitIdx + 1).map((p, i) => [i, p.rate_usd]));
+  /* Start the forecast polyline on the shared divider point so the two lines
+     touch rather than merely coming close. */
+  const fcLine = line(points.slice(splitIdx).map((p, i) => [splitIdx + i, p.rate_usd]));
+
+  const bandPath = (() => {
+    const fc = series.forecast;
+    if(!fc.length) return '';
+    const up = fc.map((p, i) => `${xScale(splitIdx + 1 + i)},${yScale(p.ci_upper_usd)}`);
+    const down = [...fc].reverse().map((p, i) =>
+      `${xScale(splitIdx + fc.length - i)},${yScale(p.ci_lower_usd)}`);
+    return `M ${up.join(' L ')} L ${down.join(' L ')} Z`;
+  })();
+
+  const yTicks = [yMin, (yMin + yMax) / 2, yMax].map(v => `
     <text x="${padL-5}" y="${yScale(v)+4}" text-anchor="end" font-size="9" fill="var(--steel-muted)" font-family="IBM Plex Mono">$${v.toFixed(1)}</text>
     <line x1="${padL}" y1="${yScale(v)}" x2="${W-padR}" y2="${yScale(v)}" stroke="var(--steel-border)" stroke-dasharray="2 3"/>`).join('');
 
-  // X axis labels
-  const xLabels=[0,Math.floor(pts/3),Math.floor(2*pts/3),pts-1].map(i=>{
-    const d=new Date(); d.setDate(d.getDate()+i);
-    return `<text x="${xScale(i)}" y="${H-6}" text-anchor="middle" font-size="9" fill="var(--steel-muted)" font-family="IBM Plex Mono">${d.toLocaleDateString('en-IN',{day:'numeric',month:'short'})}</text>`;
+  /* Labels come from the dates the service returned, so they move with the
+     window instead of being regenerated from the browser clock. */
+  const labelIdx = [...new Set([0, splitIdx, Math.floor((splitIdx + pts) / 2), pts - 1])]
+    .filter(i => i >= 0 && i < pts).sort((a, b) => a - b);
+  const xLabels = labelIdx.map(i => {
+    const d = new Date(points[i].date + 'T00:00:00');
+    const txt = d.toLocaleDateString('en-IN', {day:'numeric', month:'short'});
+    const anchor = i === 0 ? 'start' : (i === pts - 1 ? 'end' : 'middle');
+    return `<text x="${xScale(i)}" y="${H-6}" text-anchor="${anchor}" font-size="9" fill="var(--steel-muted)" font-family="IBM Plex Mono">${txt}</text>`;
   }).join('');
 
-  // Today marker
-  const splitIdx=Math.floor(pts*0.45);
+  const every = Math.max(1, Math.floor(pts / 8));
+  const dots = points.map((p, i) => (i % every === 0 || i === splitIdx)
+    ? `<circle cx="${xScale(i)}" cy="${yScale(p.rate_usd)}" r="${i === splitIdx ? 3.5 : 3}" fill="${i <= splitIdx ? 'var(--green)' : 'var(--saffron-dark)'}"/>`
+    : '').join('');
 
-  svg.innerHTML=`
+  svg.innerHTML = `
     <rect width="${W}" height="${H}" fill="#FFF"/>
     ${yTicks}
     ${xLabels}
-    <path d="${bandPath()}" fill="rgba(217,119,6,0.1)"/>
-    <polyline points="${polyLine(p10Pts)}" fill="none" stroke="var(--saffron-border)" stroke-width="1" stroke-dasharray="3 2"/>
-    <polyline points="${polyLine(p90Pts)}" fill="none" stroke="var(--saffron-border)" stroke-width="1" stroke-dasharray="3 2"/>
-    <polyline points="${polyLine(p50Pts.slice(0,splitIdx+1))}" fill="none" stroke="var(--green)" stroke-width="2"/>
-    <polyline points="${polyLine(p50Pts.slice(splitIdx))}" fill="none" stroke="var(--saffron-dark)" stroke-width="2.5" stroke-dasharray="5 3"/>
-    ${p50Pts.filter((_,i)=>i%Math.max(1,Math.floor(pts/8))===0).map((_,j)=>{
-      const i=j*Math.max(1,Math.floor(pts/8));
-      return `<circle cx="${xScale(i)}" cy="${yScale(p50Pts[i])}" r="3" fill="${i<=splitIdx?'var(--green)':'var(--saffron-dark)'}"/>`;
-    }).join('')}
+    <path d="${bandPath}" fill="rgba(217,119,6,0.1)"/>
+    <polyline points="${histLine}" fill="none" stroke="var(--green)" stroke-width="2"/>
+    <polyline points="${fcLine}" fill="none" stroke="var(--saffron-dark)" stroke-width="2.5" stroke-dasharray="5 3"/>
+    ${dots}
     <line x1="${xScale(splitIdx)}" y1="${padT}" x2="${xScale(splitIdx)}" y2="${H-padB}" stroke="var(--navy-deep)" stroke-dasharray="4 3" stroke-width="1.5"/>
     <text x="${xScale(splitIdx)+4}" y="${padT+12}" font-size="9" fill="var(--navy-deep)" font-family="IBM Plex Mono" font-weight="600">TODAY</text>
     <text x="${padL}" y="${padT-4}" font-size="9" fill="var(--steel-muted)" font-family="IBM Plex Mono">← Historical</text>
     <text x="${xScale(splitIdx)+8}" y="${padT-4}" font-size="9" fill="var(--saffron-dark)" font-family="IBM Plex Mono">Forecast →</text>`;
 }
 
+/* Offline shape: same structure the service returns, so the renderer does not
+   need to care which produced it. Dates still roll off the current date. */
+function syntheticHorizon(horizonDays, historyDays){
+  const rand = seededRand(horizonDays*1337 + activeInputs.qty);
+  const base = activeResult ? activeResult.winner.base.freight : 16.5;
+  const today = new Date(); today.setHours(0,0,0,0);
+  /* Format from local date parts. toISOString() converts to UTC, which in
+     any positive-offset zone turns local midnight into the previous day. */
+  const iso = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  const at = offset => { const d = new Date(today); d.setDate(d.getDate()+offset); return d; };
+
+  const history = [];
+  for(let k = historyDays - 1; k >= 0; k--){
+    const t = (historyDays - k) / historyDays;
+    history.push({
+      date: iso(at(-k)), day_offset: -k, segment: 'historical',
+      rate_usd: +(base*(1 + 0.03*Math.sin(t*Math.PI*1.7) + 0.015*(rand()-0.5))).toFixed(2)
+    });
+  }
+
+  const lastHist = history[history.length-1].rate_usd;
+  const forecast = [];
+  for(let i = 1; i <= horizonDays; i++){
+    const t = i / horizonDays;
+    forecast.push({
+      date: iso(at(i)), day_offset: i, segment: 'forecast',
+      _raw: base*(1 + 0.04*Math.sin(t*Math.PI*2.1) + 0.02*(rand()-0.5))
+    });
+  }
+
+  // Same day-1 anchoring rule the service applies: full offset on day 1,
+  // decaying to zero at the end of the horizon.
+  const off = lastHist - forecast[0]._raw;
+  const span = Math.max(forecast.length - 1, 1);
+  forecast.forEach((p, j) => {
+    const v = p._raw + off * (1 - j/span);
+    const vol = base * 0.15 * (1 + j/span);
+    p.rate_usd = +v.toFixed(2);
+    p.ci_lower_usd = +(v - vol).toFixed(2);
+    p.ci_upper_usd = +(v + vol).toFixed(2);
+    delete p._raw;
+  });
+  forecast[0].rate_usd = lastHist;
+
+  return { today: iso(today), history, forecast, horizon_days: horizonDays,
+           history_days: historyDays, source: 'OFFLINE' };
+}
+
+async function drawFreightChart(horizonDays=30){
+  // Show a proportionate slice of recent history without dwarfing the forecast.
+  const historyDays = Math.max(7, Math.round(horizonDays * 0.45));
+  const originKey = (activeResult && activeResult.winner.originKey) || 'australia';
+  const origin = ORIGINS[originKey] || ORIGINS.australia;
+
+  try{
+    const series = await api('/api/ml/rate-horizon', {
+      method: 'POST',
+      body: JSON.stringify({
+        origin: origin.api,
+        distance_nm: origin.distanceNm,
+        horizon_days: horizonDays,
+        history_days: historyDays
+      })
+    });
+    horizonSeries = series;
+    renderFreightChart(series);
+  }catch(err){
+    console.warn('Rate horizon unavailable; drawing a local estimate.', err);
+    setEngineSource('OFFLINE', err.message);
+    horizonSeries = syntheticHorizon(horizonDays, historyDays);
+    renderFreightChart(horizonSeries);
+  }
+}
+
 function setHorizon(days){
   document.querySelectorAll('#horizonToggle button').forEach(b=>b.classList.remove('active'));
   document.querySelector(`#horizonToggle button[data-h="${days}"]`).classList.add('active');
-  drawFreightChart(days);
+  drawFreightChart(days);   /* async; the chart repaints when it resolves */
 }
 
 /* ======= FREIGHT ORIGIN TABLE ======= */
