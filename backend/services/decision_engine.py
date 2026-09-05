@@ -92,6 +92,9 @@ class Candidate:
     risk_index: float
 
     supply_continuity: float
+    schedule_headroom_pct: float
+    continuity_risk_factor_pct: float
+    execution_factor_pct: float
     confidence: float
     feasible: bool
     requires_lightering: bool
@@ -104,6 +107,66 @@ class Candidate:
 
 def _clamp(value: float, low: float = 0.0, high: float = 100.0) -> float:
     return max(low, min(high, value))
+
+
+# Confidence ceiling. No chartering plan is certain, so the score must never
+# read as a guarantee.
+MAX_CONTINUITY = 97.0
+
+
+def _schedule_headroom(cycle_days: float, window_days: int) -> float:
+    """How comfortably the voyage cycle fits the laycan window, 0..1.
+
+    Piecewise rather than linear because the risk of missing a window is not
+    proportional to time used: consuming half the window is comfortable,
+    consuming 90% of it is precarious, and the curve has to fall away sharply
+    in that last stretch instead of degrading evenly.
+    """
+    if window_days <= 0:
+        return 0.5
+    ratio = cycle_days / window_days
+
+    if ratio <= 0.5:            # comfortable
+        return 1.0 - 0.20 * (ratio / 0.5)
+    if ratio <= 0.8:            # tightening
+        return 0.80 - 0.35 * ((ratio - 0.5) / 0.3)
+    if ratio < 1.0:             # precarious
+        return 0.45 - 0.35 * ((ratio - 0.8) / 0.2)
+    return max(0.02, 0.10 - 0.08 * (ratio - 1.0))   # overruns the window
+
+
+def _supply_continuity(
+    *, cycle_days: float, window_days: int, risk_index: float,
+    shipments: int, requires_lightering: bool,
+) -> tuple:
+    """Confidence that the parcel reaches the plant inside the window.
+
+    The previous version was `50 + slack x 100`, clamped. Any cycle shorter
+    than half the window therefore scored a flat 100/100 - which happened in
+    42% of combinations - and it ignored disruption risk entirely, so a calm
+    lane and a cyclone-exposed one scored identically. Three things actually
+    govern whether the cargo lands on time:
+
+      schedule   how much of the window the cycle consumes
+      risk       congestion, weather and volatility exposure
+      execution  each extra shipment is another chance to slip, and
+                 lightering adds a transhipment that can stall
+
+    They compound rather than add: a comfortable schedule cannot rescue a
+    high-risk lane, which is exactly the judgement the previous score missed.
+    """
+    schedule = _schedule_headroom(cycle_days, window_days)
+    risk_factor = 1.0 - 0.45 * (_clamp(risk_index) / 100.0)
+    execution = 1.0 - 0.05 * max(0, shipments - 1) - (0.06 if requires_lightering else 0.0)
+    execution = max(0.5, execution)
+
+    score = 100.0 * schedule * risk_factor * execution
+    return (
+        round(_clamp(score, 3.0, MAX_CONTINUITY), 1),
+        round(schedule * 100.0, 1),
+        round(risk_factor * 100.0, 1),
+        round(execution * 100.0, 1),
+    )
 
 
 def _laden_draft(vessel, utilisation: float) -> float:
@@ -253,11 +316,14 @@ def evaluate(
             )
 
             # --- fit against the laycan window ----------------------------
-            if window_days > 0:
-                slack = (window_days - total_cycle_days) / window_days
-            else:
-                slack = 0.0
-            supply_continuity = round(_clamp(50.0 + slack * 100.0), 1)
+            (supply_continuity, schedule_headroom_pct,
+             continuity_risk_factor_pct, execution_factor_pct) = _supply_continuity(
+                cycle_days=total_cycle_days,
+                window_days=window_days,
+                risk_index=risk_index,
+                shipments=shipments,
+                requires_lightering=requires_lightering,
+            )
             if total_cycle_days > window_days > 0:
                 warnings.append(
                     f"Cycle of {total_cycle_days:.1f} days overruns the "
@@ -311,6 +377,9 @@ def evaluate(
                     draft_risk_score=round(draft_risk, 1),
                     risk_index=risk_index,
                     supply_continuity=supply_continuity,
+                    schedule_headroom_pct=schedule_headroom_pct,
+                    continuity_risk_factor_pct=continuity_risk_factor_pct,
+                    execution_factor_pct=execution_factor_pct,
                     confidence=confidence,
                     feasible=True,
                     requires_lightering=requires_lightering,

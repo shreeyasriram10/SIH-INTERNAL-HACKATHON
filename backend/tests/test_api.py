@@ -305,6 +305,41 @@ class TestDecisionEngine:
             )
             assert parts == pytest.approx(option["landed_cost_usd"], rel=1e-6)
 
+    def test_supply_continuity_does_not_saturate(self, client):
+        """The score used to be `50 + slack x 100` clamped to 100, so any cycle
+        shorter than half the window read a flat 100/100 - a delivery guarantee
+        no charter can offer. It must stay below the ceiling and vary."""
+        scores = []
+        for origin in ("Australia", "Indonesia", "South Africa", "USA"):
+            for window in (20, 30, 45):
+                r = client.post("/api/decision/optimize", json={
+                    **self.BASE_REQUEST, "origin": origin, "window_days": window,
+                })
+                if r.status_code != 200:
+                    continue
+                best = r.json()["recommended"]
+                scores.append(best["supply_continuity"])
+                assert 0 < best["supply_continuity"] < 100, best["supply_continuity"]
+
+        assert len(scores) >= 8
+        assert len(set(scores)) > len(scores) // 2, "score barely discriminates"
+
+    def test_supply_continuity_falls_as_risk_rises(self, client):
+        """A calm month and a cyclone month must not score the same."""
+        calm = client.post("/api/decision/optimize",
+                           json={**self.BASE_REQUEST, "month": 2}).json()["recommended"]
+        rough = client.post("/api/decision/optimize",
+                            json={**self.BASE_REQUEST, "month": 7}).json()["recommended"]
+        assert rough["risk_index"] > calm["risk_index"]
+        assert rough["supply_continuity"] < calm["supply_continuity"]
+
+    def test_supply_continuity_falls_as_the_window_tightens(self, client):
+        roomy = client.post("/api/decision/optimize",
+                            json={**self.BASE_REQUEST, "window_days": 60}).json()["recommended"]
+        tight = client.post("/api/decision/optimize",
+                            json={**self.BASE_REQUEST, "window_days": 18}).json()["recommended"]
+        assert tight["supply_continuity"] < roomy["supply_continuity"]
+
     def test_explanation_is_populated(self, client):
         r = client.post("/api/decision/optimize", json=self.BASE_REQUEST)
         assert len(r.json()["recommended"]["explanation"]) > 40

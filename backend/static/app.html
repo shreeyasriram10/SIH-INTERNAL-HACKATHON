@@ -2347,7 +2347,7 @@ function renderDecisionCard(result,inputs,targetId='decisionCardHost'){
           <div class="gauge-fill" style="width:${result.continuity}%;background:var(--green);"></div>
         </div>
         <div class="gauge-footer">
-          <span>Plant Delivery Guarantee</span>
+          <span>Plant Delivery Confidence</span>
           <span class="mono"><b>${result.continuity}</b> / 100</span>
         </div>
       </div>
@@ -3159,7 +3159,7 @@ async function askCopilot(query){
   } else if(q.includes('risk') || q.includes('index')){
     reply = `The<b>Operational Risk Index is ${res.risk}/100</b>(${res.risk<40?'Low Risk ✓':'Moderate Risk'}). It is computed across 5 weighted dimensions: Freight Volatility (25%), Port Queue (30%), Monsoon Exposure (20%), Draft Buffer (15%), and Inland Evacuation Distance (10%). Click <b>Breakdown</b> on the Risk Gauge for the full breakdown.`;
   } else if(q.includes('continuity') || q.includes('supply') || q.includes('plant') || q.includes('buffer')){
-    reply = `The <b>Supply Continuity Confidence is ${res.continuity}/100</b>. It models the certainty of uninterrupted delivery to the blast furnace silos at <b>${PLANT_LABEL[inputs.plant]}</b>. We recommend maintaining a <b>15-day raw material yard buffer</b> during active voyages.`;
+    reply = `The <b>Supply Continuity Confidence is ${res.continuity}/100</b>. It blends schedule headroom against the laycan window, disruption risk, and execution complexity to estimate the likelihood of uninterrupted delivery to the blast furnace silos at <b>${PLANT_LABEL[inputs.plant]}</b>. We recommend maintaining a <b>15-day raw material yard buffer</b> during active voyages.`;
   } else if(q.includes('demurrage') || q.includes('queue') || q.includes('wait')){
     const freeTime = 3;
     const excess = Math.max(0, p.waitDays - freeTime);
