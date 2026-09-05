@@ -2307,12 +2307,12 @@ function renderDecisionCard(result,inputs,targetId='decisionCardHost'){
         <div class="kpi-sub">${usd(totalCostUSD)} USD</div>
       </div>
       <div class="kpi-card">
-        <div class="kpi-label">Risk Index <span class="gauge-info-btn" onclick="openRiskModal()" style="font-size:10px;"></span></div>
+        <div class="kpi-label">Risk Index <span class="gauge-info-btn" onclick="openRiskModal()" style="font-size:9px;" title="How the Risk Index is calculated">Details</span></div>
         <div class="kpi-value ${riskClass(result.risk)}">${result.risk}/100</div>
         <div class="kpi-sub">${result.risk<40?'LOW RISK ✓':result.risk<60?'MODERATE RISK':'HIGH RISK '}</div>
       </div>
       <div class="kpi-card">
-        <div class="kpi-label">Supply Continuity <span class="gauge-info-btn" onclick="openModal('continuityModal')" style="font-size:10px;"></span></div>
+        <div class="kpi-label">Supply Continuity <span class="gauge-info-btn" onclick="openModal('continuityModal')" style="font-size:9px;" title="How Supply Continuity is scored">Details</span></div>
         <div class="kpi-value" style="color:var(--green);">${result.continuity}/100</div>
         <div class="kpi-sub">Plant Delivery Confidence</div>
       </div>
