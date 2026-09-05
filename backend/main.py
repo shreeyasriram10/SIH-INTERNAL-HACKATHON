@@ -5,7 +5,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 
 import models
@@ -79,8 +79,36 @@ app.include_router(waterways.router, prefix="/api/waterways", tags=["waterways"]
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 
-def _page(filename: str) -> FileResponse:
-    return FileResponse(os.path.join(STATIC_DIR, filename))
+_PAGE_CACHE: dict[str, str] = {}
+
+
+def _page(filename: str) -> HTMLResponse:
+    """Serve an HTML shell with caching switched off.
+
+    FileResponse sends Last-Modified from the file's mtime, and Vercel freezes
+    deployed mtimes to a fixed timestamp for reproducible builds. That value is
+    therefore identical across every deployment, so a browser revalidating with
+    If-Modified-Since gets a 304 and keeps showing the previous build's HTML
+    indefinitely - a redeploy never reaches anyone who already loaded the page.
+
+    Returning the body directly sends no Last-Modified or ETag, so there is
+    nothing to revalidate against and the client always receives current
+    markup. The file is read once per process; these shells change only on
+    deploy, and each new deployment starts fresh containers.
+    """
+    body = _PAGE_CACHE.get(filename)
+    if body is None:
+        with open(os.path.join(STATIC_DIR, filename), "r", encoding="utf-8") as handle:
+            body = handle.read()
+        _PAGE_CACHE[filename] = body
+
+    return HTMLResponse(
+        content=body,
+        headers={
+            "Cache-Control": "no-store, must-revalidate",
+            "Pragma": "no-cache",
+        },
+    )
 
 
 @app.get("/healthz", tags=["system"])

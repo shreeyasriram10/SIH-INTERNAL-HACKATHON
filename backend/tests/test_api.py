@@ -71,6 +71,28 @@ class TestPageRoutes:
     def test_api_docs_accessible(self, client):
         assert client.get("/docs").status_code == 200
 
+    @pytest.mark.parametrize("path", ["/", "/app", "/ml-training", "/verification"])
+    def test_pages_are_not_cacheable(self, client, path):
+        """A redeploy must reach browsers that already loaded the page.
+
+        FileResponse sends Last-Modified from the file mtime, and Vercel freezes
+        deployed mtimes, so the value never changed between builds: browsers
+        revalidated, got a 304, and kept serving the previous build's HTML.
+        The shells must therefore carry no validator at all.
+        """
+        response = client.get(path)
+        assert response.status_code == 200
+        assert "no-store" in response.headers.get("cache-control", "")
+        assert "last-modified" not in response.headers
+        assert "etag" not in response.headers
+
+    def test_conditional_request_still_returns_fresh_html(self, client):
+        response = client.get(
+            "/app", headers={"If-Modified-Since": "Sat, 20 Oct 2018 01:46:40 GMT"}
+        )
+        assert response.status_code == 200, "a 304 here means stale HTML in the browser"
+        assert "LOHA DRISHTI" in response.text
+
 
 # ---------- 2. AUTHENTICATION ----------
 class TestAuthAPI:
