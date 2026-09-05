@@ -4,12 +4,12 @@ from sqlalchemy import text
 from datetime import datetime, timezone
 import time
 import os
-import joblib
 
-from database import get_db, engine
+from database import get_db
 import models
 import auth
-from routers import waterways, ml
+from routers import waterways
+from services import decision_engine, model_registry
 
 router = APIRouter()
 START_TIME = time.time()
@@ -94,7 +94,6 @@ def run_live_system_tests(db: Session = Depends(get_db)):
 
     # 2. Test Database CRUD
     try:
-        test_email = f"audit_check_{int(time.time())}@sail.gov.in"
         test_log = models.AuditLog(action="SYSTEM_VERIFICATION_TEST", details="Testing database read/write integrity")
         db.add(test_log)
         db.commit()
@@ -106,37 +105,27 @@ def run_live_system_tests(db: Session = Depends(get_db)):
 
     # 3. Test ML Model Pipeline & Artifacts
     try:
-        model_path = os.path.join(os.path.dirname(__file__), "..", "ml", "model.pkl")
-        assert os.path.exists(model_path), "model.pkl artifact exists"
-        model_data = ml.load_model_payload()
-        assert 'model' in model_data
-        assert 'features' in model_data
-        tests.append({"category": "ML Pipeline", "name": "Model Artifact & Feature Registry", "status": "PASS", "details": f"Algorithm: {model_data.get('algorithm', 'GradientBoosting')}, Features: {len(model_data['features'])}"})
+        model_data = model_registry.get_payload()
+        assert model_data.get("model") is not None, "no usable model"
+        assert model_data.get("features"), "feature registry empty"
+        source = "model.pkl artifact" if os.path.exists(model_registry.MODEL_PATH) else "runtime-trained fallback"
+        tests.append({"category": "ML Pipeline", "name": "Model Artifact & Feature Registry", "status": "PASS", "details": f"Algorithm: {model_data.get('algorithm')}, Features: {len(model_data['features'])}, Source: {source}"})
     except Exception as e:
         tests.append({"category": "ML Pipeline", "name": "Model Artifact & Feature Registry", "status": "FAIL", "details": str(e)})
 
     # 4. Test ML Prediction Inference
     try:
-        import pandas as pd
-        model_path = os.path.join(os.path.dirname(__file__), "..", "ml", "model.pkl")
-        m_data = ml.load_model_payload()
-        model = m_data['model']
-        feats = m_data['features']
-        
-        sample_df = pd.DataFrame([{
-            'distance_nm': 4500.0,
-            'month': 5,
-            'bunker_price_usd': 620.0,
-            'pressure_index': 45.0,
-            'origin_Australia': 1,
-            'origin_Indonesia': 0,
-            'origin_South Africa': 0,
-            'origin_USA': 0
-        }]).reindex(columns=feats, fill_value=0)
-        
-        pred = float(model.predict(sample_df)[0])
-        assert 10.0 < pred < 80.0
-        tests.append({"category": "ML Pipeline", "name": "Inference Latency & Boundary Check", "status": "PASS", "details": f"Predicted ${pred:.2f}/MT within valid maritime boundary [10-80 USD/MT]"})
+        t0 = time.perf_counter()
+        pred = model_registry.predict_rate({
+            "origin": "Australia",
+            "distance_nm": 4500.0,
+            "month": 5,
+            "bunker_price": 620.0,
+            "pressure_index": 45.0,
+        })
+        latency_ms = round((time.perf_counter() - t0) * 1000, 2)
+        assert 10.0 < pred < 80.0, f"prediction ${pred:.2f}/MT outside the plausible band"
+        tests.append({"category": "ML Pipeline", "name": "Inference Latency & Boundary Check", "status": "PASS", "details": f"Predicted ${pred:.2f}/MT in {latency_ms} ms, within maritime boundary [10-80 USD/MT]"})
     except Exception as e:
         tests.append({"category": "ML Pipeline", "name": "Inference Latency & Boundary Check", "status": "FAIL", "details": str(e)})
 
@@ -150,19 +139,25 @@ def run_live_system_tests(db: Session = Depends(get_db)):
     except Exception as e:
         tests.append({"category": "Backend APIs", "name": "Port & Vessel Infrastructure Database", "status": "FAIL", "details": str(e)})
 
-    # 6. Test Decision Engine Minimax Matrix Logic
+    # 6. Test the live decision engine end to end
     try:
-        # Verify Minimax mathematical properties: Max Regret must be non-negative
-        scenarios = ['normal', 'monsoon', 'congestion', 'freight_spike']
-        costs = {'RouteA': [38.2, 44.5, 41.0, 48.0], 'RouteB': [40.0, 41.2, 43.0, 46.5]}
-        # Best per scenario
-        best_per_sc = [min(costs['RouteA'][i], costs['RouteB'][i]) for i in range(4)]
-        regrets_A = [costs['RouteA'][i] - best_per_sc[i] for i in range(4)]
-        max_regret_A = max(regrets_A)
-        assert max_regret_A >= 0.0
-        tests.append({"category": "Decision Engine", "name": "Minimax-Regret Optimization Matrix", "status": "PASS", "details": f"4-scenario regret evaluated; Max Regret non-negative constraint satisfied"})
+        options, ctx = decision_engine.evaluate(
+            vessels=db.query(models.Vessel).all(),
+            ports=db.query(models.Port).all(),
+            parcel_size=80000, cargo_type="Coking Coal", origin="Australia",
+            plant="Rourkela", window_days=30, month=5,
+            bunker_price=697.0, pressure_index=52.5, top_n=5,
+        )
+        assert options, "engine returned no feasible option"
+        costs = [o.landed_cost_usd_mt for o in options]
+        assert all(c > 0 for c in costs), "non-positive landed cost"
+        # Ranking is on risk-adjusted cost, so verify that ordering directly.
+        adjusted = [o.landed_cost_usd_mt * (1 + decision_engine.RISK_WEIGHT * o.risk_index / 100) for o in options]
+        assert adjusted == sorted(adjusted), "options are not ranked by risk-adjusted cost"
+        best = options[0]
+        tests.append({"category": "Decision Engine", "name": "Vessel x Port Optimisation Grid", "status": "PASS", "details": f"{ctx['candidates_evaluated']} feasible pairings scored; best = {best.vessel_class} via {best.port_name} at ${best.landed_cost_usd_mt:.2f}/MT, risk {best.risk_index:.0f}/100"})
     except Exception as e:
-        tests.append({"category": "Decision Engine", "name": "Minimax-Regret Optimization Matrix", "status": "FAIL", "details": str(e)})
+        tests.append({"category": "Decision Engine", "name": "Vessel x Port Optimisation Grid", "status": "FAIL", "details": str(e)})
 
     # 7. International Waterways data integrity
     try:
@@ -189,17 +184,53 @@ def run_live_system_tests(db: Session = Depends(get_db)):
     }
 
 @router.post("/reports/save")
-def save_report(payload: dict, db: Session = Depends(get_db)):
+def save_report(
+    payload: dict,
+    db: Session = Depends(get_db),
+    user: models.User = Depends(auth.get_current_user),
+):
     try:
         report = models.SavedReport(
             report_title=payload.get("title", "SAIL Cargo Chartering Strategy Report"),
             cargo_summary=payload.get("cargo_summary", ""),
             recommended_strategy=payload.get("recommended_strategy", ""),
-            total_cost_inr_cr=payload.get("cost_cr", 0.0),
-            content_html=payload.get("content_html", "")
+            total_cost_inr_cr=float(payload.get("cost_cr", 0.0) or 0.0),
+            generated_by=user.name or user.email,
+            content_html=payload.get("content_html", ""),
         )
         db.add(report)
+        db.add(models.AuditLog(
+            action="REPORT_SAVED",
+            user_email=user.email,
+            details=report.report_title,
+        ))
         db.commit()
         return {"status": "SUCCESS", "report_id": report.id}
     except Exception as e:
+        db.rollback()
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/reports")
+def list_reports(
+    limit: int = 20,
+    db: Session = Depends(get_db),
+    user: models.User = Depends(auth.get_current_user),
+):
+    rows = (
+        db.query(models.SavedReport)
+        .order_by(models.SavedReport.created_at.desc())
+        .limit(min(limit, 100))
+        .all()
+    )
+    return {"count": len(rows), "items": [
+        {
+            "id": r.id,
+            "title": r.report_title,
+            "cargo_summary": r.cargo_summary,
+            "total_cost_inr_cr": r.total_cost_inr_cr,
+            "generated_by": r.generated_by,
+            "created_at": r.created_at,
+        }
+        for r in rows
+    ]}

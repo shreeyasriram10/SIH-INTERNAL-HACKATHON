@@ -1,22 +1,48 @@
-from fastapi import APIRouter, Depends, HTTPException
+from typing import List
+
+from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from database import get_db
+
+import auth
 import models
 import schemas
-from typing import List
+from database import get_db
 
 router = APIRouter()
 
-@router.post("/", response_model=schemas.CargoRequest)
-def create_cargo_request(request: schemas.CargoRequestCreate, db: Session = Depends(get_db)):
-    # Assuming user_id=1 for now (to be updated with actual auth)
-    db_request = models.CargoRequest(**request.dict(), user_id=1)
+
+@router.post("/", response_model=schemas.CargoRequest, status_code=201)
+def create_cargo_request(
+    request: schemas.CargoRequestCreate,
+    db: Session = Depends(get_db),
+    user: models.User = Depends(auth.get_current_user),
+):
+    db_request = models.CargoRequest(**request.model_dump(), user_id=user.id)
     db.add(db_request)
+    db.add(models.AuditLog(
+        action="CARGO_REQUEST_CREATED",
+        user_email=user.email,
+        details=f"{request.parcel_size:,.0f} MT {request.cargo_type} from {request.origin}",
+    ))
     db.commit()
     db.refresh(db_request)
     return db_request
 
+
 @router.get("/", response_model=List[schemas.CargoRequest])
-def read_cargo_requests(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
-    requests = db.query(models.CargoRequest).offset(skip).limit(limit).all()
-    return requests
+def read_cargo_requests(
+    skip: int = 0,
+    limit: int = 100,
+    mine_only: bool = False,
+    db: Session = Depends(get_db),
+    user: models.User = Depends(auth.get_current_user),
+):
+    query = db.query(models.CargoRequest)
+    if mine_only:
+        query = query.filter(models.CargoRequest.user_id == user.id)
+    return (
+        query.order_by(models.CargoRequest.created_at.desc())
+        .offset(skip)
+        .limit(min(limit, 200))
+        .all()
+    )

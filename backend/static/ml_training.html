@@ -364,7 +364,15 @@
     }
 
     try {
-      const res = await fetch('/api/ml/train', { method: 'POST' });
+      let token = '';
+      try { token = localStorage.getItem('ld_token') || ''; } catch(e){}
+      const res = await fetch('/api/ml/train', {
+        method: 'POST',
+        headers: token ? { 'Authorization': 'Bearer ' + token } : {}
+      });
+      if (res.status === 401 || res.status === 403) {
+        throw new Error('Retraining requires an Admin or Analyst session. Sign in again from the gateway.');
+      }
       if (res.ok) {
         const d = await res.json();
         con.innerHTML += `<div style="color:#10B981;font-weight:700;">> ✅ SUCCESS: Deployed ${d.metadata.algorithm} | R² = ${d.metadata.r2_score} | MAE = $${d.metadata.mae_usd}/MT</div>`;

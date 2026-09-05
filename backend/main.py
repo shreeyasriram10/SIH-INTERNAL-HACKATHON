@@ -1,37 +1,72 @@
+import logging
+import os
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
+from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import FileResponse
-import os
+from fastapi.staticfiles import StaticFiles
 
-from database import engine, Base
 import models
-from routers import auth, cargo, ml, decision, ports, vessels, system, waterways
 import seed_data
+from database import engine, ensure_columns
+from routers import auth, cargo, decision, ml, ports, system, vessels, waterways
 
-# Create database tables and auto-seed initial data
-models.Base.metadata.create_all(bind=engine)
-try:
-    seed_data.seed_database()
-except Exception:
-    pass
+logging.basicConfig(
+    level=os.environ.get("LOHA_LOG_LEVEL", "INFO"),
+    format="%(asctime)s %(levelname)-8s %(name)s: %(message)s",
+)
+logger = logging.getLogger("lohadrishti")
+
+STATIC_DIR = os.path.join(os.path.dirname(__file__), "static")
+
+# The dashboard is served from the same origin as the API, so the default
+# allow-list only needs to cover local dev front ends. Override in deployment
+# with LOHA_CORS_ORIGINS="https://a.example,https://b.example".
+_origins_env = os.environ.get("LOHA_CORS_ORIGINS", "").strip()
+CORS_ORIGINS = (
+    [origin.strip() for origin in _origins_env.split(",") if origin.strip()]
+    if _origins_env
+    else ["http://localhost:5173", "http://localhost:8000", "http://127.0.0.1:8000"]
+)
+
+
+@asynccontextmanager
+async def lifespan(_: FastAPI):
+    models.Base.metadata.create_all(bind=engine)
+    try:
+        ensure_columns(models.Base)
+    except Exception:
+        logger.exception("Schema reconciliation failed")
+    try:
+        seed_data.seed_database()
+    except Exception:
+        # Seeding must never block startup, but the traceback has to be visible
+        # rather than silently swallowed.
+        logger.exception("Initial seeding failed; continuing with an empty database")
+    yield
+
 
 app = FastAPI(
     title="LOHA DRISHTI API",
-    version="2.2.0",
-    description="Maritime Cargo Chartering & Decision Intelligence Platform — Steel Authority of India Limited (SAIL) / Ministry of Steel"
+    version="2.3.0",
+    description=(
+        "Maritime Cargo Chartering & Decision Intelligence Platform - "
+        "Steel Authority of India Limited (SAIL) / Ministry of Steel"
+    ),
+    lifespan=lifespan,
 )
 
-# CORS setup
+app.add_middleware(GZipMiddleware, minimum_size=1024)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=CORS_ORIGINS,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type"],
 )
 
-# API routers
 app.include_router(auth.router, prefix="/api/auth", tags=["auth"])
 app.include_router(ports.router, prefix="/api/ports", tags=["ports"])
 app.include_router(vessels.router, prefix="/api/vessels", tags=["vessels"])
@@ -41,31 +76,42 @@ app.include_router(decision.router, prefix="/api/decision", tags=["decision"])
 app.include_router(system.router, prefix="/api/system", tags=["system"])
 app.include_router(waterways.router, prefix="/api/waterways", tags=["waterways"])
 
-# Static HTML directory
-STATIC_DIR = os.path.join(os.path.dirname(__file__), "static")
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
-# 1. ROOT "/" & "/login" SERVES THE SIGN IN & REGISTRATION GATEWAY
+
+def _page(filename: str) -> FileResponse:
+    return FileResponse(os.path.join(STATIC_DIR, filename))
+
+
+@app.get("/healthz", tags=["system"])
+def healthz():
+    return {"status": "ok", "version": app.version}
+
+
+# 1. Sign-in / registration gateway
 @app.get("/", include_in_schema=False)
 @app.get("/login", include_in_schema=False)
 @app.get("/signin", include_in_schema=False)
 def serve_login():
-    return FileResponse(os.path.join(STATIC_DIR, "login.html"))
+    return _page("login.html")
 
-# 2. MAIN EXECUTIVE DASHBOARD AT "/app"
+
+# 2. Executive dashboard
 @app.get("/app", include_in_schema=False)
 @app.get("/dashboard", include_in_schema=False)
 def serve_dashboard():
-    return FileResponse(os.path.join(STATIC_DIR, "app.html"))
+    return _page("app.html")
 
-# 3. ML MODEL & TRAINING PAGE AT "/ml-training" & "/ml"
+
+# 3. ML model & training console
 @app.get("/ml-training", include_in_schema=False)
 @app.get("/ml", include_in_schema=False)
 def serve_ml_page():
-    return FileResponse(os.path.join(STATIC_DIR, "ml_training.html"))
+    return _page("ml_training.html")
 
-# 4. SYSTEM VERIFICATION / TESTER PAGE AT "/verification" & "/system-verification"
+
+# 4. System verification / live test battery
 @app.get("/verification", include_in_schema=False)
 @app.get("/system-verification", include_in_schema=False)
 def serve_verification_page():
-    return FileResponse(os.path.join(STATIC_DIR, "verification.html"))
+    return _page("verification.html")

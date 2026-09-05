@@ -1,129 +1,372 @@
-import pytest
-import sys
 import os
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+import sys
 
+import pytest
 from fastapi.testclient import TestClient
-from main import app
-from ml.train import train_model
 
-client = TestClient(app)
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
+from main import app  # noqa: E402
+from services import decision_engine, model_registry  # noqa: E402
+
+DEMO_EMAIL = "admin@sail.gov.in"
+DEMO_PASSWORD = "12345"
+
+
+@pytest.fixture(scope="session")
+def client():
+    # The context manager runs the lifespan hook, which creates the schema and
+    # seeds reference data - the API tests depend on both.
+    with TestClient(app) as test_client:
+        yield test_client
+
 
 @pytest.fixture(scope="session", autouse=True)
 def ensure_model():
-    model_path = os.path.join(os.path.dirname(__file__), "..", "ml", "model.pkl")
-    if not os.path.exists(model_path):
-        train_model()
+    """Make sure a usable model exists before any test asks for a prediction."""
+    model_registry.get_payload()
 
-# ---------- 1. PAGE ROUTING & AUTH TESTS ----------
+
+@pytest.fixture(scope="session")
+def auth_headers(client):
+    response = client.post(
+        "/api/auth/login",
+        json={"username": DEMO_EMAIL, "password": DEMO_PASSWORD},
+    )
+    assert response.status_code == 200, response.text
+    return {"Authorization": f"Bearer {response.json()['access_token']}"}
+
+
+# ---------- 1. PAGE ROUTING ----------
 class TestPageRoutes:
-    def test_root_serves_signin_gateway(self):
-        """GET / must return the Ministry of Steel Sign In gateway."""
+    def test_root_serves_signin_gateway(self, client):
         r = client.get("/")
         assert r.status_code == 200
         assert "LOHA DRISHTI" in r.text
         assert "Ministry of Steel" in r.text
         assert "Secure Authentication" in r.text
 
-    def test_app_serves_dashboard(self):
-        """GET /app must return the main LOHA-DRISHTI dashboard."""
+    def test_app_serves_dashboard(self, client):
         r = client.get("/app")
         assert r.status_code == 200
         assert "LOHA DRISHTI" in r.text
         assert "Command Center" in r.text
-        assert "Watch Workflow" in r.text
 
-    def test_login_page_serves(self):
-        """GET /login must return the dedicated Sign In page."""
-        r = client.get("/login")
-        assert r.status_code == 200
-        assert "LOHA DRISHTI" in r.text
-        assert "Secure Authentication" in r.text
-
-    def test_ml_training_page_serves(self):
-        """GET /ml-training must return the ML Model & Training page."""
+    def test_ml_training_page_serves(self, client):
         r = client.get("/ml-training")
         assert r.status_code == 200
         assert "ML Model" in r.text
-        assert "RETRAIN" in r.text
 
-    def test_system_verification_page_serves(self):
-        """GET /verification must return the System Verification tester page."""
+    def test_system_verification_page_serves(self, client):
         r = client.get("/verification")
         assert r.status_code == 200
         assert "System Verification" in r.text
-        assert "TEST SUITE" in r.text
 
-    def test_api_docs_accessible(self):
-        """GET /docs must return OpenAPI Swagger documentation."""
-        r = client.get("/docs")
+    def test_healthz(self, client):
+        r = client.get("/healthz")
         assert r.status_code == 200
+        assert r.json()["status"] == "ok"
 
-# ---------- 2. AUTHENTICATION API TESTS ----------
+    def test_api_docs_accessible(self, client):
+        assert client.get("/docs").status_code == 200
+
+
+# ---------- 2. AUTHENTICATION ----------
 class TestAuthAPI:
-    def test_login_valid(self):
-        """Valid admin@sail.gov.in / 12345 credentials return JWT token."""
+    def test_login_form_encoded(self, client):
         r = client.post(
             "/api/auth/login",
-            data={"username": "admin@sail.gov.in", "password": "12345"},
-            headers={"Content-Type": "application/x-www-form-urlencoded"}
+            data={"username": DEMO_EMAIL, "password": DEMO_PASSWORD},
+            headers={"Content-Type": "application/x-www-form-urlencoded"},
         )
         assert r.status_code == 200
-        data = r.json()
-        assert "access_token" in data
-        assert data["token_type"] == "bearer"
-        assert data["role"] == "Chief Logistics Officer"
+        body = r.json()
+        assert body["token_type"] == "bearer"
+        assert body["role"] == "Admin"
 
-    def test_login_invalid(self):
-        """Invalid credentials return 401 Unauthorized."""
+    def test_login_json_body(self, client):
+        r = client.post(
+            "/api/auth/login", json={"username": DEMO_EMAIL, "password": DEMO_PASSWORD}
+        )
+        assert r.status_code == 200
+        assert r.json()["access_token"]
+
+    def test_login_invalid_password(self, client):
         r = client.post(
             "/api/auth/login",
-            data={"username": "admin@sail.gov.in", "password": "wrongpassword999"},
-            headers={"Content-Type": "application/x-www-form-urlencoded"}
+            json={"username": DEMO_EMAIL, "password": "wrongpassword999"},
         )
         assert r.status_code == 401
 
-# ---------- 3. ML PIPELINE & METRICS TESTS ----------
+    def test_login_unknown_user(self, client):
+        r = client.post(
+            "/api/auth/login",
+            json={"username": "nobody@example.com", "password": DEMO_PASSWORD},
+        )
+        assert r.status_code == 401
+
+    def test_demo_password_is_not_a_bypass(self, client):
+        """The demo password must only work for accounts that really hold it -
+        it used to authenticate any address in a hardcoded list."""
+        r = client.post(
+            "/api/auth/login",
+            json={"username": "attacker@sail.gov.in", "password": DEMO_PASSWORD},
+        )
+        assert r.status_code == 401
+
+    def test_me_requires_token(self, client):
+        assert client.get("/api/auth/me").status_code == 401
+
+    def test_me_rejects_garbage_token(self, client):
+        r = client.get("/api/auth/me", headers={"Authorization": "Bearer not.a.jwt"})
+        assert r.status_code == 401
+
+    def test_me_with_valid_token(self, client, auth_headers):
+        r = client.get("/api/auth/me", headers=auth_headers)
+        assert r.status_code == 200
+        assert r.json()["email"] == DEMO_EMAIL
+
+
+# ---------- 3. PROTECTED ENDPOINTS ----------
+class TestAuthorization:
+    @pytest.mark.parametrize(
+        "method,path,payload",
+        [
+            ("get", "/api/cargo/", None),
+            ("get", "/api/decision/history", None),
+            ("get", "/api/system/reports", None),
+            ("post", "/api/ml/train", {}),
+        ],
+    )
+    def test_requires_authentication(self, client, method, path, payload):
+        call = getattr(client, method)
+        response = call(path) if payload is None else call(path, json=payload)
+        assert response.status_code in (401, 403), f"{path} -> {response.status_code}"
+
+    def test_report_save_requires_auth(self, client):
+        r = client.post("/api/system/reports/save", json={"title": "x"})
+        assert r.status_code in (401, 403)
+
+    def test_report_save_with_auth(self, client, auth_headers):
+        r = client.post(
+            "/api/system/reports/save",
+            json={"title": "Test Strategy Report", "cost_cr": 12.5},
+            headers=auth_headers,
+        )
+        assert r.status_code == 200
+        assert r.json()["status"] == "SUCCESS"
+
+
+# ---------- 4. REFERENCE DATA ----------
+class TestReferenceData:
+    def test_ports_seeded(self, client):
+        r = client.get("/api/ports/")
+        assert r.status_code == 200
+        ports = r.json()
+        assert len(ports) >= 5
+        assert {"Paradip", "Dhamra", "Haldia"} <= {p["name"] for p in ports}
+        for port in ports:
+            assert port["draft_m"] > 0
+            assert port["mech_rate_mt_d"] > 0
+
+    def test_vessels_seeded(self, client):
+        r = client.get("/api/vessels/")
+        assert r.status_code == 200
+        classes = {v["class_type"] for v in r.json()}
+        assert {"Handysize", "Supramax", "Panamax", "Capesize"} <= classes
+
+
+# ---------- 5. ML PIPELINE ----------
 class TestMLPipeline:
-    def test_ml_info(self):
-        """GET /api/ml/info returns model metrics (R2, MAE, RMSE)."""
+    def test_ml_info(self, client):
         r = client.get("/api/ml/info")
         assert r.status_code == 200
         data = r.json()
-        assert "algorithm" in data
-        assert "r2_score" in data
-        assert "mae_usd" in data
         assert data["r2_score"] > 0.90
+        assert data["mae_usd"] > 0
 
-    def test_ml_prediction(self):
-        """POST /api/ml/predict returns valid rate and confidence interval."""
-        r = client.post("/api/ml/predict", json={
-            "origin": "Australia",
-            "distance_nm": 4500,
-            "month": 6,
-            "bunker_price": 640.0,
-            "pressure_index": 45.0
-        })
+    def test_ml_prediction(self, client):
+        r = client.post(
+            "/api/ml/predict",
+            json={
+                "origin": "Australia",
+                "distance_nm": 4500,
+                "month": 6,
+                "bunker_price": 640.0,
+                "pressure_index": 45.0,
+            },
+        )
         assert r.status_code == 200
         data = r.json()
-        assert "predicted_rate_usd" in data
-        assert "confidence_interval" in data
+        lower, upper = data["confidence_interval"]
         assert 10.0 < data["predicted_rate_usd"] < 70.0
+        assert lower <= data["predicted_rate_usd"] <= upper
 
-# ---------- 4. DATABASE & SYSTEM TESTER ----------
+    def test_ml_prediction_rejects_bad_input(self, client):
+        r = client.post(
+            "/api/ml/predict",
+            json={
+                "origin": "Australia",
+                "distance_nm": -10,
+                "month": 99,
+                "bunker_price": 640.0,
+                "pressure_index": 45.0,
+            },
+        )
+        assert r.status_code == 422
+
+    def test_forecast_curve(self, client):
+        r = client.post(
+            "/api/ml/forecast-curve",
+            json={
+                "origin": "Australia",
+                "distance_nm": 4500,
+                "month": 3,
+                "bunker_price": 700.0,
+                "pressure_index": 50.0,
+                "horizons": [7, 30, 90],
+            },
+        )
+        assert r.status_code == 200
+        points = r.json()["points"]
+        assert [p["horizon_days"] for p in points] == [7, 30, 90]
+        assert all(p["predicted_rate_usd"] > 0 for p in points)
+
+    def test_model_is_cached_between_calls(self):
+        """get_payload must hand back the same object, not reload the pickle."""
+        assert model_registry.get_payload() is model_registry.get_payload()
+
+    def test_higher_bunker_price_raises_the_rate(self):
+        cheap, dear = model_registry.predict_rates([
+            {"origin": "Australia", "distance_nm": 4500, "month": 5,
+             "bunker_price": 550.0, "pressure_index": 50.0},
+            {"origin": "Australia", "distance_nm": 4500, "month": 5,
+             "bunker_price": 850.0, "pressure_index": 50.0},
+        ])
+        assert dear > cheap
+
+
+# ---------- 6. DECISION ENGINE ----------
+class TestDecisionEngine:
+    BASE_REQUEST = {
+        "parcel_size": 80000,
+        "cargo_type": "Coking Coal",
+        "origin": "Australia",
+        "plant": "Rourkela",
+        "window_days": 30,
+        "persist": False,
+    }
+
+    def test_optimize_returns_ranked_options(self, client):
+        r = client.post("/api/decision/optimize", json=self.BASE_REQUEST)
+        assert r.status_code == 200
+        body = r.json()
+        options = body["options"]
+        assert options, "no options returned"
+        assert body["recommended"]["landed_cost_usd_mt"] == options[0]["landed_cost_usd_mt"]
+
+        adjusted = [
+            o["landed_cost_usd_mt"] * (1 + decision_engine.RISK_WEIGHT * o["risk_index"] / 100)
+            for o in options
+        ]
+        assert adjusted == sorted(adjusted), "options are not ranked by risk-adjusted cost"
+
+    def test_cost_components_sum_to_the_total(self, client):
+        r = client.post("/api/decision/optimize", json=self.BASE_REQUEST)
+        for option in r.json()["options"]:
+            parts = (
+                option["ocean_freight_usd"] + option["deadfreight_usd"]
+                + option["vessel_hire_usd"] + option["port_dues_usd"]
+                + option["demurrage_usd"] + option["lightering_usd"]
+                + option["inland_rail_usd"]
+            )
+            assert parts == pytest.approx(option["landed_cost_usd"], rel=1e-6)
+
+    def test_explanation_is_populated(self, client):
+        r = client.post("/api/decision/optimize", json=self.BASE_REQUEST)
+        assert len(r.json()["recommended"]["explanation"]) > 40
+
+    def test_small_parcel_picks_a_small_ship(self, client):
+        r = client.post(
+            "/api/decision/optimize", json={**self.BASE_REQUEST, "parcel_size": 35000}
+        )
+        best = r.json()["recommended"]
+        assert best["vessel_class"] == "Handysize"
+        assert best["utilisation_pct"] > 80
+
+    def test_large_parcel_picks_a_large_ship(self, client):
+        r = client.post(
+            "/api/decision/optimize", json={**self.BASE_REQUEST, "parcel_size": 170000}
+        )
+        assert r.json()["recommended"]["vessel_class"] == "Capesize"
+
+    def test_monsoon_month_raises_risk(self, client):
+        dry = client.post("/api/decision/optimize", json={**self.BASE_REQUEST, "month": 2})
+        wet = client.post("/api/decision/optimize", json={**self.BASE_REQUEST, "month": 7})
+        assert wet.json()["recommended"]["risk_index"] > dry.json()["recommended"]["risk_index"]
+
+    def test_invalid_parcel_is_rejected(self, client):
+        r = client.post("/api/decision/optimize", json={**self.BASE_REQUEST, "parcel_size": 0})
+        assert r.status_code == 422
+
+    def test_optimize_persists_a_recommendation(self, client, auth_headers):
+        before = client.get("/api/decision/history", headers=auth_headers).json()["count"]
+        client.post(
+            "/api/decision/optimize",
+            json={**self.BASE_REQUEST, "persist": True},
+            headers=auth_headers,
+        )
+        after = client.get("/api/decision/history", headers=auth_headers).json()["count"]
+        assert after > before
+
+    def test_port_blocked_scenario_diverts(self, client):
+        r = client.post(
+            "/api/decision/simulate",
+            json={**self.BASE_REQUEST, "scenario": "port_blocked", "blocked_port": "Dhamra"},
+        )
+        assert r.status_code == 200
+        assert r.json()["disrupted"]["port_name"] != "Dhamra"
+
+    def test_bunker_spike_costs_more(self, client):
+        r = client.post(
+            "/api/decision/simulate", json={**self.BASE_REQUEST, "scenario": "bunker_spike"}
+        )
+        assert r.status_code == 200
+        assert r.json()["delta_usd"] > 0
+
+    def test_vessel_unavailable_scenario_switches_class(self, client):
+        r = client.post(
+            "/api/decision/simulate",
+            json={
+                **self.BASE_REQUEST,
+                "parcel_size": 170000,
+                "scenario": "vessel_unavail",
+                "unavailable_class": "Capesize",
+            },
+        )
+        assert r.status_code == 200
+        assert r.json()["disrupted"]["vessel_class"] != "Capesize"
+
+
+# ---------- 7. SYSTEM ----------
 class TestDatabaseAndSystem:
-    def test_system_status(self):
-        """GET /api/system/status returns connected database & operational status."""
+    def test_system_status(self, client):
         r = client.get("/api/system/status")
         assert r.status_code == 200
         data = r.json()
         assert data["status"] == "OPERATIONAL"
         assert data["database"]["status"] == "Connected"
 
-    def test_live_system_tests(self):
-        """GET /api/system/run-tests executes live test battery with 100% pass."""
+    def test_live_system_tests(self, client):
         r = client.get("/api/system/run-tests")
         assert r.status_code == 200
         data = r.json()
+        assert data["failed"] == 0, data["results"]
         assert data["overall_status"] == "ALL_TESTS_PASSING"
-        assert data["failed"] == 0
+
+    def test_waterways(self, client):
+        r = client.get("/api/waterways")
+        assert r.status_code == 200
+        body = r.json()
+        assert len(body["waterways"]) >= 10
+        assert len(body["vessels"]) >= 5

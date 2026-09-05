@@ -391,6 +391,29 @@ footer .data-disclaimer{font-size:10.5px;color:var(--steel-light);margin-top:6px
 .waterway-line{stroke:#F59E0B;stroke-width:3;stroke-opacity:.75;}.waterway-line.selected{stroke:#FFF;stroke-width:6;stroke-opacity:1;}
 .leaflet-container{font-family:'IBM Plex Sans',sans-serif;}.leaflet-popup-content-wrapper,.leaflet-popup-tip{background:#0F172A;color:#F8FAFC;}.leaflet-popup-content{font-size:11px;line-height:1.55;}.leaflet-control-layers{border:1px solid var(--steel-border)!important;box-shadow:var(--shadow-md)!important;}
 @media(max-width:900px){.waterways-layout{grid-template-columns:1fr;}#internationalMap{height:480px;}}
+
+/* Says whether the figures on screen came from the trained model or from the
+   local fallback, so an estimate is never mistaken for a model output. */
+.engine-source{
+  display:inline-flex; align-items:center; gap:6px;
+  padding:4px 10px; border-radius:999px;
+  font-size:11px; font-weight:800; letter-spacing:.04em;
+  border:1px solid var(--steel-border, #cbd5e1);
+  background:var(--navy-surface, #f1f5f9); color:var(--steel-muted, #64748b);
+  white-space:nowrap; cursor:help;
+}
+.engine-source::before{
+  content:""; width:7px; height:7px; border-radius:50%;
+  background:currentColor;
+}
+.engine-source.is-live{
+  background:var(--green-bg, #ecfdf5); border-color:var(--green-border, #a7f3d0);
+  color:var(--green, #059669);
+}
+.engine-source.is-offline{
+  background:var(--red-bg, #fef2f2); border-color:var(--red-border, #fecaca);
+  color:var(--red, #dc2626);
+}
 </style>
 </head>
 <body>
@@ -429,6 +452,7 @@ footer .data-disclaimer{font-size:10.5px;color:var(--steel-light);margin-top:6px
   </div>
 
   <div class="topbar-actions">
+    <span class="engine-source" id="engineSourceBadge" title="Checking the decision service...">CONNECTING</span>
     <span class="scenario-pill" id="scenarioPill">⚠ SCENARIO ACTIVE</span>
     <button class="icon-btn" id="openNotifyBtn">🔔 Alerts <span class="badge-num">2</span></button>
     <button class="icon-btn" id="openSearchBtn">🔍 Search</button>
@@ -518,7 +542,7 @@ footer .data-disclaimer{font-size:10.5px;color:var(--steel-light);margin-top:6px
     <div class="section-header">
       <div>
         <h2>Executive Command Center — WHAT SHOULD I DO?</h2>
-        <p>Primary strategy recommendation based on Minimax-Regret optimization across 4 market scenarios.</p>
+        <p>Primary strategy recommendation, ranked on risk-adjusted landed cost. Freight rates are served by the trained model; port and vessel figures come from the platform database.</p>
       </div>
       <span class="section-tag">Recommended Strategy</span>
     </div>
@@ -976,11 +1000,10 @@ footer .data-disclaimer{font-size:10.5px;color:var(--steel-light);margin-top:6px
       <label for="drawerOrigin">Preferred Origin</label>
       <select id="drawerOrigin">
         <option value="any" selected>Any (Engine Decides Optimal)</option>
-        <option value="australia">Australia (RBCT / Newcastle)</option>
+        <option value="australia">Australia (Newcastle / Hay Point)</option>
         <option value="indonesia">Indonesia (Kalimantan)</option>
-        <option value="mozambique">Mozambique (Nacala)</option>
+        <option value="south_africa">South Africa (Richards Bay / RBCT)</option>
         <option value="usa">USA (Hampton Roads)</option>
-        <option value="russia">Russia (Vostochny)</option>
       </select>
     </div>
 
@@ -1277,11 +1300,13 @@ footer .data-disclaimer{font-size:10.5px;color:var(--steel-light);margin-top:6px
 <script>
 /* ======= DATA STORE ======= */
 const ORIGINS = {
-  australia:  {name:"Australia (RBCT/Newcastle)", short:"Australia", cargo:["coking_coal","thermal_coal","iron_ore_fines","iron_ore_lumps"], baseFreight:16.5, vol:0.14, distFactor:1.0},
-  indonesia:  {name:"Indonesia (Kalimantan)",     short:"Indonesia", cargo:["thermal_coal"],                                              baseFreight:9.2,  vol:0.10, distFactor:0.7},
-  mozambique: {name:"Mozambique (Nacala)",        short:"Mozambique",cargo:["coking_coal"],                                               baseFreight:14.0, vol:0.18, distFactor:0.9},
-  usa:        {name:"USA (Hampton Roads)",         short:"USA",       cargo:["coking_coal","thermal_coal"],                                baseFreight:24.0, vol:0.12, distFactor:1.6},
-  russia:     {name:"Russia (Vostochny)",          short:"Russia",    cargo:["thermal_coal","coking_coal"],                                baseFreight:19.5, vol:0.20, distFactor:1.2},
+  /* Keys map 1:1 onto the origins the freight model was trained on
+     (services/model_registry.ORIGINS). Adding one here without retraining
+     would make the engine fall back to a default lane distance. */
+  australia:   {name:"Australia (Newcastle / Hay Point)", short:"Australia",    api:"Australia",    cargo:["coking_coal","thermal_coal","iron_ore_fines","iron_ore_lumps"], baseFreight:16.5, vol:0.14, distFactor:1.0, distanceNm:4500},
+  indonesia:   {name:"Indonesia (Kalimantan)",            short:"Indonesia",    api:"Indonesia",    cargo:["thermal_coal"],                                                 baseFreight:9.2,  vol:0.10, distFactor:0.7, distanceNm:2200},
+  south_africa:{name:"South Africa (Richards Bay / RBCT)",short:"South Africa", api:"South Africa", cargo:["coking_coal","thermal_coal"],                                   baseFreight:14.0, vol:0.18, distFactor:0.9, distanceNm:3800},
+  usa:         {name:"USA (Hampton Roads)",               short:"USA",          api:"USA",          cargo:["coking_coal","thermal_coal"],                                   baseFreight:24.0, vol:0.12, distFactor:1.6, distanceNm:8500},
 };
 
 const PORTS = {
@@ -1304,6 +1329,96 @@ const VESSEL_CLASSES = {
 const CARGO_FOB   = {coking_coal:185, thermal_coal:95, iron_ore_fines:105, iron_ore_lumps:112};
 const CARGO_LABEL = {coking_coal:"Coking Coal", thermal_coal:"Thermal Coal", iron_ore_fines:"Iron Ore Fines", iron_ore_lumps:"Iron Ore Lumps (Pellet)"};
 const PLANT_LABEL = {rourkela:"Rourkela Steel Plant (RSP)", bhilai:"Bhilai Steel Plant (BSP)", durgapur:"Durgapur Steel Plant (DSP)", bokaro:"Bokaro Steel Plant (BSL)", burnpur:"IISCO Steel Plant (ISP)"};
+
+/* =========================================================================
+   BACKEND CLIENT
+   The dashboard is a view over the FastAPI service: freight rates come from
+   the trained model and the ranked strategy from /api/decision/optimize.
+   Every call degrades to the local approximation below if the API is
+   unreachable, and the UI says so rather than passing an estimate off as a
+   model output.
+   ========================================================================= */
+const API_BASE = '';
+let ENGINE_SOURCE = 'BACKEND';   // 'BACKEND' | 'OFFLINE'
+let REFERENCE_SYNCED = false;
+
+function authToken(){
+  /* 'ld_token' is the key login.html and the sign-in modal both write. */
+  try { return localStorage.getItem('ld_token') || ''; } catch(e){ return ''; }
+}
+
+async function api(path, options={}){
+  const headers = Object.assign({'Content-Type':'application/json'}, options.headers||{});
+  const token = authToken();
+  if(token) headers['Authorization'] = 'Bearer ' + token;
+  const res = await fetch(API_BASE + path, Object.assign({}, options, {headers}));
+  if(!res.ok){
+    let detail = res.statusText;
+    try { detail = (await res.json()).detail || detail; } catch(e){}
+    throw new Error(`${res.status} ${detail}`);
+  }
+  return res.json();
+}
+
+/* Port and vessel figures live in the database. Pull them at boot so the
+   dashboard and the engine cannot drift apart. */
+const PORT_KEY_BY_CODE = {
+  INPRT:'paradip', INDHM:'dhamra', INGGV:'gangavaram', INVTZ:'vizag',
+  INGOP:'gopalpur', INHAL:'haldia', INSAG:'sandheads'
+};
+
+async function syncReferenceData(){
+  try{
+    const [ports, vessels] = await Promise.all([api('/api/ports/'), api('/api/vessels/')]);
+
+    ports.forEach(p => {
+      const key = PORT_KEY_BY_CODE[p.code];
+      if(!key || !PORTS[key]) return;
+      Object.assign(PORTS[key], {
+        name: p.name,
+        code: p.code,
+        draft: p.draft_m,
+        loa: p.max_loa,
+        beam: p.max_beam_m,
+        berths: p.berths,
+        waitDays: p.avg_wait_days,
+        mechRate: p.mech_rate_mt_d,
+        evacKm: p.rail_evac_km,
+        demurrage: p.demurrage_usd_day,
+        monsoon: String(p.monsoon_months||'').split(',').filter(Boolean).map(Number)
+      });
+    });
+
+    vessels.forEach(v => {
+      const key = String(v.class_type||'').toLowerCase();
+      if(!VESSEL_CLASSES[key]) return;
+      Object.assign(VESSEL_CLASSES[key], {
+        name: v.class_type,
+        dwtMax: v.capacity_mt,
+        draft: v.draft_m,
+        speedKnots: v.speed_knots,
+        dailyCostUsd: v.daily_cost_usd
+      });
+    });
+
+    REFERENCE_SYNCED = true;
+  }catch(err){
+    console.warn('Reference data sync failed; using built-in defaults.', err);
+    REFERENCE_SYNCED = false;
+  }
+}
+
+function setEngineSource(source, reason){
+  ENGINE_SOURCE = source;
+  const badge = document.getElementById('engineSourceBadge');
+  if(!badge) return;
+  const live = source === 'BACKEND';
+  badge.textContent = live ? 'LIVE MODEL' : 'OFFLINE ESTIMATE';
+  badge.className = 'engine-source ' + (live ? 'is-live' : 'is-offline');
+  badge.title = live
+    ? 'Freight rates and ranking served by the trained model via /api/decision/optimize.'
+    : ('Backend unreachable - showing a local approximation. ' + (reason||''));
+}
 
 let activeResult   = null;
 let baselineResult = null;
@@ -1367,8 +1482,8 @@ function riskScore(originKey, portKey){
   if(!o || !p) return 35;
   const isMonsoon=p.monsoon.includes(currentMonth());
   
-  const originBase = { australia: 10, south_africa: 22, indonesia: 36, usa: 18, russia: 42, mozambique: 38 };
-  const originVol = { australia: 6, south_africa: 15, indonesia: 20, usa: 10, russia: 26, mozambique: 22 };
+  const originBase = { australia: 10, south_africa: 22, indonesia: 36, usa: 18 };
+  const originVol = { australia: 6, south_africa: 15, indonesia: 20, usa: 10 };
   const portWait = { dhamra: 4, gangavaram: 3, vizag: 8, paradip: 16, haldia: 24 };
   const portMonsoon = { dhamra: 6, gangavaram: 5, vizag: 10, paradip: 20, haldia: 26 };
 
@@ -1381,7 +1496,9 @@ function riskScore(originKey, portKey){
 
 function riskClass(score){ return score<40?'risk-low':score<60?'risk-mid':'risk-high'; }
 
-function runDecisionEngine(inputs, blockedPorts=[], blockedVesselClass=null, seedOffset=0, freightSpikeMult=1.0){
+/* Offline approximation. Only used when the API cannot be reached; the
+   badge in the header switches to OFFLINE ESTIMATE when this runs. */
+function runDecisionEngineLocal(inputs, blockedPorts=[], blockedVesselClass=null, seedOffset=0, freightSpikeMult=1.0){
   const rand=seededRand(inputs.qty+inputs.days*7+seedOffset+inputs.plant.length*13);
   const vesselClassKey=blockedVesselClass
     ?(Object.keys(VESSEL_CLASSES).filter(k=>k!==blockedVesselClass&&VESSEL_CLASSES[k].dwtMax>=inputs.qty)[0]||"handysize")
@@ -1432,11 +1549,189 @@ function runDecisionEngine(inputs, blockedPorts=[], blockedVesselClass=null, see
   return {winner,backup,risk,continuity,vesselClassKey,candidateCount:candidates.length,candidates,bestPerScenario};
 }
 
+/* =========================================================================
+   BACKEND-BACKED ENGINE
+   Calls /api/decision/optimize and maps the response onto the result shape
+   the renderers already consume, so the numbers on screen are the model's.
+   ========================================================================= */
+
+const ORIGIN_KEY_BY_API = Object.fromEntries(
+  Object.entries(ORIGINS).map(([key, o]) => [o.api, key])
+);
+
+function portKeyByName(){
+  return Object.fromEntries(Object.entries(PORTS).map(([key, p]) => [p.name, key]));
+}
+
+/* Turn one API option into the {originKey, portKey, base:{...}} record the
+   waterfall, battle table and decision card already expect. */
+function mapOption(option, inputs, originKey){
+  const qty = Math.max(inputs.qty, 1);
+  const portKey = portKeyByName()[option.port_name] || 'paradip';
+  const port = PORTS[portKey] || {};
+  const origin = ORIGINS[originKey] || {distFactor:1.0, vol:0.14};
+  const month = currentMonth();
+  const isMonsoon = (port.monsoon || []).includes(month);
+
+  /* Straight from the service. */
+  const freight             = option.freight_rate_usd_mt;
+  const deadfreight         = option.deadfreight_usd / qty;
+  const vesselHire          = option.vessel_hire_usd / qty;
+  const dischargePortCharge = option.port_dues_usd / qty;
+  const demurrageExpected   = option.demurrage_usd / qty;
+  const lightering          = option.lightering_usd / qty;
+  const evac                = option.inland_rail_usd / qty;
+
+  /* Cargo price and origin-side charges are commercial inputs the service does
+     not model; they stay here and sit on top of the logistics stack. */
+  const fob            = CARGO_FOB[inputs.cargoType];
+  const loadPortCharge = 3.2 * origin.distFactor;
+  const insurance      = 0.9 + (isMonsoon ? 0.4 : 0);
+  const transitDays    = Math.round(option.sea_days);
+  const financing      = transitDays * 0.11;
+
+  const total = fob + freight + deadfreight + vesselHire + loadPortCharge
+              + dischargePortCharge + demurrageExpected + lightering
+              + insurance + evac + financing;
+
+  return {
+    originKey, portKey,
+    vesselClassKey: String(option.vessel_class || '').toLowerCase(),
+    api: option,
+    base: {
+      fob, freight, deadfreight, vesselHire, loadPortCharge, dischargePortCharge,
+      demurrageExpected, lightering, insurance, evac, financing, total,
+      transitDays, expectedWaitDays: option.wait_days, isMonsoon
+    }
+  };
+}
+
+/* The scenario-regret table stays, now computed over real costs. */
+function attachRegret(candidates){
+  const scenarios = ["normal","monsoon_delay","congestion_spike","freight_spike"];
+  candidates.forEach(c => {
+    c.scenarioCosts = {
+      normal:           c.base.total,
+      monsoon_delay:    c.base.total + c.base.demurrageExpected * 0.8,
+      congestion_spike: c.base.total + c.base.demurrageExpected * 0.8,
+      freight_spike:    c.base.total + c.base.freight * 0.20
+    };
+  });
+  const bestPerScenario = {};
+  scenarios.forEach(sc => {
+    bestPerScenario[sc] = Math.min(...candidates.map(c => c.scenarioCosts[sc]));
+  });
+  candidates.forEach(c => {
+    c.regrets = scenarios.map(sc => c.scenarioCosts[sc] - bestPerScenario[sc]);
+    c.maxRegret = Math.max(...c.regrets);
+  });
+  return bestPerScenario;
+}
+
+function candidateOrigins(inputs){
+  const matching = Object.keys(ORIGINS).filter(o => ORIGINS[o].cargo.includes(inputs.cargoType));
+  if(inputs.origin !== 'any' && ORIGINS[inputs.origin]) return [inputs.origin];
+  return matching.length ? matching : Object.keys(ORIGINS);
+}
+
+function riskAdjusted(candidate){
+  return candidate.api.landed_cost_usd_mt * (1 + 0.35 * candidate.api.risk_index / 100);
+}
+
+async function runDecisionEngine(inputs, blockedPorts=[], blockedVesselClass=null, seedOffset=0, freightSpikeMult=1.0){
+  const origins = candidateOrigins(inputs);
+
+  try{
+    /* "Any origin" means scoring every lane the model knows and comparing them,
+       so the calls go out together rather than one after another. */
+    const responses = await Promise.all(origins.map(originKey =>
+      api('/api/decision/optimize', {
+        method:'POST',
+        body: JSON.stringify({
+          parcel_size: inputs.qty,
+          cargo_type: CARGO_LABEL[inputs.cargoType],
+          origin: ORIGINS[originKey].api,
+          plant: PLANT_LABEL[inputs.plant],
+          window_days: inputs.days,
+          month: currentMonth(),
+          pressure_index: Math.round(50 + (ORIGINS[originKey].vol - 0.14) * 200),
+          top_n: 8,
+          persist: false
+        })
+      }).then(data => ({originKey, data}))
+    ));
+
+    const byName = portKeyByName();
+    const candidates = [];
+    responses.forEach(({originKey, data}) => {
+      data.options
+        .filter(o => !blockedPorts.includes(byName[o.port_name]))
+        .filter(o => !blockedVesselClass || String(o.vessel_class).toLowerCase() !== blockedVesselClass)
+        .forEach(o => candidates.push(mapOption(o, inputs, originKey)));
+    });
+
+    if(!candidates.length) throw new Error('no feasible option returned');
+
+    /* A freight spike is a what-if applied on top of the served rate. */
+    if(freightSpikeMult !== 1.0){
+      candidates.forEach(c => {
+        const uplift = c.base.freight * (freightSpikeMult - 1);
+        c.base.freight += uplift;
+        c.base.total   += uplift;
+      });
+    }
+
+    /* Preserve the service's ranking: risk-adjusted landed cost per tonne. */
+    candidates.sort((a,b) => riskAdjusted(a) - riskAdjusted(b));
+
+    const bestPerScenario = attachRegret(candidates);
+    const winner = candidates[0];
+    const backup = candidates[1] || winner;
+
+    /* Record the chosen strategy against the winning lane. */
+    api('/api/decision/optimize', {
+      method:'POST',
+      body: JSON.stringify({
+        parcel_size: inputs.qty,
+        cargo_type: CARGO_LABEL[inputs.cargoType],
+        origin: ORIGINS[winner.originKey].api,
+        plant: PLANT_LABEL[inputs.plant],
+        window_days: inputs.days,
+        month: currentMonth(),
+        top_n: 1,
+        persist: true
+      })
+    }).catch(err => console.warn('Could not record recommendation:', err.message));
+
+    setEngineSource('BACKEND');
+
+    return {
+      winner, backup,
+      risk: Math.round(winner.api.risk_index),
+      continuity: Math.round(winner.api.supply_continuity),
+      confidence: winner.api.confidence,
+      vesselClassKey: winner.vesselClassKey,
+      candidateCount: candidates.length,
+      candidates, bestPerScenario,
+      source: 'BACKEND',
+      explanation: winner.api.explanation,
+      warnings: winner.api.warnings || []
+    };
+
+  }catch(err){
+    console.warn('Decision service unavailable; falling back to a local estimate.', err);
+    setEngineSource('OFFLINE', err.message);
+    const local = runDecisionEngineLocal(inputs, blockedPorts, blockedVesselClass, seedOffset, freightSpikeMult);
+    if(local) local.source = 'OFFLINE';
+    return local;
+  }
+}
+
 /* ======= STEPPER ======= */
 const STAGES=[
   {key:"cargo",label:"Cargo Intake"},{key:"origins",label:"Origins"},{key:"ports",label:"Port DNA"},
   {key:"vessels",label:"Vessel Fit"},{key:"forecast",label:"Forecast"},{key:"cost",label:"Cost Waterfall"},
-  {key:"risk",label:"Risk Matrix"},{key:"optimize",label:"Minimax Regret"},{key:"decision",label:"Decision"}
+  {key:"risk",label:"Risk Matrix"},{key:"optimize",label:"Risk-Adjusted Rank"},{key:"decision",label:"Decision"}
 ];
 
 function buildStepper(){
@@ -1461,7 +1756,7 @@ function setStage(idx,note){
 }
 
 /* ======= MAP ======= */
-const ORIGIN_XY={australia:[80,260],indonesia:[140,220],mozambique:[70,160],usa:[50,70],russia:[120,50]};
+const ORIGIN_XY={australia:[80,260],indonesia:[140,220],south_africa:[70,160],usa:[50,70]};
 const PORT_XY={
   paradip:[580,140],dhamra:[620,130],gangavaram:[630,180],vizag:[610,200],
   gopalpur:[560,165],haldia:[670,80],sandheads:[685,90]
@@ -1519,7 +1814,8 @@ async function animateRouteBattle(candidates,winner){
 
 /* ======= WATERFALL ======= */
 const WATERFALL_COLORS={
-  fob:'var(--navy-surface)',freight:'var(--saffron)',loadPortCharge:'var(--steel-muted)',
+  fob:'var(--navy-surface)',freight:'var(--saffron)',vesselHire:'var(--saffron)',
+  deadfreight:'var(--red)',lightering:'var(--red)',loadPortCharge:'var(--steel-muted)',
   dischargePortCharge:'var(--steel-muted)',demurrageExpected:'var(--red)',
   insurance:'var(--blue)',evac:'var(--green)',financing:'var(--steel-light)'
 };
@@ -1529,6 +1825,9 @@ function renderWaterfallBars(base,qty){
   const items=[
     {key:'fob',         icon:"📦", label:"Cargo FOB Price", desc:"Base commodity cost at load port"},
     {key:'freight',     icon:"🚢", label:"Ocean Freight", desc:"Vessel chartering / voyage fixture"},
+    {key:'vesselHire',         icon:"🚢", label:"Vessel Hire", desc:"Daily hire across sea days plus time in port"},
+    {key:'deadfreight',        icon:"📦", label:"Deadfreight", desc:"Booked space left unfilled beyond tolerance"},
+    {key:'lightering',         icon:"⛴", label:"Lightering", desc:"Barge transhipment where the berth is draft-limited"},
     {key:'loadPortCharge',     icon:"⚓", label:"Load Port Charges", desc:"Stevedoring, pilotage, tugs at origin"},
     {key:'dischargePortCharge',icon:"🏗️", label:"Discharge Port Charges", desc:"TAMP statutory berth hire & wharfage"},
     {key:'demurrageExpected',  icon:"⏳", label:"Demurrage Risk", desc:"Queue delay beyond free laytime"},
@@ -1720,10 +2019,14 @@ function renderDecisionCard(result,inputs,targetId='decisionCardHost'){
 
     <!-- MINIMAX REGRET EXPLANATION -->
     <div class="regret-box">
-      <h4>📐 How Was This Decided? — Minimax-Regret Score Matrix</h4>
+      <h4>📐 How Was This Decided? — Scenario Regret Matrix</h4>
       <p style="font-size:12px;color:var(--steel-dark);margin:0 0 8px;">
-        The engine evaluates every origin-port combination across <b>4 market scenarios</b> and selects the strategy with the
-        <b>smallest worst-case regret</b> — i.e., the route that loses the <i>least</i> if any scenario turns bad.
+        The recommendation is the origin-port-vessel combination with the lowest
+        <b>risk-adjusted landed cost</b>: cost per tonne weighted by an index built from berth congestion,
+        seasonal exposure, freight volatility and under-keel margin.
+        The table below is a cross-check — it re-prices every shortlisted strategy under
+        <b>4 market scenarios</b> and shows the <b>worst-case regret</b>, i.e. how much each option
+        loses against the best available choice if that scenario turns bad.
       </p>
       <div style="overflow-x:auto;">
         <table class="regret-table">
@@ -1901,8 +2204,8 @@ function handleChallenge(type){
 
   showLoading(`Simulating: ${eventLabel}`, 'Recalculating Minimax-Regret for scenario...');
 
-  setTimeout(()=>{
-    const newResult=runDecisionEngine(activeInputs,blockedPorts,blockedVessel,999,spikeMult);
+  setTimeout(async ()=>{
+    const newResult=await runDecisionEngine(activeInputs,blockedPorts,blockedVessel,999,spikeMult);
     hideLoading();
     if(!newResult) return;
 
@@ -2195,10 +2498,10 @@ async function runPipeline(){
   setStage(6,`Building risk matrix: freight volatility, monsoon, congestion, evac...`);
   await delay(250);
   document.getElementById('loadingSubText').textContent='Stage 8/9: Minimax-Regret optimization...';
-  setStage(7,`Running Minimax-Regret optimization across 4 scenarios...`);
+  setStage(7,`Ranking candidates on risk-adjusted landed cost...`);
   await delay(280);
 
-  const result=runDecisionEngine(inputs);
+  const result=await runDecisionEngine(inputs);
   activeResult=result;
   baselineResult=result;
   hideLoading();
@@ -2329,7 +2632,7 @@ function submitCustomCopilotQuery(){
   askCopilot(query);
 }
 
-function askCopilot(query){
+async function askCopilot(query){
   const body=document.getElementById('copilotBody');
   const typingEl=document.getElementById('copilotTyping');
   body.innerHTML+=`<div class="copilot-msg user">${query}</div>`;
@@ -2340,7 +2643,7 @@ function askCopilot(query){
   let reply = "I am evaluating your query against live logistics parameters and port constraints.";
 
   const inputs = activeInputs || { qty: 80000, cargoType: 'coking_coal', plant: 'rourkela', days: 30, origin: 'any' };
-  const res = activeResult || runDecisionEngine(inputs);
+  const res = activeResult || await runDecisionEngine(inputs);
   const w = res.winner;
   const vc = VESSEL_CLASSES[res.vesselClassKey];
   const p = PORTS[w.portKey];
@@ -2409,6 +2712,13 @@ document.addEventListener('keydown',(e)=>{
 
 /* ======= INITIAL RENDER ======= */
 buildStepper();
+
+/* Pull ports/vessels from the database before anything is computed, so the
+   dashboard and the decision service agree on the reference figures. */
+syncReferenceData().then(() => {
+  setEngineSource(REFERENCE_SYNCED ? 'BACKEND' : 'OFFLINE',
+                  REFERENCE_SYNCED ? '' : 'Reference data could not be loaded.');
+});
 renderPortGrid();
 renderVesselGrid();
 drawFreightChart(30);
@@ -2443,7 +2753,7 @@ function updateMarketPressureGauge(result, inputs, disruptionType=null){
   const month = currentMonth();
 
   // 1. Freight Volatility (0-100): Clear corridor distinction
-  const baseVolMap = { australia: 22, south_africa: 46, indonesia: 65, usa: 36, russia: 78, mozambique: 68 };
+  const baseVolMap = { australia: 22, south_africa: 46, indonesia: 65, usa: 36 };
   let vol = baseVolMap[originKey] || 35;
   if(disruptionType === 'freight') vol = Math.min(96, vol + 44);
   if(disruptionType === 'bunker') vol = Math.min(92, vol + 32);
@@ -2635,22 +2945,14 @@ async function submitModalLogin(){
         updateTopbarAuthDisplay();
       }, 500);
     } else {
-      // Fallback
-      localStorage.setItem('ld_token', 'token_' + Date.now());
-      localStorage.setItem('ld_role', email.includes('admin') ? 'Chief Logistics Officer' : 'Senior Chartering Analyst');
-      localStorage.setItem('ld_email', email);
-      showModalAuthAlert('✅ Signed in as ' + email, true);
-      setTimeout(()=>{
-        closeModal('signinModal');
-        updateTopbarAuthDisplay();
-      }, 500);
+      /* A rejected credential must not produce a session. This branch used to
+         mint a local token and open the dashboard anyway. */
+      let detail = 'Incorrect email or password.';
+      try { detail = (await res.json()).detail || detail; } catch(e){}
+      showModalAuthAlert('❌ ' + detail);
     }
   } catch(e){
-    localStorage.setItem('ld_token', 'offline_token_' + Date.now());
-    localStorage.setItem('ld_role', 'Chief Logistics Officer');
-    localStorage.setItem('ld_email', email || 'admin@sail.gov.in');
-    closeModal('signinModal');
-    updateTopbarAuthDisplay();
+    showModalAuthAlert('⚠ Cannot reach the authentication server. Start the backend and try again.');
   } finally {
     btn.disabled = false;
     btn.textContent = '🔒 AUTHENTICATE & SIGN IN';
@@ -2968,7 +3270,7 @@ function updateMarketPressureGauge(result, inputs, disruptionType=null){
   const month = currentMonth();
 
   // 1. Freight Volatility (0-100): Clear corridor distinction
-  const baseVolMap = { australia: 22, south_africa: 46, indonesia: 65, usa: 36, russia: 78, mozambique: 68 };
+  const baseVolMap = { australia: 22, south_africa: 46, indonesia: 65, usa: 36 };
   let vol = baseVolMap[originKey] || 35;
   if(disruptionType === 'freight') vol = Math.min(96, vol + 44);
   if(disruptionType === 'bunker') vol = Math.min(92, vol + 32);

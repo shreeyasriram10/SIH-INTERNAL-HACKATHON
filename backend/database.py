@@ -32,3 +32,32 @@ def get_db():
         yield db
     finally:
         db.close()
+
+
+def ensure_columns(base) -> None:
+    """Add columns that exist on the models but not yet in an older SQLite file.
+
+    create_all() only creates missing *tables*, so a database carried over from
+    an earlier version keeps its old shape and every query on a new column
+    fails. SQLite can only ADD COLUMN, which is all a forward-only schema like
+    this one needs.
+    """
+    from sqlalchemy import inspect, text
+
+    inspector = inspect(engine)
+    existing_tables = set(inspector.get_table_names())
+
+    with engine.begin() as connection:
+        for table in base.metadata.sorted_tables:
+            if table.name not in existing_tables:
+                continue
+            present = {col["name"] for col in inspector.get_columns(table.name)}
+            for column in table.columns:
+                if column.name in present:
+                    continue
+                ddl = f"ALTER TABLE {table.name} ADD COLUMN {column.name} {column.type.compile(engine.dialect)}"
+                if column.default is not None and column.default.is_scalar:
+                    value = column.default.arg
+                    literal = f"'{value}'" if isinstance(value, str) else value
+                    ddl += f" DEFAULT {literal}"
+                connection.execute(text(ddl))

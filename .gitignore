@@ -1,0 +1,39 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+venv/
+.venv/
+env/
+
+# Database (runtime artifact — recreated and seeded on first boot)
+*.db
+*.sqlite
+*.sqlite3
+
+# The trained model artifact IS committed, so a fresh clone runs without a
+# training step. If it was built by an incompatible scikit-learn version the
+# registry detects that and retrains in memory (see services/model_registry.py).
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Node
+node_modules/
+dist/
+dist-ssr/
+*.local
+
+# Editors / OS
+.vscode/*
+!.vscode/settings.json
+.idea/
+.DS_Store
+Thumbs.db
+
+# Test / tooling caches
+.pytest_cache/
+.coverage
+htmlcov/

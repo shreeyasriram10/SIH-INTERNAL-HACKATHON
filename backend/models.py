@@ -1,5 +1,4 @@
-from sqlalchemy import Boolean, Column, Integer, String, Float, ForeignKey, DateTime, Text, JSON
-from sqlalchemy.orm import relationship
+from sqlalchemy import Boolean, Column, Integer, String, Float, ForeignKey, DateTime, Text
 from datetime import datetime, timezone
 from database import Base
 
@@ -22,9 +21,18 @@ class Port(Base):
     code = Column(String, unique=True, index=True)
     draft_m = Column(Float)
     max_loa = Column(Float)
+    max_beam_m = Column(Float, default=45.0)
+    berths = Column(Integer, default=2)
     avg_wait_days = Column(Float)
     mech_rate_mt_d = Column(Float)
     rail_evac_km = Column(Float, default=380.0)
+    demurrage_usd_day = Column(Float, default=9000.0)
+    # Comma-separated month numbers when monsoon/cyclone disruption is expected.
+    monsoon_months = Column(String, default="6,7,8,9")
+
+    @property
+    def monsoon_month_list(self) -> list:
+        return [int(m) for m in (self.monsoon_months or "").split(",") if m.strip()]
 
 class Vessel(Base):
     __tablename__ = "vessels"
