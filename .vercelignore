@@ -1,0 +1,22 @@
+# Keep the serverless bundle to what the API actually needs at runtime.
+backend/tests/
+backend/venv/
+venv/
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Runtime artifact; the app recreates and seeds it under /tmp on Vercel.
+*.db
+*.sqlite
+*.sqlite3
+
+# Local tooling
+.claude/
+.vscode/
+README.md
+run.bat
+.env
+.env.*
+!.env.example

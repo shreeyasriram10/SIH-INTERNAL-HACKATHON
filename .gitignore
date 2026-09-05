@@ -37,3 +37,8 @@ Thumbs.db
 .pytest_cache/
 .coverage
 htmlcov/
+
+# Vercel
+.vercel
+.env*
+!.env.example
