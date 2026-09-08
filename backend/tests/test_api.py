@@ -1014,3 +1014,33 @@ class TestConfidentialityControls:
         with SessionLocal() as session:
             assert session.query(m.AuditLog).filter(
                 m.AuditLog.action == "LOGIN_FAILED").count() > 0
+
+    # --- one sign-out, and it must really sign out -------------------------
+    def test_dashboard_offers_exactly_one_sign_out(self, client):
+        """There were two. The first only cleared cached display fields, so
+        with the session in an httpOnly cookie it could not end anything - it
+        left the user signed in while the header switched to "Sign In", the
+        interface asserting the opposite of the truth.
+        """
+        body = client.get("/app").text
+        # Count wired-up controls, not the function definition.
+        assert body.count('onclick="performLogout()"') == 1, "more than one sign-out control"
+        assert "Would you like to Sign Out?" not in body, "the fake sign-out is back"
+        assert body.count("function performLogout") == 1
+
+    def test_identity_is_read_from_the_server_not_storage(self, client):
+        """The header must reflect the session the server honours, not a
+        localStorage value that can disagree with it."""
+        body = client.get("/app").text
+        assert "/api/auth/me" in body
+        assert "identity-chip" in body
+
+    def test_logout_endpoint_ends_the_session(self, client):
+        client.post("/api/auth/login",
+                    json={"username": DEMO_EMAIL, "password": DEMO_PASSWORD})
+        assert client.get("/api/ports/").status_code == 200
+        client.post("/api/auth/logout")
+        assert client.get("/api/auth/me").status_code == 401
+        assert client.get("/api/ports/").status_code == 401, (
+            "protected data still readable after sign-out"
+        )
