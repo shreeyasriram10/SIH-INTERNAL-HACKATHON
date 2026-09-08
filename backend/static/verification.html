@@ -11,30 +11,9 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 
+<link rel="stylesheet" href="/static/gov-shell.css">
 <style>
-:root {
-  --bg-main: #F8FAFC;
-  --bg-surface: #FFFFFF;
-  --bg-subtle: #F1F5F9;
-  --navy-deep: #0F172A;
-  --navy-surface: #1E293B;
-  --steel-border: #E2E8F0;
-  --steel-muted: #64748B;
-  --steel-dark: #334155;
-  --saffron: #D97706;
-  --saffron-dark: #B45309;
-  --saffron-bg: #FFFBEB;
-  --saffron-border: #FDE68A;
-  --green: #15803D;
-  --green-bg: #F0FDF4;
-  --green-border: #BBF7D0;
-  --red: #DC2626;
-  --red-bg: #FEF2F2;
-  --red-border: #FECACA;
-  --radius-lg: 14px;
-  --radius: 10px;
-  --shadow-sm: 0 1px 3px rgba(15,23,42,0.08);
-}
+/* Design tokens come from gov-shell.css. */
 
 * {
   box-sizing: border-box;
@@ -198,19 +177,16 @@ body {
   color: var(--green);
 }
 
-.btn-run {
-  background: linear-gradient(135deg,var(--saffron-dark),var(--saffron));
-  color: #FFF;
-  border: none;
-  padding: 11px 22px;
-  border-radius: 8px;
-  font-weight: 700;
-  font-size: 13.5px;
-  font-family: 'Space Grotesk';
-  cursor: pointer;
-  transition: all 0.2s;
-  box-shadow: 0 2px 6px rgba(217,119,6,0.3);
-}
+.btn-run{
+    background:var(--gov-navy-2);
+    color:#FFF;border:1px solid var(--gov-navy-2);padding:10px 20px;border-radius:5px;
+    font-weight:600;font-size:13px;font-family:'IBM Plex Sans',sans-serif;
+    cursor:pointer;transition:background .15s,border-color .15s;
+    display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  }
+  .btn-run:hover{background:var(--gov-navy);border-color:var(--gov-navy);}
+  .btn-run:focus-visible{outline:3px solid var(--tri-saffron);outline-offset:2px;}
+  .btn-run:disabled{opacity:.55;cursor:not-allowed;}
 
 .btn-run:hover {
   transform: translateY(-1px);
@@ -300,63 +276,80 @@ body {
     align-items: flex-start;
   }
 }
+
+/* ---- secondary-page top navigation ---- */
+.subnav-link{font-size:12px;font-weight:500;color:var(--steel-dark);text-decoration:none;
+  padding:6px 11px;border-radius:5px;border:1px solid transparent;transition:background .15s,color .15s;}
+.subnav-link:hover{background:#F4F7FB;color:var(--gov-navy);}
+.subnav-link.active{background:#E8EEF7;color:var(--gov-navy-2);font-weight:600;border-color:#CBD9EC;}
 </style>
 </head>
 
 <body>
 
-<div class="topbar">
+<a class="skip-link" href="#mainContent">Skip to main content</a>
 
-  <div class="brand">
-    <img
-      class="brand-mark"
-      src="/static/loha-drishti-logo.svg"
-      alt="Loha Drishti maritime emblem"
-    >
-
-    <div>
-      <div class="brand-text">LOHA DRISHTI</div>
-      <div class="brand-sub">
-        Maritime Decision Intelligence · SAIL Logistics
+<div class="gov-header">
+  <div class="gov-strip">
+    <div class="gov-strip-inner">
+      <div class="gov-strip-left">
+        <strong>Government of India</strong>
+        <span class="gov-strip-sep">|</span>
+        <span>Ministry of Steel</span>
+        <span class="gov-strip-sep gov-strip-hide">|</span>
+        <span class="gov-strip-hide">Steel Authority of India Limited</span>
+      </div>
+      <div class="gov-strip-right">
+        <a href="#mainContent">Skip to Content</a>
+        <span class="gov-strip-sep">|</span>
+        <a href="/docs" target="_blank" rel="noopener">API Documentation</a>
       </div>
     </div>
   </div>
 
-  <div class="nav-links">
+  <header class="masthead">
+    <div class="masthead-inner">
+      <div class="brand">
+        <img class="brand-mark" src="/static/loha-drishti-logo.svg" alt="Loha Drishti maritime emblem">
+        <div>
+          <div class="brand-text">LOHA DRISHTI</div>
+          <div class="brand-sub">Maritime Decision Intelligence &middot; SAIL Logistics</div>
+        </div>
+        <div class="brand-rule"></div>
+        <div class="brand-org">
+          <b>Bulk Cargo Chartering Directorate</b>
+          Decision Support System
+        </div>
+      </div>
+      <div class="topbar-actions">
+        <a class="subnav-link" href="/ml-training">ML Model &amp; Training</a>
+        <a class="subnav-link active" href="/verification" aria-current="page">System Verification</a>
+        <button class="icon-btn" onclick="performLogout()" title="Sign out and return to the login gateway">Sign Out</button>
+      </div>
+    </div>
+  </header>
 
-    <a href="/app" class="nav-link">
-      ⚙ Dashboard
-    </a>
-
-    <a href="/ml-training" class="nav-link">
-      🤖 ML Model &amp; Training
-    </a>
-
-    <a href="/verification" class="nav-link active">
-      🧪 System Verification
-    </a>
-
-    <a href="/docs" target="_blank" class="nav-link">
-      📖 API Docs
-    </a>
-
-    <button
-      class="nav-link"
-      onclick="performLogout()"
-      style="
-        background:var(--red-bg);
-        border-color:var(--red-border);
-        color:var(--red);
-        font-weight:700;
-        cursor:pointer;
-      "
-    >
-      🚪 Logout
-    </button>
-
-  </div>
-
+  <div class="tricolour" aria-hidden="true"><i></i><i></i><i></i></div>
 </div>
+
+<div class="crumbbar">
+  <div class="crumbbar-inner">
+    <div class="crumbs">
+      <a href="/app">Home</a>
+      <span class="crumb-sep">/</span>
+      <span>Model & Assurance</span>
+      <span class="crumb-sep">/</span>
+      <span aria-current="page">System Verification</span>
+    </div>
+    <a class="btn-back" href="/app">
+      <svg viewBox="0 0 24 24"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
+      Back to Dashboard
+    </a>
+  </div>
+</div>
+
+<main id="mainContent">
+
 
 
 <div class="container">
@@ -383,7 +376,7 @@ body {
         id="btnRunTests"
         onclick="executeTestSuite()"
       >
-        ▶ RUN VERIFICATION
+        RUN VERIFICATION
       </button>
 
     </div>
@@ -719,7 +712,7 @@ function executeTestSuite() {
   btn.disabled = true;
 
   btn.innerHTML =
-    '✓ VERIFICATION COMPLETE';
+    '✓ Verification Complete';
 
   /*
   -----------------------------------------------
@@ -846,7 +839,7 @@ function executeTestSuite() {
   btn.disabled = false;
 
   btn.innerHTML =
-    '✓ VERIFICATION COMPLETE';
+    '✓ Verification Complete';
 
 }
 
@@ -894,6 +887,55 @@ function performLogout() {
 }
 
 </script>
+
+</main>
+
+<footer class="gov-footer">
+  <div class="gov-footer-inner">
+    <div class="gov-footer-cols">
+      <div>
+        <h5>Decision Support</h5>
+        <ul>
+          <li><a href="/app">Command Centre</a></li>
+          <li><a href="/app">Freight Intelligence</a></li>
+          <li><a href="/app">What-If Simulator</a></li>
+        </ul>
+      </div>
+      <div>
+        <h5>Model &amp; Assurance</h5>
+        <ul>
+          <li><a href="/ml-training">ML Model &amp; Training</a></li>
+          <li><a href="/verification">System Verification</a></li>
+          <li><a href="/docs">API Documentation</a></li>
+        </ul>
+      </div>
+      <div>
+        <h5>Transparency</h5>
+        <ul>
+          <li><a href="/app">About the Platform</a></li>
+          <li><a href="/app">Data Sources &amp; Governance</a></li>
+        </ul>
+      </div>
+      <div>
+        <h5>Organisation</h5>
+        <ul>
+          <li>Ministry of Steel</li>
+          <li>Steel Authority of India Limited</li>
+          <li>Problem Statement 26006</li>
+        </ul>
+      </div>
+    </div>
+    <div class="gov-footer-base">
+      <div class="gov-footer-note">
+        <b>Disclaimer.</b> All freight rates, cost figures, port waiting times, vessel data and
+        savings shown are produced by a deterministic synthetic dry-bulk model. No live SAIL
+        operational data, real-time vessel positions, live freight quotations or realised savings
+        are claimed or represented.
+      </div>
+      <div>LOHA DRISHTI &middot; Prototype for PS 26006<br>Ministry of Steel / SAIL</div>
+    </div>
+  </div>
+</footer>
 
 </body>
 </html>

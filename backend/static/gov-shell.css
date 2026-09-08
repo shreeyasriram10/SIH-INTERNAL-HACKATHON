@@ -1,0 +1,219 @@
+/* =========================================================================
+   LOHA DRISHTI - SHARED SHELL
+   Design tokens and the government-portal chrome used by every served page:
+   the utility strip, emblem masthead, tricolour rule, section rail,
+   breadcrumb bar and footer.
+
+   Loaded by app.html, ml_training.html and verification.html. Each of those
+   used to declare its own near-identical copy of these tokens, which is how
+   the pages drifted apart in the first place.
+   ========================================================================= */
+:root{
+  --bg-main:#F8FAFC;
+  --bg-surface:#FFFFFF;
+  --bg-subtle:#F1F5F9;
+  --bg-hover:#E2E8F0;
+  --navy-deep:#0F172A;
+  --navy-surface:#1E293B;
+  --navy-border:#334155;
+  --steel-dark:#334155;
+  --steel-muted:#64748B;
+  --steel-light:#94A3B8;
+  --steel-border:#E2E8F0;
+  --saffron:#D97706;
+  --saffron-dark:#B45309;
+  --saffron-bg:#FFFBEB;
+  --saffron-border:#FDE68A;
+  --green:#15803D;
+  --green-dark:#166534;
+  --green-bg:#F0FDF4;
+  --green-border:#BBF7D0;
+  --red:#DC2626;
+  --red-dark:#991B1B;
+  --red-bg:#FEF2F2;
+  --red-border:#FECACA;
+  --blue:#1D4ED8;
+  --blue-bg:#EFF6FF;
+  --blue-border:#BFDBFE;
+  --amber:#D97706;
+  --amber-bg:#FFFBEB;
+  --shadow-sm:0 1px 2px 0 rgba(15,23,42,0.05);
+  --shadow-md:0 4px 6px -1px rgba(15,23,42,0.08),0 2px 4px -2px rgba(15,23,42,0.04);
+  --shadow-lg:0 10px 15px -3px rgba(15,23,42,0.1),0 4px 6px -4px rgba(15,23,42,0.05);
+  --shadow-xl:0 20px 25px -5px rgba(15,23,42,0.12),0 8px 10px -6px rgba(15,23,42,0.04);
+  --radius-sm:6px;
+  --radius:10px;
+  --radius-lg:14px;
+}
+
+/* =========================================================================
+   GOVERNMENT PORTAL SHELL
+   Layout conventions follow Indian government portals (india.gov.in,
+   Ministry of Steel, PIB): a utility strip above an emblem masthead, a
+   tricolour rule, a persistent left section rail, breadcrumbs, and a
+   dense two-tone content area. Icons are inline SVG - no emoji.
+   ========================================================================= */
+:root{
+  --gov-strip:#0B1A2E;
+  --gov-navy:#10233F;
+  --gov-navy-2:#1B3663;
+  --gov-line:#D8DEE7;
+  --gov-rail:#FCFDFE;
+  --tri-saffron:#FF9933;
+  --tri-green:#138808;
+  --header-h:104px;
+  --rail-w:244px;
+}
+
+/* ---- utility strip ---- */
+.gov-header{position:sticky;top:0;z-index:120;}
+.gov-strip{background:var(--gov-strip);color:#C7D2E1;font-size:11.5px;}
+.gov-strip-inner{max-width:1560px;margin:0 auto;padding:0 22px;height:32px;display:flex;align-items:center;justify-content:space-between;gap:14px;}
+.gov-strip-left{display:flex;align-items:center;gap:8px;letter-spacing:.02em;}
+.gov-strip-left strong{color:#FFF;font-weight:600;}
+.gov-strip-sep{opacity:.35;}
+.gov-strip-right{display:flex;align-items:center;gap:4px;}
+.gov-strip a,.gov-strip button{color:#C7D2E1;background:none;border:none;font:inherit;text-decoration:none;padding:3px 8px;border-radius:4px;cursor:pointer;}
+.gov-strip a:hover,.gov-strip button:hover{color:#FFF;background:rgba(255,255,255,.1);}
+.gov-strip button.tsz{font-weight:600;min-width:26px;}
+.gov-strip button.tsz[aria-pressed="true"]{background:rgba(255,255,255,.16);color:#FFF;}
+.skip-link{position:absolute;left:-9999px;}
+.skip-link:focus{left:22px;top:6px;z-index:200;background:#FFF;color:var(--gov-navy);padding:6px 12px;border-radius:4px;}
+
+/* ---- masthead ---- */
+.masthead{background:#FFF;border-bottom:1px solid var(--gov-line);}
+.masthead-inner{max-width:1560px;margin:0 auto;padding:0 22px;height:68px;display:flex;align-items:center;justify-content:space-between;gap:18px;}
+.brand{display:flex;align-items:center;gap:12px;min-width:0;}
+.brand-mark{width:42px;height:42px;border-radius:8px;flex:0 0 42px;border:1px solid var(--gov-line);background:#FFF;padding:2px;}
+.brand-text{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:17px;color:var(--gov-navy);letter-spacing:.05em;line-height:1.15;}
+.brand-sub{font-size:11px;color:var(--steel-muted);letter-spacing:.01em;font-weight:500;margin-top:1px;}
+.brand-rule{width:1px;height:38px;background:var(--gov-line);margin:0 4px;}
+.brand-org{font-size:11px;line-height:1.35;color:var(--steel-muted);}
+.brand-org b{display:block;color:var(--gov-navy);font-size:12px;font-weight:600;}
+.topbar-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end;}
+
+/* ---- tricolour rule ---- */
+.tricolour{height:3px;display:flex;}
+.tricolour i{flex:1;}
+.tricolour i:nth-child(1){background:var(--tri-saffron);}
+.tricolour i:nth-child(2){background:#FFFFFF;}
+.tricolour i:nth-child(3){background:var(--tri-green);}
+
+/* ---- shell + left rail ---- */
+.app-shell{display:flex;align-items:flex-start;max-width:1560px;margin:0 auto;}
+.sidenav{position:sticky;top:var(--header-h);width:var(--rail-w);flex:0 0 var(--rail-w);
+  height:calc(100vh - var(--header-h));overflow-y:auto;background:var(--gov-rail);
+  border-right:1px solid var(--gov-line);padding:14px 0 24px;}
+.sidenav-group{padding:0 12px;margin-bottom:16px;}
+.sidenav-label{font-size:10px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--steel-light);padding:0 10px 6px;}
+.sidenav a{display:flex;align-items:center;gap:10px;padding:8px 10px;margin-bottom:1px;border-radius:6px;
+  font-size:13px;font-weight:500;color:var(--steel-dark);text-decoration:none;cursor:pointer;
+  border-left:3px solid transparent;transition:background .12s,color .12s;}
+.sidenav a:hover{background:#EEF2F7;color:var(--gov-navy);}
+.sidenav a.active{background:#E8EEF7;color:var(--gov-navy-2);font-weight:600;border-left-color:var(--gov-navy-2);}
+.sidenav a svg{width:16px;height:16px;flex:0 0 16px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;opacity:.8;}
+.sidenav a.active svg{opacity:1;}
+.sidenav a .ext{margin-left:auto;font-size:9.5px;color:var(--steel-light);font-weight:600;letter-spacing:.04em;}
+.sidenav-foot{padding:12px 22px 0;margin-top:4px;border-top:1px solid var(--gov-line);font-size:10.5px;color:var(--steel-light);line-height:1.6;}
+.app-main{flex:1;min-width:0;}
+
+/* ---- breadcrumb bar ---- */
+.crumbbar{background:#FFF;border-bottom:1px solid var(--gov-line);padding:10px 24px;}
+.crumbbar-inner{max-width:1280px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;}
+.crumbs{font-size:11.5px;color:var(--steel-muted);display:flex;align-items:center;gap:6px;}
+.crumbs a{color:var(--blue);text-decoration:none;}
+.crumbs a:hover{text-decoration:underline;}
+.crumbs span[aria-current]{color:var(--navy-deep);font-weight:600;}
+.crumb-sep{color:var(--steel-light);}
+
+/* ---- content footer ---- */
+.gov-footer{background:var(--gov-navy);color:#B9C6D8;margin-top:28px;}
+.gov-footer-inner{max-width:1280px;margin:0 auto;padding:22px 24px;}
+.gov-footer-cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:20px;padding-bottom:16px;border-bottom:1px solid rgba(255,255,255,.12);}
+.gov-footer h5{margin:0 0 8px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#FFF;font-family:'IBM Plex Sans',sans-serif;font-weight:700;}
+.gov-footer ul{list-style:none;margin:0;padding:0;font-size:12px;line-height:1.9;}
+.gov-footer a{color:#B9C6D8;text-decoration:none;cursor:pointer;}
+.gov-footer a:hover{color:#FFF;text-decoration:underline;}
+.gov-footer-base{padding-top:14px;font-size:11.5px;display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap;}
+.gov-footer-note{max-width:760px;line-height:1.6;color:#8FA2BA;}
+
+/* ---- copilot floating action button ---- */
+.copilot-fab{position:fixed;right:24px;bottom:24px;z-index:150;width:56px;height:56px;border-radius:50%;
+  border:none;cursor:pointer;background:var(--gov-navy-2);color:#FFF;
+  box-shadow:0 6px 18px rgba(16,35,63,.32),0 2px 6px rgba(16,35,63,.2);
+  display:flex;align-items:center;justify-content:center;transition:transform .15s,background .15s,box-shadow .15s;}
+.copilot-fab:hover{background:var(--gov-navy);transform:translateY(-2px);box-shadow:0 10px 24px rgba(16,35,63,.38);}
+.copilot-fab:focus-visible{outline:3px solid var(--tri-saffron);outline-offset:3px;}
+.copilot-fab svg{width:24px;height:24px;stroke:#FFF;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;}
+.copilot-fab .fab-dot{position:absolute;top:3px;right:3px;width:11px;height:11px;border-radius:50%;background:var(--tri-saffron);border:2px solid #FFF;}
+.copilot-fab-label{position:fixed;right:88px;bottom:39px;z-index:150;background:var(--gov-navy);color:#FFF;
+  font-size:12px;font-weight:600;padding:5px 10px;border-radius:5px;white-space:nowrap;pointer-events:none;
+  opacity:0;transform:translateX(6px);transition:opacity .15s,transform .15s;}
+.copilot-fab:hover + .copilot-fab-label,.copilot-fab:focus-visible + .copilot-fab-label{opacity:1;transform:translateX(0);}
+
+/* ---- about / governance panel ---- */
+.about-hero{background:var(--gov-navy);color:#E6ECF5;border-radius:var(--radius-lg);padding:26px 28px;margin-bottom:20px;}
+.about-hero h2{margin:0 0 6px;color:#FFF;font-size:22px;}
+.about-hero p{margin:0;font-size:13px;line-height:1.7;color:#B9C6D8;max-width:880px;}
+.about-hero-meta{display:flex;gap:22px;flex-wrap:wrap;margin-top:18px;padding-top:16px;border-top:1px solid rgba(255,255,255,.14);}
+.about-hero-meta div{font-size:11px;color:#8FA2BA;letter-spacing:.04em;text-transform:uppercase;}
+.about-hero-meta b{display:block;font-size:14px;color:#FFF;text-transform:none;letter-spacing:0;margin-top:3px;font-family:'Space Grotesk',sans-serif;}
+.about-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;margin-bottom:20px;}
+.about-card{background:#FFF;border:1px solid var(--gov-line);border-radius:var(--radius);padding:18px 20px;}
+.about-card h4{margin:0 0 4px;font-size:14px;color:var(--gov-navy);}
+.about-card .about-kicker{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--steel-light);margin-bottom:8px;}
+.about-card p,.about-card li{font-size:12.5px;color:var(--steel-dark);line-height:1.7;}
+.about-card ul{margin:8px 0 0;padding-left:18px;}
+.gov-table{width:100%;border-collapse:collapse;font-size:12.5px;}
+.gov-table th{background:var(--gov-navy);color:#FFF;text-align:left;padding:10px 12px;font-weight:600;font-size:11.5px;letter-spacing:.03em;}
+.gov-table td{padding:10px 12px;border-bottom:1px solid var(--gov-line);vertical-align:top;color:var(--steel-dark);}
+.gov-table tbody tr:nth-child(even){background:#FAFBFD;}
+.tag{display:inline-block;font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:4px;letter-spacing:.03em;}
+.tag-public{background:var(--green-bg);color:var(--green);border:1px solid var(--green-border);}
+.tag-calib{background:var(--blue-bg);color:var(--blue);border:1px solid var(--blue-border);}
+.tag-synth{background:var(--saffron-bg);color:var(--saffron-dark);border:1px solid var(--saffron-border);}
+
+/* ---- text-size control ---- */
+body.tsz-lg{font-size:106%;}
+body.tsz-sm{font-size:94%;}
+
+/* ---- responsive: rail folds to a horizontal strip ---- */
+@media(max-width:1024px){
+  .app-shell{flex-direction:column;}
+  .sidenav{position:static;width:100%;flex:none;height:auto;display:flex;gap:4px;overflow-x:auto;
+    border-right:none;border-bottom:1px solid var(--gov-line);padding:8px 12px;}
+  .sidenav-group{display:flex;gap:4px;margin:0;padding:0;}
+  .sidenav-label,.sidenav-foot{display:none;}
+  .sidenav a{white-space:nowrap;border-left:none;border-bottom:3px solid transparent;border-radius:4px 4px 0 0;}
+  .sidenav a.active{border-left-color:transparent;border-bottom-color:var(--gov-navy-2);}
+  .masthead-inner{height:auto;padding:10px 16px;flex-wrap:wrap;}
+  .brand-rule,.brand-org{display:none;}
+}
+@media(max-width:640px){
+  .gov-strip-left .gov-strip-hide{display:none;}
+  .copilot-fab{right:16px;bottom:16px;}
+}
+
+/* ---- shared controls ---- */
+.icon-btn{background:var(--bg-surface);border:1px solid var(--gov-line);border-radius:5px;
+  padding:6px 11px;font-size:12px;font-weight:500;color:var(--steel-dark);cursor:pointer;
+  transition:border-color .15s,color .15s,background .15s;display:inline-flex;align-items:center;gap:5px;
+  text-decoration:none;font-family:inherit;}
+.icon-btn:hover{border-color:var(--gov-navy-2);color:var(--gov-navy);background:#F4F7FB;}
+.icon-btn:focus-visible{outline:2px solid var(--gov-navy-2);outline-offset:2px;}
+
+/* The way back to the dashboard. Present on every secondary page, in the
+   breadcrumb bar, so leaving is never a hunt through the navigation. */
+.btn-back{background:var(--gov-navy-2);border:1px solid var(--gov-navy-2);color:#FFF;
+  border-radius:5px;padding:7px 14px;font-size:12.5px;font-weight:600;cursor:pointer;
+  text-decoration:none;display:inline-flex;align-items:center;gap:7px;font-family:inherit;
+  transition:background .15s,border-color .15s;}
+.btn-back:hover{background:var(--gov-navy);border-color:var(--gov-navy);}
+.btn-back:focus-visible{outline:3px solid var(--tri-saffron);outline-offset:2px;}
+.btn-back svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2;
+  stroke-linecap:round;stroke-linejoin:round;}
+
+/* ---- secondary-page content width ---- */
+.page-shell{max-width:1280px;margin:0 auto;padding:22px 24px;}
+.page-title{margin:0 0 4px;font-size:21px;font-weight:600;color:var(--gov-navy);}
+.page-lede{margin:0;font-size:12.5px;color:var(--steel-muted);max-width:900px;line-height:1.65;}

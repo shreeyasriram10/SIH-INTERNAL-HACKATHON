@@ -711,3 +711,72 @@ class TestSupplyContinuityMoves:
     def test_continuity_never_claims_certainty(self, client):
         for days in (30, 60, 120, 365):
             assert self._score(client, window_days=days)["supply_continuity"] <= 97
+
+
+# ---------- 12. SHARED SHELL ----------
+class TestSharedShell:
+    """The three served pages must stay on one stylesheet and one chrome.
+
+    ml_training and verification each carried their own near-identical copy of
+    the design tokens and the pre-redesign navigation, so they drifted away from
+    the dashboard's look and offered no obvious way back to it.
+    """
+
+    PAGES = ["/app", "/ml-training", "/verification"]
+
+    @pytest.mark.parametrize("path", PAGES)
+    def test_page_uses_the_shared_stylesheet(self, client, path):
+        assert "/static/gov-shell.css" in client.get(path).text
+
+    @pytest.mark.parametrize("path", PAGES)
+    def test_page_wears_the_government_chrome(self, client, path):
+        body = client.get(path).text
+        for marker in ("gov-strip", "masthead", "tricolour", "crumbbar", "gov-footer"):
+            assert marker in body, f"{path} is missing {marker}"
+
+    @pytest.mark.parametrize("path", ["/ml-training", "/verification"])
+    def test_secondary_pages_offer_a_way_back(self, client, path):
+        """A reader who lands here must be able to leave without the browser's
+        back button."""
+        body = client.get(path).text
+        assert "btn-back" in body
+        assert "Back to Dashboard" in body
+        assert 'href="/app"' in body
+
+    def test_shell_stylesheet_is_served(self, client):
+        response = client.get("/static/gov-shell.css")
+        assert response.status_code == 200
+        assert ":root" in response.text
+
+    def test_only_the_shared_sheet_defines_the_tokens(self, client):
+        """A page redeclaring :root is how the copies diverged last time."""
+        for path in ["/ml-training", "/verification"]:
+            assert ":root" not in client.get(path).text, f"{path} redeclares tokens"
+
+    def test_map_cannot_paint_over_the_sticky_chrome(self, client):
+        """Leaflet gives its panes z-index 400 and controls up to 1000, which
+        beat the header (120) and cargo bar (90) unless the map container owns a
+        stacking context. Without one the map slid over both while scrolling.
+        """
+        body = client.get("/app").text
+        start = body.index(".waterways-map-shell{")
+        rule = body[start:body.index("}", start)]
+        assert "isolation:isolate" in rule, rule
+        assert "z-index:0" in rule, rule
+
+    # Typographic marks that carry meaning and are deliberately kept.
+    ALLOWED = set("\u2713\u2717\u2715\u2192\u2190\u2605\u21ba")
+
+    @pytest.mark.parametrize("path", PAGES)
+    def test_pages_carry_no_emoji(self, client, path):
+        body = client.get(path).text
+        found = {
+            ch for ch in body
+            if ch not in self.ALLOWED and (
+                0x1F000 <= ord(ch) <= 0x1FAFF
+                or 0x2600 <= ord(ch) <= 0x27BF
+                or 0x2B00 <= ord(ch) <= 0x2BFF
+                or ord(ch) == 0xFE0F
+            )
+        }
+        assert not found, f"{path} still has emoji: {[hex(ord(c)) for c in found]}"
