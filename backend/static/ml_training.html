@@ -356,7 +356,7 @@
 
   async function fetchModelInfo() {
     try {
-      const res = await fetch('/api/ml/info');
+      const res = await fetch('/api/ml/info', {credentials:'same-origin'});
       if (res.ok) {
         const d = await res.json();
         document.getElementById('dispR2').textContent = d.r2_score;
@@ -394,11 +394,9 @@
     }
 
     try {
-      let token = '';
-      try { token = localStorage.getItem('ld_token') || ''; } catch(e){}
       const res = await fetch('/api/ml/train', {
         method: 'POST',
-        headers: token ? { 'Authorization': 'Bearer ' + token } : {}
+        credentials: 'same-origin'
       });
       if (res.status === 401 || res.status === 403) {
         throw new Error('Retraining requires an Admin or Analyst session. Sign in again from the gateway.');
@@ -442,7 +440,7 @@
 
     try {
       const res = await fetch('/api/ml/predict', {
-        method: 'POST',
+        method: 'POST', credentials:'same-origin',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({
           origin: origin,
@@ -469,12 +467,14 @@
   fetchModelInfo();
 
 function performLogout(){
-  if(confirm('Are you sure you want to log out and return to the Sign In gateway?')){
-    localStorage.removeItem('ld_token');
-    localStorage.removeItem('ld_role');
-    localStorage.removeItem('ld_email');
-    window.location.href = '/';
-  }
+  if(!confirm('Sign out and return to the Sign In gateway?')) return;
+  /* The session cookie is httpOnly, so only the server can clear it. */
+  fetch('/api/auth/logout', {method:'POST', credentials:'same-origin'})
+    .catch(()=>{})
+    .finally(()=>{
+      try{ localStorage.removeItem('ld_role'); localStorage.removeItem('ld_email'); }catch(e){}
+      window.location.href = '/login';
+    });
 }
 
 </script>

@@ -258,11 +258,10 @@ async function doLogin() {
   if (!pwd) { showAlert('Please enter your password.'); return; }
 
   if (window.location.protocol === 'file:') {
-    if (email !== 'admin@sail.gov.in' || pwd !== '12345') {
-      showAlert('Incorrect email or password.');
-      return;
-    }
-    await runDirectFileLogin();
+    /* Sessions are server-issued cookies now, so there is nothing to sign in to
+       when the page is opened straight off disk. Say so rather than minting a
+       fake session that bounces off the dashboard and back to here. */
+    showAlert('Open the platform through the server (http://localhost:8000) to sign in.');
     return;
   }
 
@@ -281,6 +280,7 @@ async function doLogin() {
     var params = 'username=' + encodeURIComponent(email) + '&password=' + encodeURIComponent(pwd);
     var xhr = new XMLHttpRequest();
     xhr.open('POST', '/api/auth/login', true);
+    xhr.withCredentials = true;
     xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
 
     xhr.onload = async function() {
@@ -304,8 +304,9 @@ async function doLogin() {
         setStage(4, '⏳ Loading Executive Command Center...', 'run');
         await sleep(350);
         setStage(4, '✓ Access granted. Redirecting...', 'ok');
-        localStorage.setItem('ld_token', data.access_token);
-        localStorage.setItem('ld_role', data.role || 'Chief Logistics Officer');
+        /* The session cookie is set by the response. Only display details
+           are kept here; the token itself is never exposed to script. */
+        localStorage.setItem('ld_role', data.role || 'Analyst');
         localStorage.setItem('ld_email', email);
         setTimeout(function() { window.location.href = '/app'; }, 700);
       } else {
@@ -332,29 +333,6 @@ async function doLogin() {
   }
 }
 
-async function runDirectFileLogin() {
-  var btn = document.getElementById('loginBtn');
-  var box = document.getElementById('processBox');
-  btn.disabled = true;
-  hideAlert();
-  box.className = 'process show';
-  setStage(1, '⏳ Initiating secure connection...', 'run');
-  await sleep(350);
-  setStage(1, '✓ Connection established', 'ok');
-  setStage(2, '⏳ Verifying credentials...', 'run');
-  await sleep(500);
-  setStage(2, '✓ Credentials verified', 'ok');
-  setStage(3, '⏳ Establishing session...', 'run');
-  await sleep(500);
-  setStage(3, '✓ Session established', 'ok');
-  setStage(4, '⏳ Loading Executive Command Center...', 'run');
-  await sleep(500);
-  setStage(4, '✓ Access granted. Opening dashboard...', 'ok');
-  localStorage.setItem('ld_token', 'direct_demo_' + Date.now());
-  localStorage.setItem('ld_role', 'Chief Logistics Officer');
-  localStorage.setItem('ld_email', 'admin@sail.gov.in');
-  setTimeout(function() { window.location.href = 'app.html'; }, 700);
-}
 
 function sleep(ms) {
   return new Promise(function(r) { setTimeout(r, ms); });

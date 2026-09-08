@@ -1548,16 +1548,19 @@ const API_BASE = '';
 let ENGINE_SOURCE = 'BACKEND';   // 'BACKEND' | 'OFFLINE'
 let REFERENCE_SYNCED = false;
 
-function authToken(){
-  /* 'ld_token' is the key login.html and the sign-in modal both write. */
-  try { return localStorage.getItem('ld_token') || ''; } catch(e){ return ''; }
-}
-
+/* The session lives in an httpOnly cookie that script cannot read, so there is
+   no token to attach here - the browser sends it automatically. `credentials`
+   is required for that to happen on same-origin fetches with custom headers. */
 async function api(path, options={}){
   const headers = Object.assign({'Content-Type':'application/json'}, options.headers||{});
-  const token = authToken();
-  if(token) headers['Authorization'] = 'Bearer ' + token;
-  const res = await fetch(API_BASE + path, Object.assign({}, options, {headers}));
+  const res = await fetch(API_BASE + path, Object.assign({}, options, {
+    headers, credentials: 'same-origin'
+  }));
+  if(res.status === 401){
+    /* The session expired or was never established. */
+    window.location.href = '/login';
+    throw new Error('Not authenticated');
+  }
   if(!res.ok){
     let detail = res.statusText;
     try { detail = (await res.json()).detail || detail; } catch(e){}
@@ -3250,7 +3253,7 @@ function updateMarketPressureGauge(result, inputs, disruptionType=null){
 /* ======= TOPBAR AUTH & SIGN IN MODAL LOGIC ======= */
 function updateTopbarAuthDisplay(){
   const actions = document.querySelector('.topbar-actions');
-  const token = localStorage.getItem('ld_token');
+  const token = localStorage.getItem('ld_email');  /* display only */
   const role = localStorage.getItem('ld_role') || 'Chief Logistics Officer';
   const email = localStorage.getItem('ld_email') || 'admin@sail.gov.in';
 
@@ -3268,7 +3271,6 @@ function updateTopbarAuthDisplay(){
     authBtn.style.cssText = 'background:var(--green-bg);border-color:var(--green-border);color:var(--green);font-weight:600;font-size:12px;';
     authBtn.onclick = function(){
       if(confirm('Signed in as ' + role + ' (' + email + '). Would you like to Sign Out?')){
-        localStorage.removeItem('ld_token');
         localStorage.removeItem('ld_role');
         localStorage.removeItem('ld_email');
         updateTopbarAuthDisplay();
@@ -3326,13 +3328,15 @@ async function submitModalLogin(){
     const res = await fetch('/api/auth/login', {
       method: 'POST',
       headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+      credentials: 'same-origin',
       body: params
     });
 
     if(res.ok){
       const data = await res.json();
-      localStorage.setItem('ld_token', data.access_token);
-      localStorage.setItem('ld_role', data.role || 'Chief Logistics Officer');
+      /* The session cookie arrives on the response; only display details are
+         kept locally, and those are not credentials. */
+      localStorage.setItem('ld_role', data.role || 'Analyst');
       localStorage.setItem('ld_email', email);
       showModalAuthAlert('✓ Authentication successful! Session active.', true);
       setTimeout(()=>{
@@ -3385,12 +3389,13 @@ document.addEventListener('DOMContentLoaded', updateTopbarAuthDisplay);
 
 
 function performLogout(){
-  if(confirm('Are you sure you want to log out and return to the Sign In gateway?')){
-    localStorage.removeItem('ld_token');
-    localStorage.removeItem('ld_role');
-    localStorage.removeItem('ld_email');
-    window.location.href = '/';
-  }
+  /* The cookie is httpOnly, so only the server can clear it. */
+  fetch('/api/auth/logout', {method:'POST', credentials:'same-origin'})
+    .catch(()=>{})
+    .finally(()=>{
+      try{ localStorage.removeItem('ld_role'); localStorage.removeItem('ld_email'); }catch(e){}
+      window.location.href = '/login';
+    });
 }
 
 /* ======= INTERNATIONAL WATERWAYS MAP ======= */

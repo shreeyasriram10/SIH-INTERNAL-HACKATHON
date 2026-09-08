@@ -9,6 +9,7 @@ from fastapi.testclient import TestClient
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from main import app  # noqa: E402
+import auth  # noqa: E402
 from services import decision_engine, model_registry, rate_horizon  # noqa: E402
 
 DEMO_EMAIL = "admin@sail.gov.in"
@@ -16,11 +17,22 @@ DEMO_PASSWORD = "12345"
 
 
 @pytest.fixture(scope="session")
-def client():
+def _app_client():
     # The context manager runs the lifespan hook, which creates the schema and
     # seeds reference data - the API tests depend on both.
     with TestClient(app) as test_client:
         yield test_client
+
+
+@pytest.fixture
+def client(_app_client):
+    """An anonymous caller.
+
+    Cookies are cleared before each test so a sign-in elsewhere cannot leak a
+    session into the checks that must be rejected.
+    """
+    _app_client.cookies.clear()
+    return _app_client
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -30,13 +42,69 @@ def ensure_model():
 
 
 @pytest.fixture(scope="session")
-def auth_headers(client):
-    response = client.post(
-        "/api/auth/login",
-        json={"username": DEMO_EMAIL, "password": DEMO_PASSWORD},
-    )
-    assert response.status_code == 200, response.text
-    return {"Authorization": f"Bearer {response.json()['access_token']}"}
+def auth_headers():
+    """Bearer credentials for the programmatic-client path.
+
+    Obtained through a throwaway client: logging in via the shared `client`
+    would leave a session cookie on it, and the tests that assert endpoints
+    reject anonymous callers would then be signed in.
+    """
+    with TestClient(app) as throwaway:
+        response = throwaway.post(
+            "/api/auth/login",
+            json={"username": DEMO_EMAIL, "password": DEMO_PASSWORD},
+        )
+        assert response.status_code == 200, response.text
+        return {"Authorization": f"Bearer {response.json()['access_token']}"}
+
+
+@pytest.fixture
+def db_user_factory(_app_client):
+    """Create a user directly and hand back a client signed in as them."""
+    from database import SessionLocal
+    import models as _m
+
+    created = []
+
+    def _make(email, role, password="Str0ngPass!23"):
+        with SessionLocal() as session:
+            user = session.query(_m.User).filter(_m.User.email == email).first()
+            if user is None:
+                user = _m.User(name=email.split("@")[0], email=email,
+                               hashed_password=auth.get_password_hash(password),
+                               role=role)
+                session.add(user)
+                session.commit()
+                session.refresh(user)
+            user_id = user.id
+        signed_in = TestClient(app)
+        response = signed_in.post("/api/auth/login",
+                                  json={"username": email, "password": password})
+        assert response.status_code == 200, response.text
+        created.append(signed_in)
+        return {"id": user_id, "client": signed_in, "email": email}
+
+    yield _make
+    for c in created:
+        c.close()
+
+
+@pytest.fixture(scope="session")
+def auth_client():
+    """A client holding a signed-in session.
+
+    Login sets an httpOnly cookie and TestClient keeps it for the life of the
+    instance, so this behaves like a signed-in browser. Kept separate from
+    `client`, which must stay anonymous to prove the endpoints reject it.
+    """
+    with TestClient(app) as signed_in:
+        response = signed_in.post(
+            "/api/auth/login",
+            json={"username": DEMO_EMAIL, "password": DEMO_PASSWORD},
+        )
+        assert response.status_code == 200, response.text
+        assert auth.SESSION_COOKIE in signed_in.cookies, "login set no session cookie"
+        yield signed_in
 
 
 # ---------- 1. PAGE ROUTING ----------
@@ -183,8 +251,8 @@ class TestAuthorization:
 
 # ---------- 4. REFERENCE DATA ----------
 class TestReferenceData:
-    def test_ports_seeded(self, client):
-        r = client.get("/api/ports/")
+    def test_ports_seeded(self, auth_client):
+        r = auth_client.get("/api/ports/")
         assert r.status_code == 200
         ports = r.json()
         assert len(ports) >= 5
@@ -193,8 +261,8 @@ class TestReferenceData:
             assert port["draft_m"] > 0
             assert port["mech_rate_mt_d"] > 0
 
-    def test_vessels_seeded(self, client):
-        r = client.get("/api/vessels/")
+    def test_vessels_seeded(self, auth_client):
+        r = auth_client.get("/api/vessels/")
         assert r.status_code == 200
         classes = {v["class_type"] for v in r.json()}
         assert {"Handysize", "Supramax", "Panamax", "Capesize"} <= classes
@@ -202,15 +270,15 @@ class TestReferenceData:
 
 # ---------- 5. ML PIPELINE ----------
 class TestMLPipeline:
-    def test_ml_info(self, client):
-        r = client.get("/api/ml/info")
+    def test_ml_info(self, auth_client):
+        r = auth_client.get("/api/ml/info")
         assert r.status_code == 200
         data = r.json()
         assert data["r2_score"] > 0.90
         assert data["mae_usd"] > 0
 
-    def test_ml_prediction(self, client):
-        r = client.post(
+    def test_ml_prediction(self, auth_client):
+        r = auth_client.post(
             "/api/ml/predict",
             json={
                 "origin": "Australia",
@@ -226,8 +294,8 @@ class TestMLPipeline:
         assert 10.0 < data["predicted_rate_usd"] < 70.0
         assert lower <= data["predicted_rate_usd"] <= upper
 
-    def test_ml_prediction_rejects_bad_input(self, client):
-        r = client.post(
+    def test_ml_prediction_rejects_bad_input(self, auth_client):
+        r = auth_client.post(
             "/api/ml/predict",
             json={
                 "origin": "Australia",
@@ -239,8 +307,8 @@ class TestMLPipeline:
         )
         assert r.status_code == 422
 
-    def test_forecast_curve(self, client):
-        r = client.post(
+    def test_forecast_curve(self, auth_client):
+        r = auth_client.post(
             "/api/ml/forecast-curve",
             json={
                 "origin": "Australia",
@@ -281,8 +349,8 @@ class TestDecisionEngine:
         "persist": False,
     }
 
-    def test_optimize_returns_ranked_options(self, client):
-        r = client.post("/api/decision/optimize", json=self.BASE_REQUEST)
+    def test_optimize_returns_ranked_options(self, auth_client):
+        r = auth_client.post("/api/decision/optimize", json=self.BASE_REQUEST)
         assert r.status_code == 200
         body = r.json()
         options = body["options"]
@@ -295,8 +363,8 @@ class TestDecisionEngine:
         ]
         assert adjusted == sorted(adjusted), "options are not ranked by risk-adjusted cost"
 
-    def test_cost_components_sum_to_the_total(self, client):
-        r = client.post("/api/decision/optimize", json=self.BASE_REQUEST)
+    def test_cost_components_sum_to_the_total(self, auth_client):
+        r = auth_client.post("/api/decision/optimize", json=self.BASE_REQUEST)
         for option in r.json()["options"]:
             parts = (
                 option["ocean_freight_usd"] + option["deadfreight_usd"]
@@ -306,14 +374,14 @@ class TestDecisionEngine:
             )
             assert parts == pytest.approx(option["landed_cost_usd"], rel=1e-6)
 
-    def test_supply_continuity_does_not_saturate(self, client):
+    def test_supply_continuity_does_not_saturate(self, auth_client):
         """The score used to be `50 + slack x 100` clamped to 100, so any cycle
         shorter than half the window read a flat 100/100 - a delivery guarantee
         no charter can offer. It must stay below the ceiling and vary."""
         scores = []
         for origin in ("Australia", "Indonesia", "South Africa", "USA"):
             for window in (20, 30, 45):
-                r = client.post("/api/decision/optimize", json={
+                r = auth_client.post("/api/decision/optimize", json={
                     **self.BASE_REQUEST, "origin": origin, "window_days": window,
                 })
                 if r.status_code != 200:
@@ -325,60 +393,60 @@ class TestDecisionEngine:
         assert len(scores) >= 8
         assert len(set(scores)) > len(scores) // 2, "score barely discriminates"
 
-    def test_supply_continuity_falls_as_risk_rises(self, client):
+    def test_supply_continuity_falls_as_risk_rises(self, auth_client):
         """A calm month and a cyclone month must not score the same."""
-        calm = client.post("/api/decision/optimize",
+        calm = auth_client.post("/api/decision/optimize",
                            json={**self.BASE_REQUEST, "month": 2}).json()["recommended"]
-        rough = client.post("/api/decision/optimize",
+        rough = auth_client.post("/api/decision/optimize",
                             json={**self.BASE_REQUEST, "month": 7}).json()["recommended"]
         assert rough["risk_index"] > calm["risk_index"]
         assert rough["supply_continuity"] < calm["supply_continuity"]
 
-    def test_supply_continuity_falls_as_the_window_tightens(self, client):
-        roomy = client.post("/api/decision/optimize",
+    def test_supply_continuity_falls_as_the_window_tightens(self, auth_client):
+        roomy = auth_client.post("/api/decision/optimize",
                             json={**self.BASE_REQUEST, "window_days": 60}).json()["recommended"]
-        tight = client.post("/api/decision/optimize",
+        tight = auth_client.post("/api/decision/optimize",
                             json={**self.BASE_REQUEST, "window_days": 18}).json()["recommended"]
         assert tight["supply_continuity"] < roomy["supply_continuity"]
 
-    def test_explanation_is_populated(self, client):
-        r = client.post("/api/decision/optimize", json=self.BASE_REQUEST)
+    def test_explanation_is_populated(self, auth_client):
+        r = auth_client.post("/api/decision/optimize", json=self.BASE_REQUEST)
         assert len(r.json()["recommended"]["explanation"]) > 40
 
-    def test_small_parcel_picks_a_small_ship(self, client):
-        r = client.post(
+    def test_small_parcel_picks_a_small_ship(self, auth_client):
+        r = auth_client.post(
             "/api/decision/optimize", json={**self.BASE_REQUEST, "parcel_size": 35000}
         )
         best = r.json()["recommended"]
         assert best["vessel_class"] == "Handysize"
         assert best["utilisation_pct"] > 80
 
-    def test_large_parcel_picks_a_large_ship(self, client):
-        r = client.post(
+    def test_large_parcel_picks_a_large_ship(self, auth_client):
+        r = auth_client.post(
             "/api/decision/optimize", json={**self.BASE_REQUEST, "parcel_size": 170000}
         )
         assert r.json()["recommended"]["vessel_class"] == "Capesize"
 
-    def test_monsoon_month_raises_risk(self, client):
-        dry = client.post("/api/decision/optimize", json={**self.BASE_REQUEST, "month": 2})
-        wet = client.post("/api/decision/optimize", json={**self.BASE_REQUEST, "month": 7})
+    def test_monsoon_month_raises_risk(self, auth_client):
+        dry = auth_client.post("/api/decision/optimize", json={**self.BASE_REQUEST, "month": 2})
+        wet = auth_client.post("/api/decision/optimize", json={**self.BASE_REQUEST, "month": 7})
         assert wet.json()["recommended"]["risk_index"] > dry.json()["recommended"]["risk_index"]
 
-    def test_invalid_parcel_is_rejected(self, client):
-        r = client.post("/api/decision/optimize", json={**self.BASE_REQUEST, "parcel_size": 0})
+    def test_invalid_parcel_is_rejected(self, auth_client):
+        r = auth_client.post("/api/decision/optimize", json={**self.BASE_REQUEST, "parcel_size": 0})
         assert r.status_code == 422
 
-    def test_optimize_persists_a_recommendation(self, client, auth_headers):
+    def test_optimize_persists_a_recommendation(self, auth_client, auth_headers):
         """Compare the newest row rather than a page count - /history returns a
         capped page, so once it is full the count stops moving."""
         def newest_id():
-            page = client.get(
+            page = auth_client.get(
                 "/api/decision/history?limit=1", headers=auth_headers
             ).json()["items"]
             return page[0]["id"] if page else None
 
         before = newest_id()
-        client.post(
+        auth_client.post(
             "/api/decision/optimize",
             json={**self.BASE_REQUEST, "persist": True},
             headers=auth_headers,
@@ -387,23 +455,23 @@ class TestDecisionEngine:
         assert after is not None
         assert after != before
 
-    def test_port_blocked_scenario_diverts(self, client):
-        r = client.post(
+    def test_port_blocked_scenario_diverts(self, auth_client):
+        r = auth_client.post(
             "/api/decision/simulate",
             json={**self.BASE_REQUEST, "scenario": "port_blocked", "blocked_port": "Dhamra"},
         )
         assert r.status_code == 200
         assert r.json()["disrupted"]["port_name"] != "Dhamra"
 
-    def test_bunker_spike_costs_more(self, client):
-        r = client.post(
+    def test_bunker_spike_costs_more(self, auth_client):
+        r = auth_client.post(
             "/api/decision/simulate", json={**self.BASE_REQUEST, "scenario": "bunker_spike"}
         )
         assert r.status_code == 200
         assert r.json()["delta_usd"] > 0
 
-    def test_vessel_unavailable_scenario_switches_class(self, client):
-        r = client.post(
+    def test_vessel_unavailable_scenario_switches_class(self, auth_client):
+        r = auth_client.post(
             "/api/decision/simulate",
             json={
                 **self.BASE_REQUEST,
@@ -418,15 +486,15 @@ class TestDecisionEngine:
 
 # ---------- 7. SYSTEM ----------
 class TestDatabaseAndSystem:
-    def test_system_status(self, client):
-        r = client.get("/api/system/status")
+    def test_system_status(self, auth_client):
+        r = auth_client.get("/api/system/status")
         assert r.status_code == 200
         data = r.json()
         assert data["status"] == "OPERATIONAL"
         assert data["database"]["status"] == "Connected"
 
-    def test_live_system_tests(self, client):
-        r = client.get("/api/system/run-tests")
+    def test_live_system_tests(self, auth_client):
+        r = auth_client.get("/api/system/run-tests")
         assert r.status_code == 200
         data = r.json()
         assert data["failed"] == 0, data["results"]
@@ -566,8 +634,8 @@ class TestRateHorizonWindow:
         assert far > near
 
     # --- through the API --------------------------------------------------
-    def test_endpoint_anchors_to_the_server_clock(self, client):
-        r = client.post(
+    def test_endpoint_anchors_to_the_server_clock(self, auth_client):
+        r = auth_client.post(
             "/api/ml/rate-horizon",
             json={"origin": "Australia", "horizon_days": 30, "history_days": 14},
         )
@@ -587,8 +655,8 @@ class TestRateHorizonWindow:
         fields = set(RateHorizonRequest.model_fields)
         assert not (fields & {"month", "start_date", "today", "anchor_date"})
 
-    def test_endpoint_rejects_an_out_of_range_horizon(self, client):
-        r = client.post(
+    def test_endpoint_rejects_an_out_of_range_horizon(self, auth_client):
+        r = auth_client.post(
             "/api/ml/rate-horizon", json={"origin": "Australia", "horizon_days": 5000}
         )
         assert r.status_code == 422
@@ -639,30 +707,30 @@ class TestOptimisationSavingBasis:
         "persist": False,
     }
 
-    def _totals(self, client, **overrides):
-        response = client.post(
+    def _totals(self, auth_client, **overrides):
+        response = auth_client.post(
             "/api/decision/optimize", json={**self.REQUEST, **overrides}
         )
         assert response.status_code == 200
         return sorted(o["landed_cost_usd_mt"] for o in response.json()["options"])
 
-    def test_runner_up_can_be_indistinguishable_from_the_winner(self, client):
+    def test_runner_up_can_be_indistinguishable_from_the_winner(self, auth_client):
         """Documents why the runner-up is a useless comparator."""
-        totals = self._totals(client)
+        totals = self._totals(auth_client)
         assert len(totals) >= 2
         assert totals[1] - totals[0] < 1.0, (
             "top two are far apart here; if this ever holds broadly the saving "
             "metric could go back to comparing against the runner-up"
         )
 
-    def test_median_gives_a_material_saving(self, client):
-        totals = self._totals(client)
+    def test_median_gives_a_material_saving(self, auth_client):
+        totals = self._totals(auth_client)
         median = totals[len(totals) // 2]
         saving = median - totals[0]
         assert saving > 0.5, f"saving vs median is only ${saving:.2f}/MT"
 
-    def test_shortlist_spread_is_wide_enough_to_be_worth_optimising(self, client):
-        totals = self._totals(client)
+    def test_shortlist_spread_is_wide_enough_to_be_worth_optimising(self, auth_client):
+        totals = self._totals(auth_client)
         assert totals[-1] - totals[0] > 5.0
 
 
@@ -676,30 +744,30 @@ class TestSupplyContinuityMoves:
         "persist": False,
     }
 
-    def _score(self, client, **overrides):
-        response = client.post(
+    def _score(self, auth_client, **overrides):
+        response = auth_client.post(
             "/api/decision/optimize", json={**self.REQUEST, **overrides}
         )
         assert response.status_code == 200
         return response.json()["recommended"]
 
-    def test_a_tighter_window_lowers_continuity(self, client):
-        tight = self._score(client, window_days=15)["supply_continuity"]
-        roomy = self._score(client, window_days=60)["supply_continuity"]
+    def test_a_tighter_window_lowers_continuity(self, auth_client):
+        tight = self._score(auth_client, window_days=15)["supply_continuity"]
+        roomy = self._score(auth_client, window_days=60)["supply_continuity"]
         assert tight < roomy, f"{tight} not below {roomy}"
 
-    def test_continuity_spans_a_useful_range(self, client):
+    def test_continuity_spans_a_useful_range(self, auth_client):
         """A score that barely moves reads as broken even when it is computed."""
         scores = {
-            self._score(client, window_days=days)["supply_continuity"]
+            self._score(auth_client, window_days=days)["supply_continuity"]
             for days in (12, 15, 20, 30, 45, 60, 90)
         }
         assert len(scores) >= 5, f"only {len(scores)} distinct values: {scores}"
         assert max(scores) - min(scores) > 25
 
-    def test_factors_are_returned_so_the_score_can_be_explained(self, client):
+    def test_factors_are_returned_so_the_score_can_be_explained(self, auth_client):
         """The card names the binding factor; it needs all three to do that."""
-        best = self._score(client, window_days=30)
+        best = self._score(auth_client, window_days=30)
         for field in (
             "schedule_headroom_pct",
             "continuity_risk_factor_pct",
@@ -708,9 +776,9 @@ class TestSupplyContinuityMoves:
             assert field in best, f"missing {field}"
             assert 0 <= best[field] <= 100
 
-    def test_continuity_never_claims_certainty(self, client):
+    def test_continuity_never_claims_certainty(self, auth_client):
         for days in (30, 60, 120, 365):
-            assert self._score(client, window_days=days)["supply_continuity"] <= 97
+            assert self._score(auth_client, window_days=days)["supply_continuity"] <= 97
 
 
 # ---------- 12. SHARED SHELL ----------
@@ -780,3 +848,169 @@ class TestSharedShell:
             )
         }
         assert not found, f"{path} still has emoji: {[hex(ord(c)) for c in found]}"
+
+
+# ---------- 13. CONFIDENTIALITY CONTROLS ----------
+class TestConfidentialityControls:
+    """Guards for the Tier 0 hardening.
+
+    An audit found that a stranger could self-register, was handed an Analyst
+    role, and could then read the organisation's cargo pipeline and priced
+    recommendations - while the decision engine, port tariffs and charter rates
+    needed no session at all.
+    """
+
+    # --- registration is no longer a way in --------------------------------
+    def test_self_registration_is_closed_by_default(self, client):
+        r = client.post("/api/auth/register", json={
+            "name": "Outside Party",
+            "email": "stranger@example.com",
+            "password": "whatever123",
+        })
+        assert r.status_code == 403, r.text
+        assert "administrator" in r.json()["detail"].lower()
+
+    def test_registration_honours_the_domain_allow_list(self, client, monkeypatch):
+        monkeypatch.setattr(auth, "SIGNUP_DOMAINS", ["sail.in"])
+        assert auth.signup_allowed("officer@sail.in")
+        assert auth.signup_allowed("officer@plant.sail.in")   # subdomain
+        assert not auth.signup_allowed("attacker@sail.in.evil.com")
+        assert not auth.signup_allowed("someone@example.com")
+
+    # --- the commercially sensitive endpoints need a session ---------------
+    @pytest.mark.parametrize("method,path,payload", [
+        ("post", "/api/decision/optimize", {
+            "parcel_size": 80000, "cargo_type": "Coking Coal", "origin": "Australia",
+            "plant": "Rourkela", "window_days": 30}),
+        ("post", "/api/decision/simulate", {
+            "parcel_size": 80000, "cargo_type": "Coking Coal", "origin": "Australia",
+            "plant": "Rourkela", "window_days": 30, "scenario": "cyclone"}),
+        ("get", "/api/ports/", None),
+        ("get", "/api/vessels/", None),
+        ("get", "/api/system/status", None),
+        ("get", "/api/system/run-tests", None),
+        ("post", "/api/ml/predict", {
+            "origin": "Australia", "distance_nm": 4500, "month": 6,
+            "bunker_price": 640.0, "pressure_index": 45.0}),
+        ("get", "/api/ml/info", None),
+        ("post", "/api/ml/rate-horizon", {"origin": "Australia"}),
+        ("post", "/api/ml/forecast-curve", {
+            "origin": "Australia", "distance_nm": 4500, "month": 3,
+            "bunker_price": 700.0, "pressure_index": 50.0}),
+    ])
+    def test_priced_data_rejects_anonymous_callers(self, client, method, path, payload):
+        call = getattr(client, method)
+        response = call(path) if payload is None else call(path, json=payload)
+        assert response.status_code in (401, 403), (
+            f"{path} answered {response.status_code} without a session"
+        )
+
+    def test_the_same_endpoints_work_once_signed_in(self, auth_client):
+        assert auth_client.get("/api/ports/").status_code == 200
+        assert auth_client.get("/api/vessels/").status_code == 200
+
+    # --- horizontal privilege ----------------------------------------------
+    def test_cargo_listing_is_scoped_to_the_caller(self, auth_client):
+        """It used to return every user's requests unless you opted out."""
+        import inspect
+        from routers import cargo
+
+        signature = inspect.signature(cargo.read_cargo_requests)
+        assert "mine_only" not in signature.parameters, "the opt-out default is back"
+        assert signature.parameters["all_users"].default is False
+
+    def test_cross_user_listing_needs_admin(self, auth_client, client, db_user_factory):
+        analyst = db_user_factory("scoped.analyst@sail.gov.in", "Analyst")
+        signed_in = analyst["client"]
+        signed_in.post("/api/cargo/", json={
+            "parcel_size": 42000, "cargo_type": "Thermal Coal", "origin": "Indonesia",
+            "plant": "Bokaro", "window_days": 25})
+        # Asking to see everyone's is ignored for a non-admin.
+        rows = signed_in.get("/api/cargo/?all_users=true").json()
+        assert all(r["user_id"] == analyst["id"] for r in rows), (
+            "a non-admin was shown another user's cargo requests"
+        )
+
+    # --- the session is not reachable from script --------------------------
+    def test_login_sets_an_httponly_session_cookie(self, client):
+        r = client.post("/api/auth/login",
+                        json={"username": DEMO_EMAIL, "password": DEMO_PASSWORD})
+        assert r.status_code == 200
+        raw = r.headers.get("set-cookie", "")
+        assert auth.SESSION_COOKIE in raw
+        assert "httponly" in raw.lower(), "session cookie is readable by script"
+        assert "samesite=strict" in raw.lower().replace(" ", "")
+
+    def test_pages_no_longer_store_the_token(self, client):
+        """The dashboard used to keep the JWT in localStorage, where any
+        injected script could read it."""
+        for path in ["/app", "/login", "/ml-training", "/verification"]:
+            body = client.get(path).text
+            assert "ld_token" not in body, f"{path} still handles the raw token"
+
+    def test_logout_clears_the_session(self, client):
+        client.post("/api/auth/login",
+                    json={"username": DEMO_EMAIL, "password": DEMO_PASSWORD})
+        assert client.get("/api/auth/me").status_code == 200
+        client.post("/api/auth/logout")
+        assert client.get("/api/auth/me").status_code == 401
+
+    # --- brute force --------------------------------------------------------
+    def test_repeated_failures_are_throttled(self, client):
+        auth._login_attempts.clear()
+        target = "throttle.probe@sail.gov.in"
+        codes = [
+            client.post("/api/auth/login",
+                        json={"username": target, "password": f"wrong{i}"}).status_code
+            for i in range(auth.LOGIN_MAX_ATTEMPTS + 2)
+        ]
+        auth._login_attempts.clear()
+        assert 429 in codes, f"no throttling after {len(codes)} failures: {codes}"
+
+    # --- the demo backdoor --------------------------------------------------
+    def test_demo_password_repair_is_off_by_default(self):
+        """It reset three known accounts' passwords on every boot, so an
+        administrator could not change them."""
+        import os
+
+        assert os.environ.get("LOHA_REPAIR_DEMO_ACCOUNTS", "0") == "0"
+        source = io.open(
+            os.path.join(os.path.dirname(__file__), "..", "seed_data.py"),
+            encoding="utf-8",
+        ).read()
+        assert 'os.environ.get("LOHA_REPAIR_DEMO_ACCOUNTS", "0")' in source
+
+    def test_demo_accounts_can_be_switched_off(self):
+        import os
+
+        source = io.open(
+            os.path.join(os.path.dirname(__file__), "..", "seed_data.py"),
+            encoding="utf-8",
+        ).read()
+        assert "LOHA_SEED_DEMO_ACCOUNTS" in source
+
+    # --- reads are recorded, not just writes -------------------------------
+    def test_reading_recommendation_history_is_audited(self, auth_client):
+        auth_client.get("/api/decision/history")
+        from database import SessionLocal
+        import models as m
+
+        with SessionLocal() as session:
+            found = (
+                session.query(m.AuditLog)
+                .filter(m.AuditLog.action == "RECOMMENDATION_HISTORY_READ")
+                .count()
+            )
+        assert found > 0, "reads of priced data are not audited"
+
+    def test_failed_logins_are_audited(self, client):
+        auth._login_attempts.clear()
+        client.post("/api/auth/login",
+                    json={"username": "audit.probe@sail.gov.in", "password": "nope"})
+        auth._login_attempts.clear()
+        from database import SessionLocal
+        import models as m
+
+        with SessionLocal() as session:
+            assert session.query(m.AuditLog).filter(
+                m.AuditLog.action == "LOGIN_FAILED").count() > 0

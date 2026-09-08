@@ -31,10 +31,14 @@ def _resolve_month(month: int) -> int:
 def optimize_route(
     request: schemas.OptimizeRequest,
     db: Session = Depends(get_db),
-    user: models.User | None = Depends(auth.get_optional_user),
+    user: models.User = Depends(auth.get_current_user),
 ):
     """Score every feasible vessel-class x port pairing and return the ranked
-    shortlist with a full cost and risk breakdown."""
+    shortlist with a full cost and risk breakdown.
+
+    Authenticated: the response discloses landed cost, lane economics and
+    procurement timing - the most commercially sensitive output here.
+    """
     vessels, ports = _reference_data(db)
     month = _resolve_month(request.month)
 
@@ -118,7 +122,7 @@ def optimize_route(
 def simulate_scenario(
     request: schemas.ScenarioRequest,
     db: Session = Depends(get_db),
-    user: models.User | None = Depends(auth.get_optional_user),
+    user: models.User = Depends(auth.get_current_user),
 ):
     """Run the optimizer twice - once on baseline market/fleet conditions and
     once under a disruption - and report the delta plus a mitigation."""
@@ -291,6 +295,13 @@ def recommendation_history(
         .limit(min(limit, 100))
         .all()
     )
+    # Who reads priced recommendations matters as much as who writes them.
+    db.add(models.AuditLog(
+        action="RECOMMENDATION_HISTORY_READ",
+        user_email=user.email,
+        details=f"Read {len(rows)} recommendation(s)",
+    ))
+    db.commit()
     return {"count": len(rows), "items": [
         {
             "id": row.id,

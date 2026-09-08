@@ -33,12 +33,18 @@ def create_cargo_request(
 def read_cargo_requests(
     skip: int = 0,
     limit: int = 100,
-    mine_only: bool = False,
+    all_users: bool = False,
     db: Session = Depends(get_db),
     user: models.User = Depends(auth.get_current_user),
 ):
+    """Own requests by default.
+
+    This used to return every user's cargo requests unless the caller opted
+    out, so any account could read the organisation's whole procurement
+    pipeline. Seeing across users is now explicit and an Admin privilege.
+    """
     query = db.query(models.CargoRequest)
-    if mine_only:
+    if not (all_users and user.role == "Admin"):
         query = query.filter(models.CargoRequest.user_id == user.id)
     return (
         query.order_by(models.CargoRequest.created_at.desc())

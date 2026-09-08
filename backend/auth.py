@@ -4,10 +4,11 @@ FastAPI dependencies used to protect endpoints."""
 import logging
 import os
 import secrets
+import time
 from datetime import datetime, timezone, timedelta
 
 import bcrypt
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from sqlalchemy.orm import Session
@@ -41,6 +42,67 @@ DEMO_ACCOUNTS = {
     "officer@sail.gov.in": ("SAIL Procurement Officer", "Procurement Officer"),
 }
 DEMO_PASSWORD = os.environ.get("LOHA_DEMO_PASSWORD", "12345")
+
+# The browser session travels in an httpOnly cookie so that script injected into
+# the page cannot read it; localStorage offered no such protection. Bearer
+# tokens still work for programmatic clients (Swagger, curl, integration tests).
+SESSION_COOKIE = "loha_session"
+
+# Secure cookies are refused by clients over plain http, which would silently
+# break local development and the test suite. Derive the flag from the actual
+# request scheme - behind a proxy that terminates TLS the original scheme
+# arrives in x-forwarded-proto - and allow an explicit override.
+_COOKIE_SECURE_OVERRIDE = os.environ.get("LOHA_COOKIE_SECURE")
+
+
+def cookie_is_secure(request) -> bool:
+    if _COOKIE_SECURE_OVERRIDE is not None:
+        return _COOKIE_SECURE_OVERRIDE != "0"
+    forwarded = request.headers.get("x-forwarded-proto", "").split(",")[0].strip()
+    return (forwarded or request.url.scheme) == "https"
+
+# Registration is closed by default. Set LOHA_SIGNUP_DOMAINS to a comma-separated
+# allow-list ("sail.in,gov.in") to permit self-service sign-up for those domains
+# only; anything else has to be created by an administrator. Open registration
+# handed an Analyst role - and every endpoint it unlocks - to any passer-by.
+SIGNUP_DOMAINS = [
+    d.strip().lower().lstrip("@")
+    for d in os.environ.get("LOHA_SIGNUP_DOMAINS", "").split(",")
+    if d.strip()
+]
+
+# Login throttling. In-process, so on serverless it is per-container rather than
+# global - it blunts credential stuffing but is not a substitute for a shared
+# rate limiter at the edge.
+LOGIN_MAX_ATTEMPTS = int(os.environ.get("LOHA_LOGIN_MAX_ATTEMPTS", 8))
+LOGIN_WINDOW_SEC = int(os.environ.get("LOHA_LOGIN_WINDOW_SEC", 300))
+_login_attempts: dict[str, list] = {}
+
+
+def signup_allowed(email: str) -> bool:
+    """Whether this address may create its own account."""
+    if not SIGNUP_DOMAINS:
+        return False
+    domain = email.rsplit("@", 1)[-1].lower()
+    return any(domain == d or domain.endswith("." + d) for d in SIGNUP_DOMAINS)
+
+
+def register_login_failure(key: str) -> None:
+    now = time.time()
+    attempts = [t for t in _login_attempts.get(key, []) if now - t < LOGIN_WINDOW_SEC]
+    attempts.append(now)
+    _login_attempts[key] = attempts
+
+
+def clear_login_failures(key: str) -> None:
+    _login_attempts.pop(key, None)
+
+
+def login_is_throttled(key: str) -> bool:
+    now = time.time()
+    attempts = [t for t in _login_attempts.get(key, []) if now - t < LOGIN_WINDOW_SEC]
+    _login_attempts[key] = attempts
+    return len(attempts) >= LOGIN_MAX_ATTEMPTS
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login", auto_error=False)
 
@@ -96,38 +158,49 @@ def decode_access_token(token: str) -> dict | None:
 
 CREDENTIALS_EXCEPTION = HTTPException(
     status_code=status.HTTP_401_UNAUTHORIZED,
-    detail="Not authenticated. Provide a valid bearer token.",
+    detail="Not authenticated. Sign in to continue.",
     headers={"WWW-Authenticate": "Bearer"},
 )
 
 
-def get_current_user(
-    token: str | None = Depends(oauth2_scheme),
-    db: Session = Depends(get_db),
-) -> models.User:
-    if not token:
-        raise CREDENTIALS_EXCEPTION
-    payload = decode_access_token(token)
-    if not payload or not payload.get("sub"):
-        raise CREDENTIALS_EXCEPTION
-    user = db.query(models.User).filter(models.User.email == payload["sub"]).first()
-    if user is None:
-        raise CREDENTIALS_EXCEPTION
-    return user
+def _extract_token(request: Request, bearer: str | None) -> str | None:
+    """Session cookie first, Authorization header second.
+
+    The browser never handles the token itself; the header path exists for
+    Swagger and other programmatic clients.
+    """
+    cookie = request.cookies.get(SESSION_COOKIE)
+    return cookie or bearer
 
 
-def get_optional_user(
-    token: str | None = Depends(oauth2_scheme),
-    db: Session = Depends(get_db),
-) -> models.User | None:
-    """For endpoints that attribute an action to a user when a token is present
-    but stay readable without one."""
+def _resolve_user(token: str | None, db: Session):
     if not token:
         return None
     payload = decode_access_token(token)
     if not payload or not payload.get("sub"):
         return None
     return db.query(models.User).filter(models.User.email == payload["sub"]).first()
+
+
+def get_current_user(
+    request: Request,
+    bearer: str | None = Depends(oauth2_scheme),
+    db: Session = Depends(get_db),
+) -> models.User:
+    user = _resolve_user(_extract_token(request, bearer), db)
+    if user is None:
+        raise CREDENTIALS_EXCEPTION
+    return user
+
+
+def get_optional_user(
+    request: Request,
+    bearer: str | None = Depends(oauth2_scheme),
+    db: Session = Depends(get_db),
+) -> models.User | None:
+    """For endpoints that attribute an action to a signed-in user but do not
+    require one."""
+    return _resolve_user(_extract_token(request, bearer), db)
 
 
 def require_roles(*roles: str):

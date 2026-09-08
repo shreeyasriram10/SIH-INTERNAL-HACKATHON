@@ -58,7 +58,9 @@ def _confidence_interval(rate: float) -> tuple[float, float]:
 # ---------------------------------------------------------------------------
 
 @router.get("/info")
-def get_model_info():
+def get_model_info(user: models.User = Depends(auth.get_current_user)):
+    """Model metrics and the feature registry describe how the platform prices
+    freight, so they sit behind a session like the predictions themselves."""
     payload = model_registry.get_payload()
     metadata = dict(payload.get("metadata") or {})
 
@@ -170,7 +172,11 @@ def trigger_training(
 # ---------------------------------------------------------------------------
 
 @router.post("/predict")
-def predict_freight(request: ForecastRequest, db: Session = Depends(get_db)):
+def predict_freight(
+    request: ForecastRequest,
+    db: Session = Depends(get_db),
+    user: models.User = Depends(auth.get_current_user),
+):
     try:
         rate = max(0.0, model_registry.predict_rate(request.model_dump()))
     except Exception as error:
@@ -214,7 +220,10 @@ def predict_freight(request: ForecastRequest, db: Session = Depends(get_db)):
 
 
 @router.post("/forecast-curve")
-def forecast_curve(request: CurveRequest):
+def forecast_curve(
+    request: CurveRequest,
+    user: models.User = Depends(auth.get_current_user),
+):
     """Rate curve across several horizons in one round trip.
 
     Each horizon walks the calendar forward from the requested month, which is
@@ -261,7 +270,10 @@ def forecast_curve(request: CurveRequest):
 
 
 @router.post("/rate-horizon")
-def rate_horizon_series(request: RateHorizonRequest):
+def rate_horizon_series(
+    request: RateHorizonRequest,
+    user: models.User = Depends(auth.get_current_user),
+):
     """Daily rate series for the dashboard's freight-rate chart.
 
     The window is always [today - history_days + 1 ... today + horizon_days],

@@ -160,6 +160,41 @@ failing the request.
 
 Copy `.env.example` and adjust.
 
+| Variable | Default | Purpose |
+|---|---|---|
+| `LOHA_SIGNUP_DOMAINS` | *(empty - closed)* | Domains permitted to self-register. Empty means administrators create all accounts. |
+| `LOHA_SEED_DEMO_ACCOUNTS` | `1` | Seeds three documented logins sharing a weak password. **Set `0` before real data.** |
+| `LOHA_REPAIR_DEMO_ACCOUNTS` | `0` | Rewrites those passwords every boot. Leave off. |
+| `LOHA_COOKIE_SECURE` | *(from request scheme)* | Force the session cookie's Secure flag. |
+| `LOHA_LOGIN_MAX_ATTEMPTS` / `LOHA_LOGIN_WINDOW_SEC` | `8` / `300` | Login throttle, per container. |
+
+---
+
+## Security posture
+
+The session is an **httpOnly, SameSite=strict cookie**; the browser never
+handles the token, so injected script cannot lift it. Bearer tokens still work
+for Swagger and other programmatic clients.
+
+Everything that discloses commercial figures - landed cost, lane economics,
+port tariffs, charter hire, freight predictions, procurement history - requires
+a session. Port and vessel reference data are not public: draft, handling
+rates, waiting times and demurrage are negotiated terms. `/api/system/status`
+is Admin-only; retraining and the test battery are Admin or Analyst.
+
+Self-registration is closed unless `LOHA_SIGNUP_DOMAINS` is set. Cargo listings
+are scoped to the caller, and reading across users is an Admin privilege.
+Failed sign-ins are throttled per address and IP, and both failures and reads
+of priced recommendations are written to the audit log.
+
+**Not yet done, and required before real data.** Tokens cannot be revoked
+before they expire; there is no MFA; the database is unencrypted at rest and on
+serverless it is an ephemeral SQLite file in `/tmp`; the throttle is
+per-container rather than shared. Public-cloud hosting is also unlikely to be
+acceptable for genuine SAIL procurement data - that belongs on government
+infrastructure behind a VPN, with SSO, encrypted storage and full read
+auditing.
+
 ---
 
 ## Tests

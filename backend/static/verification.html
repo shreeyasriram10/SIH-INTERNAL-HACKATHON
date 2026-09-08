@@ -866,24 +866,15 @@ LOGOUT
 ====================================================
 */
 
-function performLogout() {
-
-  if (
-    confirm(
-      'Are you sure you want to log out and return to the Sign In gateway?'
-    )
-  ) {
-
-    localStorage.removeItem('ld_token');
-
-    localStorage.removeItem('ld_role');
-
-    localStorage.removeItem('ld_email');
-
-    window.location.href = '/';
-
-  }
-
+function performLogout(){
+  if(!confirm('Sign out and return to the Sign In gateway?')) return;
+  /* The session cookie is httpOnly, so only the server can clear it. */
+  fetch('/api/auth/logout', {method:'POST', credentials:'same-origin'})
+    .catch(()=>{})
+    .finally(()=>{
+      try{ localStorage.removeItem('ld_role'); localStorage.removeItem('ld_email'); }catch(e){}
+      window.location.href = '/login';
+    });
 }
 
 </script>

@@ -19,9 +19,26 @@ def seed_database():
         # name instead of a role. Repair both here so the credentials printed in
         # the README actually authenticate. Guarded by an env flag and scoped to
         # the three known demo addresses, so it can never touch a real account.
-        repair = os.environ.get("LOHA_REPAIR_DEMO_ACCOUNTS", "1") != "0"
+        # Demo accounts exist so the prototype can be opened and driven without
+        # provisioning. They are three publicly documented logins with a weak
+        # shared password, so they must be switched off before the platform ever
+        # holds real data: LOHA_SEED_DEMO_ACCOUNTS=0.
+        #
+        # The repair step is separate and now defaults OFF. It re-wrote those
+        # passwords on every boot, which meant an administrator could not change
+        # them - a standing backdoor rather than a one-off fix.
+        seed_demo = os.environ.get("LOHA_SEED_DEMO_ACCOUNTS", "1") != "0"
+        repair = os.environ.get("LOHA_REPAIR_DEMO_ACCOUNTS", "0") != "0"
 
-        for email, (name, role) in auth.DEMO_ACCOUNTS.items():
+        if seed_demo:
+            print(
+                "WARNING: demo accounts are enabled with a shared known password. "
+                "Set LOHA_SEED_DEMO_ACCOUNTS=0 before using real data."
+            )
+        else:
+            print("Demo accounts not seeded (LOHA_SEED_DEMO_ACCOUNTS=0).")
+
+        for email, (name, role) in (auth.DEMO_ACCOUNTS.items() if seed_demo else []):
             existing = db.query(models.User).filter(models.User.email == email).first()
 
             if existing is None:

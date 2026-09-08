@@ -15,7 +15,10 @@ router = APIRouter()
 START_TIME = time.time()
 
 @router.get("/status")
-def get_system_status(db: Session = Depends(get_db)):
+def get_system_status(
+    db: Session = Depends(get_db),
+    user: models.User = Depends(auth.require_roles("Admin")),
+):
     try:
         # Check DB connection
         db.execute(text("SELECT 1"))
@@ -72,7 +75,10 @@ def get_system_status(db: Session = Depends(get_db)):
     }
 
 @router.get("/run-tests")
-def run_live_system_tests(db: Session = Depends(get_db)):
+def run_live_system_tests(
+    db: Session = Depends(get_db),
+    user: models.User = Depends(auth.require_roles("Admin", "Analyst")),
+):
     """
     Executes a real programmatic battery of automated system tests
     and returns genuine pass/fail results.
