@@ -79,7 +79,8 @@ app.include_router(waterways.router, prefix="/api/waterways", tags=["waterways"]
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 
-_PAGE_CACHE: dict[str, str] = {}
+# filename -> (stat signature, body)
+_PAGE_CACHE: dict[str, tuple] = {}
 
 
 def _page(filename: str) -> HTMLResponse:
@@ -92,15 +93,27 @@ def _page(filename: str) -> HTMLResponse:
     indefinitely - a redeploy never reaches anyone who already loaded the page.
 
     Returning the body directly sends no Last-Modified or ETag, so there is
-    nothing to revalidate against and the client always receives current
-    markup. The file is read once per process; these shells change only on
-    deploy, and each new deployment starts fresh containers.
+    nothing to revalidate against and the client always receives current markup.
+
+    The body is held in memory but keyed on the file's mtime and size, so an
+    edit on disk is picked up without a restart. Reading once per process would
+    be enough for a deployment, where each release starts fresh containers, but
+    it makes every local edit invisible until the server is bounced.
     """
-    body = _PAGE_CACHE.get(filename)
-    if body is None:
-        with open(os.path.join(STATIC_DIR, filename), "r", encoding="utf-8") as handle:
+    path = os.path.join(STATIC_DIR, filename)
+    try:
+        stat = os.stat(path)
+        signature = (stat.st_mtime_ns, stat.st_size)
+    except OSError:
+        signature = None
+
+    cached = _PAGE_CACHE.get(filename)
+    if cached is not None and cached[0] == signature:
+        body = cached[1]
+    else:
+        with open(path, "r", encoding="utf-8") as handle:
             body = handle.read()
-        _PAGE_CACHE[filename] = body
+        _PAGE_CACHE[filename] = (signature, body)
 
     return HTMLResponse(
         content=body,

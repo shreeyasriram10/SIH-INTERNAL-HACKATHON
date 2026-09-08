@@ -2259,13 +2259,42 @@ function renderCharterStrategy(result, inputs){
   host.innerHTML=`<section class="charter-strategy-section"><div class="charter-strategy-header"><div><h3>Charter Contract Strategy</h3><p>Moving from single-voyage spot exposure toward continuity-led multiple-voyage coverage. Totals: ₹ Cr at $1 = ₹${FX_INR_PER_USD}.</p></div><span class="data-tag">CALCULATED FROM ACTIVE RESULT</span></div><div class="charter-strategy-grid">${cards}</div><div class="charter-recommended"><h4>RECOMMENDED CHARTER STRATEGY → ${recommended.label}</h4><p><b>WHY THIS STRATEGY?</b>${reasonList.join(' ')}</p></div></section>`;
 }
 
+/* Continuity is dominated by how much of the laycan window the voyage cycle
+   consumes, so name the factor that is actually binding rather than repeating
+   a static caption that makes a live score look frozen. */
+function continuityDriver(candidate){
+  const api = candidate.api || {};
+  const schedule = api.schedule_headroom_pct, risk = api.continuity_risk_factor_pct,
+        execution = api.execution_factor_pct;
+  if(schedule == null) return 'Plant delivery confidence';
+  const factors = [
+    {name:'schedule headroom', value:schedule},
+    {name:'disruption risk',   value:risk},
+    {name:'execution',         value:execution}
+  ].sort((a,b)=>a.value-b.value);
+  const binding = factors[0];
+  return `Limited by ${binding.name} (${binding.value.toFixed(0)}%)`;
+}
+
+function continuityClass(score){
+  return score>=70 ? 'risk-low' : score>=45 ? 'risk-mid' : 'risk-high';
+}
+
 /* ======= DECISION CARD RENDERER ======= */
 function renderDecisionCard(result,inputs,targetId='decisionCardHost'){
   const w=result.winner, b=result.backup;
   const vc=VESSEL_CLASSES[result.vesselClassKey];
   const totalCostUSD=w.base.total*inputs.qty;
   const totalCostINR=(totalCostUSD*83.5)/10000000;
-  const savings=Math.abs(b.base.total-w.base.total);
+  const sortedTotals=result.candidates.map(c=>c.base.total).sort((x,y)=>x-y);
+  const medianTotal=sortedTotals.length
+    ? sortedTotals[Math.floor(sortedTotals.length/2)]
+    : w.base.total;
+  const savings=Math.max(0, medianTotal-w.base.total);
+  const worstTotal=sortedTotals.length?sortedTotals[sortedTotals.length-1]:w.base.total;
+  /* Signed, because the runner-up can be cheaper per tonne and still lose on
+     risk-adjusted cost - claiming it is dearer would be untrue. */
+  const backupDelta=b.base.total-w.base.total;
 
   // Build regret table rows
   const scenarios=['normal','monsoon_delay','congestion_spike','freight_spike'];
@@ -2313,13 +2342,13 @@ function renderDecisionCard(result,inputs,targetId='decisionCardHost'){
       </div>
       <div class="kpi-card">
         <div class="kpi-label">Supply Continuity <span class="gauge-info-btn" onclick="openModal('continuityModal')" style="font-size:9px;" title="How Supply Continuity is scored">Details</span></div>
-        <div class="kpi-value" style="color:var(--green);">${result.continuity}/100</div>
-        <div class="kpi-sub">Plant Delivery Confidence</div>
+        <div class="kpi-value ${continuityClass(result.continuity)}">${result.continuity}/100</div>
+        <div class="kpi-sub">${continuityDriver(w)}</div>
       </div>
       <div class="kpi-card">
-        <div class="kpi-label">Simulated Saving</div>
+        <div class="kpi-label">Optimisation Saving</div>
         <div class="kpi-value" style="color:var(--green);">${usd(savings)}/MT</div>
-        <div class="kpi-sub">vs Backup Route</div>
+        <div class="kpi-sub">vs median of ${sortedTotals.length} feasible options &middot; up to ${usd(worstTotal-w.base.total)}/MT vs worst</div>
       </div>
     </div>
 
@@ -2406,7 +2435,13 @@ function renderDecisionCard(result,inputs,targetId='decisionCardHost'){
         <div class="explain-box">
           <h5>Why Alternatives Lost?</h5>
           <ul>
-            <li><b>Backup route (${ORIGINS[b.originKey].short} → ${PORTS[b.portKey].name}):</b> Higher landed cost by ${usd(savings)}/MT.</li>
+            <li><b>Runner-up (${ORIGINS[b.originKey].short} → ${PORTS[b.portKey].name}):</b> ${
+              backupDelta > 0.005
+                ? 'Costs '+usd(backupDelta)+'/MT more.'
+                : backupDelta < -0.005
+                  ? 'Is '+usd(Math.abs(backupDelta))+'/MT cheaper per tonne, but carries a higher risk index ('+b.api.risk_index.toFixed(0)+' against '+w.api.risk_index.toFixed(0)+'), so it loses on risk-adjusted cost.'
+                  : 'Is within a cent per tonne on cost; the recommendation turns on its lower risk index ('+w.api.risk_index.toFixed(0)+' against '+b.api.risk_index.toFixed(0)+').'
+            }</li>
             ${PORTS.paradip.name!==PORTS[w.portKey].name?`<li><b>Paradip:</b> ${PORTS.paradip.waitDays}d avg. wait adds demurrage risk. ${result.winner.base.isMonsoon?'Monsoon exposed.':''}</li>`:''}
             <li><b>Spot charter only:</b> Freight forecast shows +12% upside risk over 60d — contract hedge recommended.</li>
             <li><b>High regret routes:</b> ${result.candidates.length-1} alternatives scored higher max-regret — eliminated by optimizer.</li>

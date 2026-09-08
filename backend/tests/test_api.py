@@ -1,3 +1,4 @@
+import io
 import os
 import sys
 from datetime import date, timedelta
@@ -591,3 +592,122 @@ class TestRateHorizonWindow:
             "/api/ml/rate-horizon", json={"origin": "Australia", "horizon_days": 5000}
         )
         assert r.status_code == 422
+
+
+# ---------- 9. SHELL CACHE ----------
+class TestPageCacheFreshness:
+    def test_edit_on_disk_is_served_without_a_restart(self, client):
+        """The in-memory page cache must be keyed on the file, not the process.
+
+        Holding the body for the process lifetime is fine on a platform where
+        every release starts new containers, but locally it made each edit to
+        a shell invisible until the server was bounced.
+        """
+        import main
+
+        path = os.path.join(main.STATIC_DIR, "app.html")
+        original = io.open(path, encoding="utf-8").read()
+        marker = "<!-- cache-freshness-probe -->"
+        try:
+            assert marker not in client.get("/app").text
+
+            io.open(path, "w", encoding="utf-8", newline="").write(original + marker)
+            assert marker in client.get("/app").text, "edit not picked up without a restart"
+        finally:
+            io.open(path, "w", encoding="utf-8", newline="").write(original)
+
+        assert marker not in client.get("/app").text
+
+
+# ---------- 10. SAVING METRIC ----------
+class TestOptimisationSavingBasis:
+    """The dashboard reports the saving against the median feasible option.
+
+    It used to compare the winner with the runner-up, which is nearly always a
+    near-twin - same origin and vessel class, an adjacent berth whose rail and
+    waiting costs cancel - so the figure resolved to fractions of a cent and
+    displayed as $0/MT. These guard the data assumptions the replacement rests on.
+    """
+
+    REQUEST = {
+        "parcel_size": 80000,
+        "cargo_type": "Coking Coal",
+        "origin": "Australia",
+        "plant": "Rourkela",
+        "window_days": 30,
+        "top_n": 25,
+        "persist": False,
+    }
+
+    def _totals(self, client, **overrides):
+        response = client.post(
+            "/api/decision/optimize", json={**self.REQUEST, **overrides}
+        )
+        assert response.status_code == 200
+        return sorted(o["landed_cost_usd_mt"] for o in response.json()["options"])
+
+    def test_runner_up_can_be_indistinguishable_from_the_winner(self, client):
+        """Documents why the runner-up is a useless comparator."""
+        totals = self._totals(client)
+        assert len(totals) >= 2
+        assert totals[1] - totals[0] < 1.0, (
+            "top two are far apart here; if this ever holds broadly the saving "
+            "metric could go back to comparing against the runner-up"
+        )
+
+    def test_median_gives_a_material_saving(self, client):
+        totals = self._totals(client)
+        median = totals[len(totals) // 2]
+        saving = median - totals[0]
+        assert saving > 0.5, f"saving vs median is only ${saving:.2f}/MT"
+
+    def test_shortlist_spread_is_wide_enough_to_be_worth_optimising(self, client):
+        totals = self._totals(client)
+        assert totals[-1] - totals[0] > 5.0
+
+
+# ---------- 11. SUPPLY CONTINUITY RESPONSIVENESS ----------
+class TestSupplyContinuityMoves:
+    REQUEST = {
+        "parcel_size": 80000,
+        "cargo_type": "Coking Coal",
+        "origin": "Australia",
+        "plant": "Rourkela",
+        "persist": False,
+    }
+
+    def _score(self, client, **overrides):
+        response = client.post(
+            "/api/decision/optimize", json={**self.REQUEST, **overrides}
+        )
+        assert response.status_code == 200
+        return response.json()["recommended"]
+
+    def test_a_tighter_window_lowers_continuity(self, client):
+        tight = self._score(client, window_days=15)["supply_continuity"]
+        roomy = self._score(client, window_days=60)["supply_continuity"]
+        assert tight < roomy, f"{tight} not below {roomy}"
+
+    def test_continuity_spans_a_useful_range(self, client):
+        """A score that barely moves reads as broken even when it is computed."""
+        scores = {
+            self._score(client, window_days=days)["supply_continuity"]
+            for days in (12, 15, 20, 30, 45, 60, 90)
+        }
+        assert len(scores) >= 5, f"only {len(scores)} distinct values: {scores}"
+        assert max(scores) - min(scores) > 25
+
+    def test_factors_are_returned_so_the_score_can_be_explained(self, client):
+        """The card names the binding factor; it needs all three to do that."""
+        best = self._score(client, window_days=30)
+        for field in (
+            "schedule_headroom_pct",
+            "continuity_risk_factor_pct",
+            "execution_factor_pct",
+        ):
+            assert field in best, f"missing {field}"
+            assert 0 <= best[field] <= 100
+
+    def test_continuity_never_claims_certainty(self, client):
+        for days in (30, 60, 120, 365):
+            assert self._score(client, window_days=days)["supply_continuity"] <= 97
