@@ -11,7 +11,8 @@ from fastapi.staticfiles import StaticFiles
 import models
 import seed_data
 from database import engine, ensure_columns
-from routers import auth, cargo, decision, ml, ports, system, vessels, waterways
+from routers import (auth, cargo, copilot, decision, ml, ports, system, vessels,
+                     waterways)
 
 logging.basicConfig(
     level=os.environ.get("LOHA_LOG_LEVEL", "INFO"),
@@ -74,6 +75,7 @@ app.include_router(cargo.router, prefix="/api/cargo", tags=["cargo"])
 app.include_router(ml.router, prefix="/api/ml", tags=["ml"])
 app.include_router(decision.router, prefix="/api/decision", tags=["decision"])
 app.include_router(system.router, prefix="/api/system", tags=["system"])
+app.include_router(copilot.router, prefix="/api/copilot", tags=["copilot"])
 app.include_router(waterways.router, prefix="/api/waterways", tags=["waterways"])
 
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
