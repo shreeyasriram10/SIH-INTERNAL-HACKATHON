@@ -118,47 +118,84 @@ def optimize_route(
     }
 
 
+def _risk_adjusted(candidate) -> float:
+    return candidate.landed_cost_usd_mt * (
+        1.0 + decision_engine.RISK_WEIGHT * candidate.risk_index / 100.0
+    )
+
+
+def _lanes(request: schemas.ScenarioRequest):
+    """The origin lanes to score. The dashboard sends every lane it is comparing,
+    each with the pressure index it used, so a scenario is evaluated on exactly
+    the inputs behind the recommendation on screen."""
+    if request.lanes:
+        return [(lane.origin, lane.pressure_index) for lane in request.lanes]
+    return [(request.origin, request.pressure_index)]
+
+
+def _evaluate_lanes(*, vessels, ports, request, month, bunker_price,
+                    pressure_mult=1.0, top_n):
+    """Score every lane, merge, and rank the whole set on one scale."""
+    merged, context = [], None
+    for origin, pressure in _lanes(request):
+        options, lane_context = decision_engine.evaluate(
+            vessels=vessels,
+            ports=ports,
+            parcel_size=request.parcel_size,
+            cargo_type=request.cargo_type,
+            origin=origin,
+            plant=request.plant,
+            window_days=request.window_days,
+            month=month,
+            bunker_price=bunker_price,
+            pressure_index=min(100.0, pressure * pressure_mult),
+            top_n=25,
+        )
+        merged.extend(options)
+        context = context or lane_context
+
+    merged.sort(key=_risk_adjusted)
+    if merged:
+        # Explanations were ranked within each lane; re-rank them across the set.
+        best_cost = merged[0].landed_cost_usd_mt
+        for rank, candidate in enumerate(merged, start=1):
+            candidate.explanation = decision_engine._explain(
+                candidate, rank, candidate.landed_cost_usd_mt - best_cost, request.cargo_type
+            )
+    if context is not None:
+        context = {**context, "lanes": [origin for origin, _ in _lanes(request)],
+                   "candidates_evaluated": len(merged)}
+    return merged[:top_n], context
+
+
 @router.post("/simulate")
 def simulate_scenario(
     request: schemas.ScenarioRequest,
     db: Session = Depends(get_db),
     user: models.User = Depends(auth.get_current_user),
 ):
-    """Run the optimizer twice - once on baseline market/fleet conditions and
-    once under a disruption - and report the delta plus a mitigation."""
+    """Score the current cargo on baseline conditions and under a disruption.
+
+    Both legs come from this one call, on the same lanes and inputs, so the
+    before/after comparison, the recommendation and the map drawn from them
+    cannot disagree with each other or with what the user entered.
+    """
     vessels, ports = _reference_data(db)
     month = _resolve_month(request.month)
 
-    baseline, _ = decision_engine.evaluate(
-        vessels=vessels,
-        ports=ports,
-        parcel_size=request.parcel_size,
-        cargo_type=request.cargo_type,
-        origin=request.origin,
-        plant=request.plant,
-        window_days=request.window_days,
-        month=month,
-        bunker_price=request.bunker_price,
-        pressure_index=request.pressure_index,
-        top_n=1,
+    baseline, _ = _evaluate_lanes(
+        vessels=vessels, ports=ports, request=request, month=month,
+        bunker_price=request.bunker_price, top_n=request.top_n,
     )
     if not baseline:
         raise HTTPException(status_code=422, detail="No feasible baseline option.")
 
-    shocked = _apply_shock(request, vessels, ports, month)
+    shock = _apply_shock(request, vessels, ports, month, baseline[0])
 
-    disrupted, context = decision_engine.evaluate(
-        vessels=shocked["vessels"],
-        ports=shocked["ports"],
-        parcel_size=request.parcel_size,
-        cargo_type=request.cargo_type,
-        origin=request.origin,
-        plant=request.plant,
-        window_days=request.window_days,
-        month=shocked["month"],
-        bunker_price=shocked["bunker_price"],
-        pressure_index=shocked["pressure_index"],
-        top_n=3,
+    disrupted, context = _evaluate_lanes(
+        vessels=shock["vessels"], ports=shock["ports"], request=request,
+        month=shock["month"], bunker_price=shock["bunker_price"],
+        pressure_mult=shock["pressure_mult"], top_n=request.top_n,
     )
     if not disrupted:
         raise HTTPException(
@@ -175,44 +212,60 @@ def simulate_scenario(
         baseline_cost=base_best.landed_cost_usd,
         disrupted_cost=shock_best.landed_cost_usd,
         diff_amount=diff,
-        mitigation_action=shocked["mitigation"],
+        mitigation_action=shock["mitigation"],
     ))
     db.add(models.AuditLog(
         action="SCENARIO_SIMULATE",
-        user_email=user.email if user else "anonymous",
-        details=f"{request.scenario}: delta ${diff:,.0f} "
-                f"({shocked['mitigation']})",
+        user_email=user.email,
+        details=f"{request.scenario}: {request.parcel_size:,.0f} MT {request.cargo_type} "
+                f"-> delta ${diff:,.0f} ({shock['mitigation']})",
     ))
     db.commit()
 
     return {
         "status": "SUCCESS",
         "scenario": request.scenario,
-        "shock_applied": shocked["description"],
-        "mitigation_action": shocked["mitigation"],
+        "shock_applied": shock["description"],
+        "mitigation_action": shock["mitigation"],
+        "blocked_port": shock["blocked_port"],
+        "unavailable_class": shock["unavailable_class"],
         "context": context,
         "baseline": base_best.as_dict(),
         "disrupted": shock_best.as_dict(),
+        "baseline_options": [option.as_dict() for option in baseline],
+        "disrupted_options": [option.as_dict() for option in disrupted],
         "delta_usd": round(diff, 2),
         "delta_usd_mt": round(
             shock_best.landed_cost_usd_mt - base_best.landed_cost_usd_mt, 2
         ),
+        # Ranking is on risk-adjusted cost, so a blocked berth can hand back a
+        # fallback that is cheaper per tonne but riskier. This figure is the one
+        # the ranking actually moved on.
+        "delta_risk_adjusted_usd_mt": round(
+            _risk_adjusted(shock_best) - _risk_adjusted(base_best), 2
+        ),
         "delta_pct": round(
             (diff / base_best.landed_cost_usd * 100.0) if base_best.landed_cost_usd else 0.0, 2
         ),
-        "alternatives": [option.as_dict() for option in disrupted],
+        "alternatives": [option.as_dict() for option in disrupted[:3]],
     }
 
 
-def _apply_shock(request: schemas.ScenarioRequest, vessels, ports, month: int) -> dict:
-    """Translate a scenario name into perturbed inputs. Ports and vessels are
-    filtered/copied in memory only - nothing is written back to the database."""
+def _apply_shock(request: schemas.ScenarioRequest, vessels, ports, month: int, baseline_best) -> dict:
+    """Translate a scenario into perturbed inputs. Ports and vessels are copied
+    in memory only - nothing is written back to the reference data.
+
+    Where a scenario targets "the" berth or "the" class, it means the one the
+    current cargo was actually going to use, not the first row in the table.
+    """
     shocked = {
         "vessels": list(vessels),
         "ports": list(ports),
         "month": month,
         "bunker_price": request.bunker_price,
-        "pressure_index": request.pressure_index,
+        "pressure_mult": 1.0,
+        "blocked_port": None,
+        "unavailable_class": None,
         "description": "No change.",
         "mitigation": "Maintain the baseline charter plan.",
     }
@@ -220,7 +273,7 @@ def _apply_shock(request: schemas.ScenarioRequest, vessels, ports, month: int) -
 
     if scenario == "cyclone":
         shocked["month"] = 11  # peak Bay of Bengal cyclone month
-        shocked["pressure_index"] = min(100.0, request.pressure_index * 1.35)
+        shocked["pressure_mult"] = 1.35
         shocked["ports"] = [_port_with_wait(p, p.avg_wait_days + 4.0) for p in ports]
         shocked["description"] = "Cyclone alert: +4 days berth wait, market pressure +35%."
         shocked["mitigation"] = "Shift the laycan and pre-position at a deeper alternate berth."
@@ -232,55 +285,58 @@ def _apply_shock(request: schemas.ScenarioRequest, vessels, ports, month: int) -
         shocked["mitigation"] = "Front-load tonnage into the pre-monsoon window."
 
     elif scenario == "port_blocked":
-        target = (request.blocked_port or ports[0].name).strip().lower()
-        remaining = [p for p in ports if p.name.strip().lower() != target]
+        name = request.blocked_port or baseline_best.port_name
+        remaining = [p for p in ports if p.name.strip().lower() != name.strip().lower()]
         if not remaining:
             raise HTTPException(status_code=422, detail="Cannot block every port.")
         shocked["ports"] = remaining
-        shocked["description"] = f"{request.blocked_port or ports[0].name} unavailable."
+        shocked["blocked_port"] = name
+        shocked["description"] = f"{name} unavailable."
         shocked["mitigation"] = "Divert to the next-best berth and re-book rail evacuation."
 
     elif scenario == "freight_spike":
-        shocked["pressure_index"] = min(100.0, request.pressure_index * 1.5)
+        shocked["pressure_mult"] = 1.5
         shocked["description"] = "Freight market pressure index +50%."
         shocked["mitigation"] = "Lock a period charter to cap exposure to spot rates."
 
     elif scenario == "bunker_spike":
         shocked["bunker_price"] = request.bunker_price * 1.4
-        shocked["description"] = "Bunker price +40%."
+        shocked["description"] = "Bunker price +40%, fed through the freight model."
         shocked["mitigation"] = "Negotiate a bunker-adjustment clause and slow-steam."
 
     elif scenario == "vessel_unavail":
-        target = (request.unavailable_class or "Capesize").strip().lower()
-        remaining = [v for v in vessels if v.class_type.strip().lower() != target]
+        name = request.unavailable_class or baseline_best.vessel_class
+        remaining = [v for v in vessels if v.class_type.strip().lower() != name.strip().lower()]
         if not remaining:
             raise HTTPException(status_code=422, detail="Cannot remove every vessel class.")
         shocked["vessels"] = remaining
-        shocked["description"] = f"{request.unavailable_class or 'Capesize'} tonnage unavailable."
-        shocked["mitigation"] = "Split the parcel across smaller available tonnage."
+        shocked["unavailable_class"] = name
+        shocked["description"] = f"{name} tonnage unavailable."
+        shocked["mitigation"] = "Split the parcel across the smaller tonnage still available."
 
     return shocked
 
 
 class _PortView:
-    """Lightweight stand-in so a scenario can perturb a port without touching
-    the ORM row (and therefore without risking a write on commit)."""
+    """A port with one attribute overridden, so a scenario can perturb it
+    without touching the ORM row (and therefore without risking a write).
 
-    __slots__ = ("name", "code", "draft_m", "max_loa", "avg_wait_days",
-                 "mech_rate_mt_d", "rail_evac_km")
+    Every field the engine reads is copied. An earlier version copied only
+    seven, so under cyclone and monsoon every berth silently fell back to the
+    engine's defaults - two berths, $9,000/day demurrage, no monsoon months.
+    """
 
-    def __init__(self, port, avg_wait_days):
-        self.name = port.name
-        self.code = port.code
-        self.draft_m = port.draft_m
-        self.max_loa = port.max_loa
-        self.avg_wait_days = avg_wait_days
-        self.mech_rate_mt_d = port.mech_rate_mt_d
-        self.rail_evac_km = port.rail_evac_km
+    FIELDS = ("name", "code", "draft_m", "max_loa", "max_beam_m", "berths",
+              "avg_wait_days", "mech_rate_mt_d", "rail_evac_km",
+              "demurrage_usd_day", "monsoon_months")
+
+    def __init__(self, port, **overrides):
+        for attr in self.FIELDS:
+            setattr(self, attr, overrides.get(attr, getattr(port, attr, None)))
 
 
 def _port_with_wait(port, avg_wait_days: float):
-    return _PortView(port, avg_wait_days)
+    return _PortView(port, avg_wait_days=avg_wait_days)
 
 
 @router.get("/history")

@@ -814,8 +814,8 @@ footer .data-disclaimer{font-size:10.5px;color:var(--steel-light);margin-top:6px
       <div class="challenge-buttons">
         <button class="btn-challenge danger" id="btn-cyclone" onclick="handleChallenge('cyclone')">Cyclone Warning (Odisha Coast)</button>
         <button class="btn-challenge danger" id="btn-port" onclick="handleChallenge('port')">Primary Port Blocked</button>
-        <button class="btn-challenge danger" id="btn-freight" onclick="handleChallenge('freight')">Freight Spike +20%</button>
-        <button class="btn-challenge danger" id="btn-bunker" onclick="handleChallenge('bunker')">Bunker Spike +15%</button>
+        <button class="btn-challenge danger" id="btn-freight" onclick="handleChallenge('freight')">Freight Market Spike</button>
+        <button class="btn-challenge danger" id="btn-bunker" onclick="handleChallenge('bunker')">Bunker Price Spike</button>
         <button class="btn-challenge danger" id="btn-vessel" onclick="handleChallenge('vessel')">Vessel Unavailable</button>
         <button class="btn-challenge danger" id="btn-monsoon" onclick="handleChallenge('monsoon')">Monsoon Delay</button>
         <button class="btn-challenge btn-reset" onclick="resetBaseline()">Reset to Baseline</button>
@@ -843,9 +843,26 @@ footer .data-disclaimer{font-size:10.5px;color:var(--steel-light);margin-top:6px
           <div class="scenario-phase-label">✓ After Re-optimization</div>
           <div class="scenario-phase-route" id="viz-after-route">—</div>
           <div class="scenario-phase-cost">Cost: <span id="viz-after-cost">—</span>/MT</div>
+          <div class="scenario-phase-cost">Risk: <span id="viz-after-risk">—</span>/100</div>
           <div class="scenario-phase-cost">Delta: <span id="viz-after-delta">—</span></div>
+          <div class="scenario-phase-cost" id="viz-after-delta-risk" style="font-size:11px;"></div>
         </div>
       </div>
+    </div>
+
+    <!-- The disrupted route, drawn from the same response as the figures above.
+         The simulator used to redraw the Command Centre's map and then switch
+         here, so the map that changed was never the one on screen. -->
+    <div class="map-card" style="margin-top:16px;">
+      <div class="map-header">
+        <h4 style="margin:0;font-size:14px;">Disrupted Route Map</h4>
+        <div class="map-legend">
+          <div class="legend-item"><div class="legend-dot" style="background:var(--saffron);"></div> New best route</div>
+          <div class="legend-item"><div class="legend-dot" style="background:var(--steel-muted);"></div> Alternative</div>
+          <div class="legend-item"><div class="legend-dot" style="background:var(--red);"></div> Unavailable</div>
+        </div>
+      </div>
+      <svg id="scenarioMap" viewBox="0 0 920 340"></svg>
     </div>
 
     <!-- SCENARIO DECISION CARD (injected here too) -->
@@ -1990,8 +2007,12 @@ const PORT_XY={
   gopalpur:[560,165],haldia:[670,80],sandheads:[685,90]
 };
 
-function drawBaseMap(blockedPorts=[]){
-  const svg=document.getElementById('routemap');
+function drawBaseMap(blockedPorts=[], svgId='routemap', inputs=null){
+  const svg=document.getElementById(svgId);
+  if(!svg) return;
+  /* Only the lanes this cargo is actually being scored on are drawn at full
+     strength, so the map cannot suggest an origin that was never considered. */
+  const inPlay = inputs ? new Set(candidateOrigins(inputs)) : null;
   const ports=Object.entries(PORT_XY).map(([k,[x,y]])=>{
     const blocked=blockedPorts.includes(k);
     return `<g>
@@ -2002,7 +2023,7 @@ function drawBaseMap(blockedPorts=[]){
   }).join('');
 
   const origins=Object.entries(ORIGIN_XY).map(([k,[x,y]])=>`
-    <g>
+    <g opacity="${!inPlay || inPlay.has(k) ? 1 : 0.22}">
       <circle cx="${x}" cy="${y}" r="7" fill="var(--saffron-dark)" stroke="#FFF" stroke-width="2"/>
       <text x="${x-8}" y="${y-11}" font-size="10.5" fill="var(--navy-deep)" font-family="IBM Plex Sans" font-weight="700">${ORIGINS[k].short}</text>
     </g>`).join('');
@@ -2013,7 +2034,7 @@ function drawBaseMap(blockedPorts=[]){
     <text x="510" y="24" font-size="11" fill="var(--steel-muted)" font-family="IBM Plex Mono" font-weight="600">INDIA EAST COAST MARITIME GATEWAY</text>
     <line x1="300" y1="10" x2="300" y2="330" stroke="var(--steel-border)" stroke-dasharray="3 4"/>
     <text x="310" y="320" font-size="9" fill="var(--steel-muted)" font-family="IBM Plex Mono">Indian Ocean Transit Zone</text>
-    <g id="arcs"></g>
+    <g class="arcs"></g>
     ${origins}
     ${ports}
   `;
@@ -2025,8 +2046,9 @@ function arcPath(x1,y1,x2,y2){
   return `M ${x1} ${y1} Q ${mx} ${my} ${x2} ${y2}`;
 }
 
-async function animateRouteBattle(candidates,winner){
-  const arcsG=document.getElementById('arcs');
+async function animateRouteBattle(candidates, winner, svgId='routemap'){
+  const arcsG=document.querySelector(`#${svgId} .arcs`);
+  if(!arcsG) return;
   const top=candidates.slice(0,6);
   let html='';
   top.forEach((c,i)=>{
@@ -2034,7 +2056,7 @@ async function animateRouteBattle(candidates,winner){
     const [x1,y1]=ORIGIN_XY[c.originKey];
     const [x2,y2]=PORT_XY[c.portKey];
     const isWinner=c===winner;
-    html+=`<path class="arc${isWinner?' winner':''}" id="arc-${i}" d="${arcPath(x1,y1,x2,y2)}" stroke="${isWinner?'var(--saffron)':'var(--steel-muted)'}"/>`;
+    html+=`<path class="arc${isWinner?' winner':''}" d="${arcPath(x1,y1,x2,y2)}" stroke="${isWinner?'var(--saffron)':'var(--steel-muted)'}"/>`;
   });
   arcsG.innerHTML=html;
   await delay(200);
@@ -2425,97 +2447,205 @@ function toggleCostMode(totalMode){
 }
 
 /* ======= DISRUPTION CHALLENGES ======= */
-function handleChallenge(type){
-  if(!activeInputs){
-    alert('Please run the decision engine first before applying a disruption scenario.');
+/* ======= INTAKE ======= */
+/* The single reader of the intake form. Disruptions used to act on a copy of
+   the inputs taken the last time "Apply" was pressed - or, on a fresh page, on
+   a hardcoded default - so editing the form and firing a scenario silently
+   simulated something other than what was on screen. */
+function readIntake(){
+  const qtyEl=document.getElementById('drawerQty');
+  const qty=parseInt(qtyEl.value,10);
+  const alertEl=document.getElementById('validationAlert');
+  const qtyErrEl=document.getElementById('qtyError');
+
+  if(isNaN(qty)||qty<1000||qty>200000){
+    alertEl.textContent="Cargo quantity must be between 1,000 MT and 200,000 MT.";
+    alertEl.style.display='block';
+    qtyErrEl.style.display='block';
+    qtyEl.classList.add('error');
+    openCargoDrawer();
+    return null;
+  }
+  alertEl.style.display='none';
+  qtyErrEl.style.display='none';
+  qtyEl.classList.remove('error');
+
+  return {
+    cargoType: document.getElementById('drawerCargoType').value,
+    qty,
+    origin: document.getElementById('drawerOrigin').value,
+    plant: document.getElementById('drawerPlant').value,
+    days: parseInt(document.getElementById('drawerDays').value,10),
+  };
+}
+
+function sameInputs(a, b){
+  return !!a && !!b && ['cargoType','qty','origin','plant','days'].every(k => a[k] === b[k]);
+}
+
+function syncCargoBar(inputs){
+  document.getElementById('barQty').textContent=fmt(inputs.qty)+" MT";
+  document.getElementById('barCargo').textContent=CARGO_LABEL[inputs.cargoType];
+  document.getElementById('barOrigin').textContent=inputs.origin==="any"?"Any Origin":ORIGINS[inputs.origin].short;
+  document.getElementById('barPlant').textContent=PLANT_LABEL[inputs.plant].split('(')[0].trim();
+  document.getElementById('barDays').textContent=inputs.days+" Days";
+}
+
+/* Each lane with the market pressure the Command Centre scores it at, so a
+   scenario is evaluated on exactly the same inputs. */
+function lanesFor(inputs){
+  return candidateOrigins(inputs).map(k => ({
+    origin: ORIGINS[k].api,
+    pressure_index: Math.round(50 + (ORIGINS[k].vol - 0.14) * 200)
+  }));
+}
+
+/* Same shape runDecisionEngine returns, built from service options. */
+function resultFrom(candidates){
+  if(!candidates.length) return null;
+  candidates.sort((a,b) => riskAdjusted(a) - riskAdjusted(b));
+  const bestPerScenario = attachRegret(candidates);
+  const winner = candidates[0];
+  return {
+    winner, backup: candidates[1] || winner,
+    risk: Math.round(winner.api.risk_index),
+    continuity: Math.round(winner.api.supply_continuity),
+    confidence: winner.api.confidence,
+    vesselClassKey: winner.vesselClassKey,
+    candidateCount: candidates.length,
+    candidates, bestPerScenario,
+    source: 'BACKEND',
+    explanation: winner.api.explanation,
+    warnings: winner.api.warnings || []
+  };
+}
+
+const SCENARIO_API = {
+  cyclone:'cyclone', port:'port_blocked', freight:'freight_spike',
+  bunker:'bunker_spike', vessel:'vessel_unavail', monsoon:'monsoon'
+};
+
+/* Run a disruption against whatever the intake form holds right now.
+
+   Baseline and disrupted results both come from one /api/decision/simulate
+   call on the same lanes and inputs, and the cards, the before/after figures
+   and the map are all drawn from that one response - so they cannot disagree
+   with each other or with the form. The scenario definitions live on the
+   server; the page used to invent its own (a "cyclone" that simply deleted two
+   ports, a "bunker spike" that multiplied freight). */
+async function handleChallenge(type){
+  const inputs = readIntake();
+  if(!inputs) return;
+  const scenario = SCENARIO_API[type];
+  if(!scenario) return;
+
+  const button = document.getElementById('btn-'+type);
+  document.querySelectorAll('.btn-challenge').forEach(b=>b.classList.remove('active-scenario'));
+  button?.classList.add('active-scenario');
+  activeScenarioType = type;
+  showLoading(`Simulating: ${button ? button.textContent.trim() : scenario}`,
+              'Re-ranking every strategy for the current cargo...');
+
+  let data;
+  try{
+    data = await api('/api/decision/simulate', {
+      method:'POST',
+      body: JSON.stringify({
+        parcel_size: inputs.qty,
+        cargo_type: CARGO_LABEL[inputs.cargoType],
+        origin: ORIGINS[candidateOrigins(inputs)[0]].api,
+        plant: PLANT_LABEL[inputs.plant],
+        window_days: inputs.days,
+        month: currentMonth(),
+        top_n: 8,
+        persist: false,
+        lanes: lanesFor(inputs),
+        scenario
+      })
+    });
+  }catch(err){
+    hideLoading();
+    showScenarioError(err.message);
     return;
   }
-  const prevW=activeResult?.winner;
-  let blockedPorts=[],blockedVessel=null,spikeMult=1.0;
-  let eventLabel='',eventDesc='';
+  hideLoading();
 
-  if(type==='cyclone'){
-    blockedPorts=['paradip','dhamra'];
-    eventLabel=' Cyclone (Odisha Coast)';
-    eventDesc='Paradip & Dhamra blocked';
-  } else if(type==='port'){
-    blockedPorts=prevW?[prevW.portKey]:['paradip'];
-    eventLabel=' Primary Port Blocked';
-    eventDesc=`${prevW?PORTS[prevW.portKey].name:'Paradip'} unavailable`;
-  } else if(type==='freight'){
-    spikeMult=1.20;
-    eventLabel=' Freight Spike +20%';
-    eventDesc='Ocean freight +20% across all routes';
-  } else if(type==='bunker'){
-    spikeMult=1.15;
-    eventLabel=' Bunker Spike +15%';
-    eventDesc='Bunker surcharge applied across routes';
-  } else if(type==='vessel'){
-    blockedVessel=activeResult?.vesselClassKey||'capesize';
-    eventLabel=' Vessel Class Unavailable';
-    eventDesc=`${VESSEL_CLASSES[blockedVessel]?.name||'Capesize'} class removed`;
-  } else if(type==='monsoon'){
-    blockedPorts=['haldia','sandheads'];
-    eventLabel=' Monsoon Delay';
-    eventDesc='Northern ports congested; rerouting south';
+  const toResult = options => resultFrom(
+    options.map(o => mapOption(o, inputs, ORIGIN_KEY_BY_API[o.origin]))
+  );
+  const before = toResult(data.baseline_options);
+  const after = toResult(data.disrupted_options);
+  if(!before || !after){ showScenarioError('no feasible option returned'); return; }
+
+  /* The form changed since the last run, so the Command Centre is stale too.
+     Bring it onto the same inputs rather than leave two answers on screen. */
+  if(!sameInputs(inputs, activeInputs) || !baselineResult){
+    activeInputs = inputs;
+    activeResult = before;
+    baselineResult = before;
+    syncCargoBar(inputs);
+    renderDecisionCard(before, inputs, 'decisionCardHost');
+    renderCharterStrategy(before, inputs);
+    drawBaseMap([], 'routemap', inputs);
+    animateRouteBattle(before.candidates, before.winner, 'routemap');
   }
 
-  // Highlight active button
-  document.querySelectorAll('.btn-challenge').forEach(b=>b.classList.remove('active-scenario'));
-  document.getElementById('btn-'+type)?.classList.add('active-scenario');
-  activeScenarioType=type;
+  const route = w => `${ORIGINS[w.originKey].short} → ${PORTS[w.portKey].name} · `
+                   + `${VESSEL_CLASSES[w.vesselClassKey]?.name || w.api.vessel_class}`;
+  const bw = before.winner, aw = after.winner;
 
-  showLoading(`Simulating: ${eventLabel}`, 'Re-ranking strategies under the disrupted scenario...');
+  document.getElementById('scenarioPill').classList.add('show');
+  document.getElementById('scenarioViz').classList.add('show');
+  document.getElementById('viz-before-route').textContent = route(bw);
+  document.getElementById('viz-before-cost').textContent = usd(bw.base.total);
+  document.getElementById('viz-before-risk').textContent = Math.round(bw.api.risk_index);
+  document.getElementById('viz-event-label').textContent = button ? button.textContent.trim() : scenario;
+  document.getElementById('viz-event-desc').textContent = data.shock_applied;
+  document.getElementById('viz-after-route').textContent = route(aw);
+  document.getElementById('viz-after-cost').textContent = usd(aw.base.total);
+  document.getElementById('viz-after-risk').textContent = Math.round(aw.api.risk_index);
 
-  setTimeout(async ()=>{
-    const newResult=await runDecisionEngine(activeInputs,blockedPorts,blockedVessel,999,spikeMult);
-    hideLoading();
-    if(!newResult) return;
+  const delta = aw.base.total - bw.base.total;
+  const deltaEl = document.getElementById('viz-after-delta');
+  deltaEl.textContent = (delta>=0?'+':'') + usd(delta) + '/MT';
+  deltaEl.style.color = delta>0 ? 'var(--red)' : 'var(--green)';
+  /* A blocked berth can hand back something cheaper per tonne but riskier -
+     say so, instead of letting a disruption look like a saving. */
+  const riskDelta = data.delta_risk_adjusted_usd_mt;
+  document.getElementById('viz-after-delta-risk').textContent =
+    (delta < 0 && riskDelta > 0)
+      ? `Cheaper per tonne but riskier: +${usd(riskDelta)}/MT on the risk-adjusted basis the ranking uses.`
+      : `Risk-adjusted: ${riskDelta>=0?'+':''}${usd(riskDelta)}/MT`;
 
-    // Update scenario pill
-    document.getElementById('scenarioPill').classList.add('show');
+  renderDecisionCard(after, inputs, 'scenarioDecisionHost');
+  renderBattleTable(after.candidates, 'scenarioBattleBody');
+  updateMarketPressureGauge(after, inputs, type);
 
-    // Update Before→During→After viz
-    const viz=document.getElementById('scenarioViz');
-    viz.classList.add('show');
-    if(prevW){
-      document.getElementById('viz-before-route').textContent=`${ORIGINS[prevW.originKey].short} → ${PORTS[prevW.portKey].name}`;
-      document.getElementById('viz-before-cost').textContent=usd(prevW.base.total);
-      document.getElementById('viz-before-risk').textContent=riskScore(prevW.originKey,prevW.portKey);
-    }
-    document.getElementById('viz-event-label').textContent=eventLabel;
-    document.getElementById('viz-event-desc').textContent=eventDesc;
-    document.getElementById('viz-after-route').textContent=`${ORIGINS[newResult.winner.originKey].short} → ${PORTS[newResult.winner.portKey].name}`;
-    document.getElementById('viz-after-cost').textContent=usd(newResult.winner.base.total);
-    const delta=prevW?newResult.winner.base.total-prevW.base.total:0;
-    const deltaEl=document.getElementById('viz-after-delta');
-    deltaEl.textContent=(delta>=0?'+':'')+usd(delta)+'/MT';
-    deltaEl.style.color=delta>0?'var(--red)':'var(--green)';
+  const blocked = data.blocked_port ? [portKeyByName()[data.blocked_port]].filter(Boolean) : [];
+  drawBaseMap(blocked, 'scenarioMap', inputs);
+  animateRouteBattle(after.candidates, aw, 'scenarioMap');
 
-    // Render scenario decision card
-    renderDecisionCard(newResult,activeInputs,'scenarioDecisionHost');
-    renderCharterStrategy(newResult,activeInputs);
+  const banner = document.getElementById('diffBanner');
+  banner.innerHTML = `<b>${escapeHtml(data.shock_applied)}</b><br>`
+    + `For <b>${fmt(inputs.qty)} MT ${CARGO_LABEL[inputs.cargoType]}</b> to ${PLANT_LABEL[inputs.plant].split('(')[0].trim()}: `
+    + `<b>${route(bw)}</b> becomes <b>${route(aw)}</b> &nbsp;&middot;&nbsp; `
+    + `<span style="color:${delta>=0?'var(--red)':'var(--green)'};">${delta>=0?'+':''}${usd(delta)}/MT</span>`
+    + `<br><i>Mitigation: ${escapeHtml(data.mitigation_action)}</i>`;
+  banner.classList.add('show');
 
-    // Render scenario battle table
-    renderBattleTable(newResult.candidates,'scenarioBattleBody');
-    updateMarketPressureGauge(newResult, activeInputs, type);
+  switchPanel('scenarios');
+}
 
-    // Update map
-    drawBaseMap(blockedPorts);
-    animateRouteBattle(newResult.candidates,newResult.winner);
-
-    // Update diff banner
-    const banner=document.getElementById('diffBanner');
-    banner.innerHTML=`<b>${eventLabel}</b> scenario applied.<br><b>New Best Route:</b> ${ORIGINS[newResult.winner.originKey].short} → ${PORTS[newResult.winner.portKey].name} &nbsp;·&nbsp; <b>Cost Delta:</b> <span style="color:${delta>=0?'var(--red)':'var(--green)'};">${delta>=0?'+':''}${usd(delta)}/MT</span>`;
-    banner.classList.add('show');
-
-    // Switch to scenarios panel to show results
-    switchPanel('scenarios');
-  },800);
+function showScenarioError(message){
+  document.getElementById('scenarioViz').classList.remove('show');
+  const banner = document.getElementById('diffBanner');
+  banner.innerHTML = `<b>Simulation unavailable.</b> ${escapeHtml(message || '')}<br>`
+    + 'Nothing below reflects this scenario.';
+  banner.classList.add('show');
+  switchPanel('scenarios');
 }
 
 function resetBaseline(){
-  if(!activeInputs) return;
   activeScenarioType=null;
   document.getElementById('scenarioPill').classList.remove('show');
   document.querySelectorAll('.btn-challenge').forEach(b=>b.classList.remove('active-scenario'));
@@ -2523,13 +2653,15 @@ function resetBaseline(){
   document.getElementById('diffBanner').classList.remove('show');
   document.getElementById('scenarioDecisionHost').innerHTML='<div style="text-align:center;padding:30px 20px;color:var(--steel-muted);font-size:13px;">No scenario active — click a disruption button above.</div>';
   document.getElementById('scenarioBattleBody').innerHTML='<tr><td colspan="7" style="text-align:center;color:var(--steel-muted);padding:20px;">Select a disruption scenario above.</td></tr>';
+  const scenarioMap = document.getElementById('scenarioMap');
+  if(scenarioMap) scenarioMap.innerHTML='';
 
-  if(baselineResult){
+  if(baselineResult && activeInputs){
     activeResult=baselineResult;
     renderDecisionCard(baselineResult,activeInputs,'decisionCardHost');
     renderCharterStrategy(baselineResult,activeInputs);
-    drawBaseMap();
-    animateRouteBattle(baselineResult.candidates,baselineResult.winner);
+    drawBaseMap([], 'routemap', activeInputs);
+    animateRouteBattle(baselineResult.candidates, baselineResult.winner, 'routemap');
     updateMarketPressureGauge(baselineResult, activeInputs, null);
   }
 }
@@ -2816,30 +2948,8 @@ function hideLoading(){
 
 /* ======= PIPELINE RUNNER ======= */
 async function runPipeline(){
-  // Read and validate inputs from drawer
-  const qtyRaw=document.getElementById('drawerQty').value;
-  const qtyInput=parseInt(qtyRaw,10);
-  const alertEl=document.getElementById('validationAlert');
-  const qtyErrEl=document.getElementById('qtyError');
-
-  if(isNaN(qtyInput)||qtyInput<1000||qtyInput>200000){
-    alertEl.textContent="Cargo quantity must be between 1,000 MT and 200,000 MT.";
-    alertEl.style.display='block';
-    qtyErrEl.style.display='block';
-    document.getElementById('drawerQty').classList.add('error');
-    return;
-  }
-  alertEl.style.display='none';
-  qtyErrEl.style.display='none';
-  document.getElementById('drawerQty').classList.remove('error');
-
-  const inputs={
-    cargoType: document.getElementById('drawerCargoType').value,
-    qty: qtyInput,
-    origin: document.getElementById('drawerOrigin').value,
-    plant: document.getElementById('drawerPlant').value,
-    days: parseInt(document.getElementById('drawerDays').value,10),
-  };
+  const inputs=readIntake();
+  if(!inputs) return;
   activeInputs=inputs;
   closeAllDrawers();
 
@@ -2881,8 +2991,8 @@ async function runPipeline(){
   setStage(8,`✓ Optimal Strategy: ${ORIGINS[result.winner.originKey].short} → ${PORTS[result.winner.portKey].name} at ${usd(result.winner.base.total)}/MT.`);
   renderDecisionCard(result,inputs,'decisionCardHost');
   renderCharterStrategy(result,inputs);
-  drawBaseMap();
-  animateRouteBattle(result.candidates,result.winner);
+  drawBaseMap([], 'routemap', inputs);
+  animateRouteBattle(result.candidates, result.winner, 'routemap');
 
   // Update freight chart with active result
   drawFreightChart(30);

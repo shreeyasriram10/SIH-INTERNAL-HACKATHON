@@ -714,14 +714,19 @@ class TestOptimisationSavingBasis:
         assert response.status_code == 200
         return sorted(o["landed_cost_usd_mt"] for o in response.json()["options"])
 
-    def test_runner_up_can_be_indistinguishable_from_the_winner(self, auth_client):
-        """Documents why the runner-up is a useless comparator."""
+    def test_runner_up_understates_the_saving(self, auth_client):
+        """Why the saving is measured against the median, not the runner-up.
+
+        The second-ranked option is usually a near-twin of the winner, so the
+        gap to it understates what optimisation bought. This used to assert a
+        fixed "within $1" for one parcel, which stopped holding once cargo
+        density entered the model; the property that actually matters is that
+        the runner-up gap is smaller than the median gap."""
         totals = self._totals(auth_client)
-        assert len(totals) >= 2
-        assert totals[1] - totals[0] < 1.0, (
-            "top two are far apart here; if this ever holds broadly the saving "
-            "metric could go back to comparing against the runner-up"
-        )
+        assert len(totals) >= 3
+        runner_up_gap = totals[1] - totals[0]
+        median_gap = totals[len(totals) // 2] - totals[0]
+        assert runner_up_gap < median_gap, (runner_up_gap, median_gap)
 
     def test_median_gives_a_material_saving(self, auth_client):
         totals = self._totals(auth_client)
@@ -1201,3 +1206,189 @@ class TestCopilot:
         body = client.get("/app").text
         assert "/api/copilot/ask" in body
         assert "Class</b> (${fmt(vc.dwtMin)}" not in body, "old keyword matcher is back"
+
+
+# ---------- 15. SIMULATOR INPUTS ----------
+class TestSimulatorHonoursInputs:
+    """The What-If simulator used to act on a copy of the inputs taken the last
+    time Apply was pressed (or a hardcoded default on a fresh page), invented its
+    own scenario definitions in the browser, and drew its map on a panel the
+    user was not looking at. Cargo type and plant were accepted by the engine
+    and then ignored."""
+
+    BASE = {"window_days": 30, "month": 5, "top_n": 8, "persist": False}
+    PRESSURE = {"Australia": 50, "Indonesia": 42, "South Africa": 58, "USA": 46}
+
+    def simulate(self, client, origin, cargo, plant, qty, scenario, **extra):
+        response = client.post("/api/decision/simulate", json={
+            **self.BASE, "origin": origin, "cargo_type": cargo, "plant": plant,
+            "parcel_size": qty, "scenario": scenario,
+            "lanes": [{"origin": origin, "pressure_index": self.PRESSURE[origin]}],
+            **extra,
+        })
+        assert response.status_code == 200, response.text
+        return response.json()
+
+    def evaluate(self, cargo="Coking Coal", plant="Rourkela", origin="Australia", qty=80000):
+        from database import SessionLocal
+        import models as m
+
+        with SessionLocal() as db:
+            ports, vessels = db.query(m.Port).all(), db.query(m.Vessel).all()
+        options, _ = decision_engine.evaluate(
+            vessels=vessels, ports=ports, parcel_size=qty, cargo_type=cargo, origin=origin,
+            plant=plant, window_days=30, month=5, bunker_price=697.0, pressure_index=52.5,
+            top_n=3,
+        )
+        return options[0]
+
+    # --- cargo is now an input, through physics rather than fiat ------------
+    def test_cargo_changes_how_much_a_ship_can_lift(self):
+        from services import network
+
+        coal = network.effective_capacity(80000, network.cargo_profile("Coking Coal"))
+        ore = network.effective_capacity(80000, network.cargo_profile("Iron Ore Fines"))
+        assert coal < 80000, "coal should fill the holds before reaching deadweight"
+        assert ore == 80000, "ore should be weight-limited"
+
+    def test_cargo_changes_the_recommendation_for_a_fixed_origin(self):
+        coal = self.evaluate(cargo="Coking Coal")
+        ore = self.evaluate(cargo="Iron Ore Fines")
+        assert coal.stowage_limit == "volume" and ore.stowage_limit == "weight"
+        assert (coal.vessel_class, coal.shipments) != (ore.vessel_class, ore.shipments)
+        assert coal.landed_cost_usd_mt != ore.landed_cost_usd_mt
+
+    def test_cargo_labels_and_keys_are_both_understood(self):
+        from services import network
+
+        assert network.cargo_key("Iron Ore Fines") == "iron_ore_fines"
+        assert network.cargo_key("iron_ore_lumps") == "iron_ore_lumps"
+        assert network.cargo_key("Iron Ore Lumps (Pellet)") == "iron_ore_lumps"
+        assert network.cargo_key("Thermal Coal") == "thermal_coal"
+
+    # --- plant is now an input ---------------------------------------------
+    def test_plant_changes_the_rail_leg(self):
+        rourkela = self.evaluate(plant="Rourkela Steel Plant (RSP)")
+        bhilai = self.evaluate(plant="Bhilai Steel Plant (BSP)")
+        assert rourkela.rail_km != bhilai.rail_km
+        assert rourkela.landed_cost_usd_mt != bhilai.landed_cost_usd_mt
+
+    def test_iisco_resolves_to_burnpur(self):
+        from services import network
+
+        assert network.plant_key("IISCO Steel Plant (ISP)") == "burnpur"
+
+    # --- the simulator responds to every input ------------------------------
+    def test_simulator_output_tracks_the_inputs(self, auth_client):
+        combos = [
+            ("Australia", "Coking Coal", "Rourkela Steel Plant (RSP)", 80000),
+            ("Indonesia", "Thermal Coal", "Durgapur Steel Plant (DSP)", 45000),
+            ("Australia", "Iron Ore Fines", "Bhilai Steel Plant (BSP)", 150000),
+        ]
+        for scenario in ("cyclone", "port_blocked", "freight_spike"):
+            outcomes = set()
+            for origin, cargo, plant, qty in combos:
+                data = self.simulate(auth_client, origin, cargo, plant, qty, scenario)
+                for leg in ("baseline", "disrupted"):
+                    assert data[leg]["origin"] == origin
+                    assert data[leg]["parcel_mt"] == qty
+                d = data["disrupted"]
+                outcomes.add((d["vessel_class"], d["port_name"], d["landed_cost_usd_mt"]))
+            assert len(outcomes) == len(combos), f"{scenario}: {outcomes}"
+
+    def test_cargo_alone_changes_the_simulation(self, auth_client):
+        coal = self.simulate(auth_client, "Australia", "Coking Coal", "Rourkela", 80000, "cyclone")
+        ore = self.simulate(auth_client, "Australia", "Iron Ore Fines", "Rourkela", 80000, "cyclone")
+        assert coal["disrupted"]["landed_cost_usd_mt"] != ore["disrupted"]["landed_cost_usd_mt"]
+        assert coal["baseline"]["shipments"] != ore["baseline"]["shipments"]
+
+    def test_origin_alone_changes_the_simulation(self, auth_client):
+        au = self.simulate(auth_client, "Australia", "Thermal Coal", "Rourkela", 80000, "freight_spike")
+        usa = self.simulate(auth_client, "USA", "Thermal Coal", "Rourkela", 80000, "freight_spike")
+        assert au["baseline"]["freight_rate_usd_mt"] != usa["baseline"]["freight_rate_usd_mt"]
+
+    def test_simulator_baseline_matches_the_command_centre(self, auth_client):
+        """Both screens must be scored on the same inputs, or the before/after
+        comparison contradicts the recommendation next to it."""
+        request = {**self.BASE, "origin": "Australia", "cargo_type": "Coking Coal",
+                   "plant": "Rourkela", "parcel_size": 80000, "pressure_index": 50}
+        optimised = auth_client.post("/api/decision/optimize", json=request).json()["recommended"]
+        simulated = self.simulate(auth_client, "Australia", "Coking Coal", "Rourkela",
+                                  80000, "freight_spike")["baseline"]
+        for key in ("vessel_class", "port_name", "shipments", "landed_cost_usd_mt"):
+            assert optimised[key] == simulated[key], key
+
+    def test_lanes_are_merged_and_ranked_together(self, auth_client):
+        """Several lanes in one request must yield the winner you would get by
+        scoring each lane on its own and taking the best - not just the first
+        lane's answer. (A dominant lane may legitimately fill the whole
+        shortlist, so the test does not demand variety in the top slots.)"""
+        lanes = ("Australia", "Indonesia", "USA")
+        combined = auth_client.post("/api/decision/simulate", json={
+            **self.BASE, "origin": "Australia", "cargo_type": "Thermal Coal",
+            "plant": "Rourkela", "parcel_size": 60000, "scenario": "freight_spike",
+            "lanes": [{"origin": o, "pressure_index": self.PRESSURE[o]} for o in lanes],
+        }).json()
+
+        def score(option):
+            return option["landed_cost_usd_mt"] * (
+                1 + decision_engine.RISK_WEIGHT * option["risk_index"] / 100)
+
+        singles = [self.simulate(auth_client, o, "Thermal Coal", "Rourkela", 60000,
+                                 "freight_spike") for o in lanes]
+        best_single = min((s["baseline"] for s in singles), key=score)
+
+        assert combined["context"]["lanes"] == list(lanes)
+        assert combined["baseline"]["origin"] == best_single["origin"]
+        assert combined["baseline"]["landed_cost_usd_mt"] == best_single["landed_cost_usd_mt"]
+        assert combined["context"]["candidates_evaluated"] == sum(
+            s["context"]["candidates_evaluated"] for s in singles)
+
+    # --- scenario definitions ----------------------------------------------
+    def test_port_blocked_targets_the_berth_actually_in_use(self, auth_client):
+        """It used to default to the first port in the table."""
+        data = self.simulate(auth_client, "Australia", "Iron Ore Fines", "Bhilai", 150000, "port_blocked")
+        assert data["blocked_port"] == data["baseline"]["port_name"]
+        assert data["disrupted"]["port_name"] != data["blocked_port"]
+
+    def test_vessel_unavailable_targets_the_class_actually_in_use(self, auth_client):
+        """It used to default to Capesize whatever the parcel."""
+        data = self.simulate(auth_client, "Indonesia", "Thermal Coal", "Durgapur", 45000, "vessel_unavail")
+        assert data["unavailable_class"] == data["baseline"]["vessel_class"]
+        assert data["disrupted"]["vessel_class"] != data["unavailable_class"]
+
+    def test_cyclone_keeps_each_berths_own_characteristics(self):
+        """Perturbed ports used to lose berths, demurrage and monsoon months."""
+        from routers.decision import _port_with_wait
+        from database import SessionLocal
+        import models as m
+
+        with SessionLocal() as db:
+            port = db.query(m.Port).filter(m.Port.name == "Gangavaram").first()
+            view = _port_with_wait(port, port.avg_wait_days + 4.0)
+            assert view.avg_wait_days == port.avg_wait_days + 4.0
+            for attr in ("berths", "demurrage_usd_day", "monsoon_months", "rail_evac_km"):
+                assert getattr(view, attr) == getattr(port, attr), attr
+
+    def test_bunker_spike_moves_the_freight_rate(self, auth_client):
+        data = self.simulate(auth_client, "Australia", "Coking Coal", "Rourkela", 80000, "bunker_spike")
+        assert data["disrupted"]["freight_rate_usd_mt"] > data["baseline"]["freight_rate_usd_mt"]
+
+    def test_risk_adjusted_delta_is_reported(self, auth_client):
+        data = self.simulate(auth_client, "Indonesia", "Thermal Coal", "Durgapur", 45000, "port_blocked")
+        assert "delta_risk_adjusted_usd_mt" in data
+        # Losing the preferred berth can never improve the basis the ranking uses.
+        assert data["delta_risk_adjusted_usd_mt"] >= 0
+
+    # --- the page -----------------------------------------------------------
+    def test_page_simulates_through_the_server(self, client):
+        body = client.get("/app").text
+        assert "/api/decision/simulate" in body
+        assert "function readIntake" in body
+        assert 'id="scenarioMap"' in body
+
+    def test_page_no_longer_invents_scenarios(self, client):
+        body = client.get("/app").text
+        assert "blockedPorts=['paradip','dhamra']" not in body
+        assert "spikeMult=1.15" not in body
+        assert "Freight Spike +20%" not in body

@@ -54,6 +54,7 @@ backend/
     model_registry.py   Single cached owner of the freight model
     decision_engine.py  Vessel x port optimisation and risk scoring
     rate_horizon.py     Rolling, day-1-anchored forecast window
+    network.py          Cargo stowage and berth-to-plant rail distances
   ml/train.py           Offline trainer -> model.pkl + model_metadata.json
   static/               The four served HTML pages
   tests/test_api.py     57 tests
@@ -94,9 +95,47 @@ The risk index (0–100) is a weighted blend of berth congestion (30%), seasonal
 exposure (25%), freight volatility (25%) and under-keel margin (20%). Ranking
 minimises `cost_per_tonne × (1 + 0.35 × risk/100)`.
 
-`POST /api/decision/simulate` runs the optimizer twice — baseline and shocked —
-for cyclone, monsoon, port closure, freight spike, bunker spike and vessel
-unavailability, and reports the delta with a mitigation.
+### Cargo and plant are inputs, not labels
+
+A bulk carrier's holds are sized by volume, while its deadweight is a weight
+limit. Which one binds depends on the cargo's stowage factor, so
+`services/network.py` works out how many tonnes each class can actually lift:
+
+| Cargo | Stowage (m³/t) | Binds on | Panamax lift |
+|---|---|---|---|
+| Coking coal | 1.30 | volume | ~76,900 MT |
+| Thermal coal | 1.35 | volume | ~74,100 MT |
+| Iron ore fines | 0.45 | weight | 80,000 MT |
+| Iron ore lumps | 0.50 | weight | 80,000 MT |
+
+That feeds shipments, deadfreight, laden draft (and so berth access) and
+discharge rate, so an 80,000 MT coal parcel needs two Supramaxes where the same
+tonnage of ore fits one Panamax. Rail distance is looked up per berth-and-plant
+pair rather than per berth, so the choice of plant can move the recommended
+port. Both tables are representative planning values, labelled synthetic like
+the rest of the dataset.
+
+### Disruption scenarios
+
+`POST /api/decision/simulate` scores the cargo on baseline conditions and under
+a disruption in one call, across every lane the dashboard is comparing (each
+sent with the pressure index the Command Centre used, so both screens are
+scored on identical inputs). The Scenarios panel reads the intake form at the
+moment a disruption is clicked, and draws its figures, recommendation and map
+from that single response.
+
+| Scenario | Definition |
+|---|---|
+| Cyclone | cyclone-season month, +4 days berth wait, market pressure +35% |
+| Monsoon | south-west monsoon month, +1.8 days berth wait |
+| Port blocked | the berth the current cargo was going to use is removed |
+| Freight spike | market pressure +50% |
+| Bunker spike | bunker price +40%, fed through the freight model |
+| Vessel unavailable | the class the current cargo was going to use is withdrawn |
+
+The response reports both the raw cost delta and the risk-adjusted delta. A
+blocked berth can hand back a fallback that is cheaper per tonne but riskier;
+the risk-adjusted figure is the one the ranking actually moved on.
 
 ## The model
 

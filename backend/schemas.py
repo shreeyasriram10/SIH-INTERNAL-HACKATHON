@@ -127,7 +127,17 @@ class OptimizeRequest(CargoRequestBase):
     persist: bool = Field(default=True, description="Store the winning option")
 
 
+class Lane(BaseModel):
+    """One origin lane to evaluate, with the market pressure the dashboard uses
+    for it - sent explicitly so a scenario is scored on exactly the inputs the
+    Command Centre used, not on a server-side default."""
+
+    origin: str = Field(min_length=1, max_length=80)
+    pressure_index: float = Field(ge=0, le=100)
+
+
 class ScenarioRequest(OptimizeRequest):
+    lanes: Optional[list[Lane]] = Field(default=None, max_length=8)
     scenario: Literal[
         "baseline",
         "cyclone",

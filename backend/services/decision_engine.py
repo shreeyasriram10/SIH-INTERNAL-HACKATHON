@@ -19,7 +19,7 @@ Cost stack per candidate, all in USD:
 import math
 from dataclasses import dataclass, field, asdict
 
-from services import model_registry
+from services import model_registry, network
 
 # ---------------------------------------------------------------------------
 # Tariffs and physical constants
@@ -100,6 +100,9 @@ class Candidate:
     requires_lightering: bool
     explanation: str
     warnings: list = field(default_factory=list)
+    rail_km: float = 0.0
+    effective_capacity_mt: float = 0.0
+    stowage_limit: str = "weight"
 
     def as_dict(self) -> dict:
         return asdict(self)
@@ -192,6 +195,8 @@ def evaluate(
     """Return candidates ranked best-first, plus the context used to score them."""
     parcel_size = max(float(parcel_size), 1.0)
     distance_nm = model_registry.ORIGIN_DISTANCE_NM.get(origin, 4500.0)
+    # Cargo density decides whether a ship fills by weight or by volume.
+    profile = network.cargo_profile(cargo_type)
 
     # One model call covers the whole grid. The rate depends on the lane and
     # market inputs rather than the berth, so it is predicted once per vessel
@@ -213,17 +218,22 @@ def evaluate(
             # Bigger *lifts* move a tonne more cheaply. Scale on the tonnage
             # actually carried per shipment, not on nominal capacity, so a
             # part-loaded ship does not collect a discount it has not earned.
-            shipments = max(1, math.ceil(parcel_size / max(vessel.capacity_mt, 1.0)))
+            lift_cap = network.effective_capacity(vessel.capacity_mt, profile)
+            shipments = max(1, math.ceil(parcel_size / lift_cap))
             lift_mt = max(parcel_size / shipments, 1.0)
             scale = (REFERENCE_DWT / lift_mt) ** SCALE_EXPONENT
             rate_by_class[vessel.id] = max(base_rate * scale, 1.0)
 
     candidates = []
     for vessel in vessels:
-        shipments = max(1, math.ceil(parcel_size / max(vessel.capacity_mt, 1.0)))
-        booked_mt = shipments * max(vessel.capacity_mt, 1.0)
+        # Space is booked by what the ship can actually lift of this cargo;
+        # draft follows the weight aboard, not the space used.
+        eff_cap = network.effective_capacity(vessel.capacity_mt, profile)
+        shipments = max(1, math.ceil(parcel_size / eff_cap))
+        booked_mt = shipments * eff_cap
         utilisation = parcel_size / booked_mt
-        laden_draft = _laden_draft(vessel, utilisation)
+        weight_fraction = parcel_size / (shipments * max(vessel.capacity_mt, 1.0))
+        laden_draft = _laden_draft(vessel, weight_fraction)
         rate = rate_by_class.get(vessel.id, 25.0)
 
         # Space booked but not filled, beyond the customary tolerance.
@@ -251,7 +261,7 @@ def evaluate(
 
             # --- schedule -------------------------------------------------
             sea_days = distance_nm / (max(vessel.speed_knots, 1.0) * 24.0)
-            discharge_days = parcel_size / max(port.mech_rate_mt_d, 1.0)
+            discharge_days = parcel_size / max(port.mech_rate_mt_d * profile["handling"], 1.0)
             wait_days = (port.avg_wait_days or 0.0) * shipments
             port_days = wait_days + discharge_days
             total_cycle_days = sea_days + port_days
@@ -276,7 +286,8 @@ def evaluate(
                 )
             lightering = lightered_mt * LIGHTERING_USD_PER_MT
 
-            inland_rail = (port.rail_evac_km or 0.0) * RAIL_USD_PER_MT_KM * parcel_size
+            rail = network.rail_km(port, plant)
+            inland_rail = rail * RAIL_USD_PER_MT_KM * parcel_size
 
             landed = (
                 ocean_freight + deadfreight + vessel_hire
@@ -385,6 +396,9 @@ def evaluate(
                     requires_lightering=requires_lightering,
                     explanation="",
                     warnings=warnings,
+                    rail_km=round(rail, 1),
+                    effective_capacity_mt=round(eff_cap, 0),
+                    stowage_limit=network.binding_limit(vessel.capacity_mt, profile),
                 )
             )
 
@@ -407,6 +421,7 @@ def evaluate(
         "pressure_index": round(pressure_index, 1),
         "parcel_mt": round(parcel_size, 1),
         "cargo_type": cargo_type,
+        "cargo_profile": profile,
         "plant": plant,
         "window_days": window_days,
         "candidates_evaluated": len(candidates),
