@@ -4,9 +4,7 @@ Maritime cargo chartering and decision intelligence for **Steel Authority of Ind
 
 Given a bulk parcel (coking coal, thermal coal, iron ore) the platform answers one question: **which vessel class, through which discharge port, at what cost and what risk.**
 
----
-
-## Quick start
+##  start
 
 ```bash
 pip install -r requirements.txt
