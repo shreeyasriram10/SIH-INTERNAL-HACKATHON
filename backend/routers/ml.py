@@ -98,7 +98,7 @@ def trigger_training(
     to the in-process cache so subsequent predictions use it immediately."""
     started = time.perf_counter()
     try:
-        result = model_registry.train_runtime_model()
+        result = model_registry.train_runtime_model(select_model=True)
     except Exception as error:
         logger.exception("Training failed")
         raise HTTPException(status_code=500, detail=f"Training failed: {error}")

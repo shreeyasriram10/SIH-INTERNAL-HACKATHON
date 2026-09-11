@@ -236,6 +236,18 @@ def _best(context: dict) -> dict:
     return (context or {}).get("recommended") or {}
 
 
+def _plant_label(context) -> str:
+    return (_best(context).get("plant") or "the plant").split("(")[0].strip()
+
+
+def _rail_for(port, context) -> float:
+    """Rail distance from this berth to the plant on screen - not the berth's
+    generic figure, which is the same whichever plant is chosen."""
+    from services import network
+
+    return network.rail_km(port, _best(context).get("plant") or "")
+
+
 def _answer_vessel(ports, vessels, context, question):
     best = _best(context)
     fleet = ", ".join(
@@ -284,7 +296,7 @@ def _answer_port(ports, vessels, context, question):
             f"Mechanised handling {p.mech_rate_mt_d:,.0f} MT/day &middot; "
             f"average pre-berthing wait {p.avg_wait_days:.1f} days<br>"
             f"Demurrage {_fmt_usd(p.demurrage_usd_day)}/day &middot; "
-            f"rail evacuation {p.rail_evac_km:.0f} km<br>"
+            f"rail to {_plant_label(context)} {_rail_for(p, context):.0f} km<br>"
             f"Monsoon/cyclone months: {p.monsoon_months or '-'}"
         )
         if p.draft_m < 12:
@@ -601,7 +613,8 @@ def _answer_plants(ports, vessels, context, question):
         "from the discharge berth is a real cost line, priced at roughly $0.019 per tonne-km, "
         "and it is often what decides between two otherwise similar ports.<br><br>"
         "Rail evacuation distances from each berth: "
-        + ", ".join(f"{p.name} {p.rail_evac_km:.0f} km" for p in sorted(ports, key=lambda p: p.rail_evac_km))
+        + ", ".join(f"{p.name} {_rail_for(p, context):.0f} km"
+                    for p in sorted(ports, key=lambda p: _rail_for(p, context)))
         + "."
     )
     if best:

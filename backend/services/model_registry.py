@@ -11,9 +11,14 @@ import threading
 
 import joblib
 import pandas as pd
-from sklearn.ensemble import GradientBoostingRegressor
+from sklearn.ensemble import (
+    ExtraTreesRegressor,
+    GradientBoostingRegressor,
+    RandomForestRegressor,
+)
+from sklearn.linear_model import Ridge
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import KFold, cross_validate, train_test_split
 
 logger = logging.getLogger(__name__)
 
@@ -42,6 +47,21 @@ ORIGIN_DISTANCE_NM = {
     "South Africa": 3800.0,
     "USA": 8500.0,
 }
+
+# Candidates compared by 5-fold cross-validation when a retrain is requested.
+# Single-threaded on purpose: serverless containers do not reliably support
+# worker processes, and the whole comparison is a few seconds on this data.
+CANDIDATES = {
+    "GradientBoostingRegressor": lambda: GradientBoostingRegressor(
+        n_estimators=150, learning_rate=0.05, max_depth=3, random_state=42),
+    "RandomForestRegressor": lambda: RandomForestRegressor(
+        n_estimators=100, min_samples_leaf=3, random_state=42, n_jobs=1),
+    "ExtraTreesRegressor": lambda: ExtraTreesRegressor(
+        n_estimators=100, min_samples_leaf=3, random_state=42, n_jobs=1),
+    "Ridge": lambda: Ridge(alpha=1.0),
+}
+DEFAULT_ALGORITHM = "GradientBoostingRegressor"
+CV_FOLDS = 5
 
 _lock = threading.Lock()
 _cache: dict = {"payload": None, "signature": None}
@@ -105,12 +125,18 @@ def build_feature_frame(rows, features=None) -> pd.DataFrame:
 # Training
 # ---------------------------------------------------------------------------
 
-def train_runtime_model() -> dict:
+def train_runtime_model(select_model: bool = False) -> dict:
     """Train from the committed CSV.
 
-    Used by /api/ml/train and as the cold-start fallback when model.pkl is
-    absent (a fresh serverless container), so prediction never hard-fails on a
-    missing artifact.
+    With `select_model`, every candidate is scored by 5-fold cross-validation
+    on the training split and the one with the lowest mean absolute error is
+    fitted and evaluated on the untouched 20% hold-out. The ML page used to
+    animate "5-fold CV across 4 candidate models" while the backend trained a
+    single model on a single split; the comparison now actually runs, and its
+    results are returned so the page shows them instead of a script.
+
+    Without it (the cold-start fallback for a container with no model.pkl),
+    the default algorithm is fitted directly and the metadata says so.
     """
     if not os.path.exists(DATA_PATH):
         raise FileNotFoundError(f"Dataset not found: {DATA_PATH}")
@@ -121,9 +147,25 @@ def train_runtime_model() -> dict:
         X, y, test_size=0.20, random_state=42
     )
 
-    model = GradientBoostingRegressor(
-        n_estimators=150, learning_rate=0.05, max_depth=3, random_state=42
-    )
+    cv_results = []
+    algorithm = DEFAULT_ALGORITHM
+    if select_model:
+        folds = KFold(n_splits=CV_FOLDS, shuffle=True, random_state=42)
+        for name, make in CANDIDATES.items():
+            scores = cross_validate(
+                make(), X_train, y_train, cv=folds,
+                scoring=("r2", "neg_mean_absolute_error"),
+            )
+            cv_results.append({
+                "algorithm": name,
+                "cv_r2_mean": round(float(scores["test_r2"].mean()), 4),
+                "cv_r2_std": round(float(scores["test_r2"].std()), 4),
+                "cv_mae_mean": round(float(-scores["test_neg_mean_absolute_error"].mean()), 3),
+            })
+        cv_results.sort(key=lambda row: row["cv_mae_mean"])
+        algorithm = cv_results[0]["algorithm"]
+
+    model = CANDIDATES[algorithm]()
     model.fit(X_train, y_train)
 
     predictions = model.predict(X_test)
@@ -131,8 +173,18 @@ def train_runtime_model() -> dict:
 
     metadata = {
         "model_name": "LOHA-DRISHTI Freight Predictor",
-        "algorithm": "GradientBoostingRegressor",
+        "algorithm": algorithm,
         "version": "v2.3-runtime",
+        "selection": (
+            f"{CV_FOLDS}-fold cross-validation on the training split across "
+            f"{len(CANDIDATES)} candidates; lowest mean absolute error selected"
+            if select_model else
+            "Default algorithm fitted directly - no model comparison was run"
+        ),
+        "cv_folds": CV_FOLDS if select_model else 0,
+        "cv_results": cv_results,
+        "train_rows": int(len(X_train)),
+        "holdout_rows": int(len(X_test)),
         "dataset_type": "Synthetic / Calibrated Maritime Benchmark",
         "records_count": int(len(df)),
         "features_list": FEATURES,
@@ -146,7 +198,7 @@ def train_runtime_model() -> dict:
     return {
         "model": model,
         "features": FEATURES,
-        "algorithm": "GradientBoostingRegressor",
+        "algorithm": algorithm,
         "metadata": metadata,
     }
 

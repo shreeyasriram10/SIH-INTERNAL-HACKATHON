@@ -24,7 +24,7 @@ from services import model_registry  # noqa: E402
 def train_model(persist: bool = True) -> dict:
     """Fit the model and, unless told otherwise, write the artifact + metadata."""
     started = time.perf_counter()
-    result = model_registry.train_runtime_model()
+    result = model_registry.train_runtime_model(select_model=True)
 
     metadata = result["metadata"]
     metadata["training_duration_sec"] = round(time.perf_counter() - started, 2)

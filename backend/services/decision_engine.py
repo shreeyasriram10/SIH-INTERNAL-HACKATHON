@@ -178,6 +178,58 @@ def _laden_draft(vessel, utilisation: float) -> float:
     return vessel.draft_m * (0.55 + 0.45 * utilisation)
 
 
+def nearest_by_rail(candidates, ports, plant):
+    """The berth closest to the plant by rail, and how its best option fared.
+
+    That is the berth a planner looking at the map expects to win. When it
+    does not, the page has to say why - otherwise the recommendation reads as
+    if the plant was ignored. `candidates` must be ranked best-first.
+    """
+    key = network.plant_key(plant)
+    if not key:
+        return None
+    distances = {code: km[key] for code, km in network.PLANT_RAIL_KM.items() if key in km}
+    if not distances:
+        return None
+    code = min(distances, key=distances.get)
+    port = next((p for p in ports if p.code == code), None)
+    option = next((c for c in candidates if c.port_code == code), None)
+    winner = candidates[0] if candidates else None
+
+    result = {
+        "port_code": code,
+        "port_name": option.port_name if option else (port.name if port else code),
+        "rail_km": float(distances[code]),
+        "feasible": option is not None,
+        "is_recommended": bool(option and winner and option is winner),
+    }
+    if option is None or winner is None:
+        result["reasons"] = ["no vessel class that fits this parcel can berth there"]
+        return result
+
+    reasons = []
+    if option.requires_lightering:
+        reasons.append("draft-restricted, so part of the cargo must be lightered")
+    if option.congestion_score >= 60:
+        reasons.append(f"{option.wait_days:.1f} days of expected berth queue")
+    if option.monsoon_risk_score >= 50:
+        reasons.append("monsoon or cyclone season at that berth")
+    if option.draft_risk_score >= 50 and not option.requires_lightering:
+        reasons.append("tight under-keel clearance")
+
+    result.update({
+        "vessel_class": option.vessel_class,
+        "landed_cost_usd_mt": option.landed_cost_usd_mt,
+        "risk_index": option.risk_index,
+        "cost_vs_recommended_usd_mt": round(
+            option.landed_cost_usd_mt - winner.landed_cost_usd_mt, 2),
+        "risk_vs_recommended": round(option.risk_index - winner.risk_index, 1),
+        "recommended_rail_km": winner.rail_km,
+        "reasons": reasons,
+    })
+    return result
+
+
 def evaluate(
     *,
     vessels,
@@ -423,6 +475,7 @@ def evaluate(
         "cargo_type": cargo_type,
         "cargo_profile": profile,
         "plant": plant,
+        "nearest_by_rail": nearest_by_rail(candidates, ports, plant),
         "window_days": window_days,
         "candidates_evaluated": len(candidates),
         "model_version": model_registry.get_payload()["metadata"].get("version", "runtime"),

@@ -375,9 +375,7 @@ body {
         class="btn-run"
         id="btnRunTests"
         onclick="executeTestSuite()"
-      >
-        RUN VERIFICATION
-      </button>
+      >Run Full Verification</button>
 
     </div>
 
@@ -407,9 +405,7 @@ body {
         <span
           class="score-num"
           id="healthScore"
-        >
-          100%
-        </span>
+        >—</span>
 
         <span
           style="
@@ -418,9 +414,7 @@ body {
             color:var(--green);
           "
           id="overallStatusLabel"
-        >
-          ALL SYSTEMS PASS
-        </span>
+        >NOT RUN YET</span>
 
       </div>
 
@@ -438,7 +432,7 @@ body {
 
       <div>
         <strong>Total Tests:</strong>
-        <span id="totalTests" class="mono">7</span>
+        <span id="totalTests" class="mono">—</span>
       </div>
 
       <div>
@@ -447,9 +441,7 @@ body {
           id="passedTests"
           class="mono"
           style="color:var(--green);font-weight:700;"
-        >
-          7
-        </span>
+        >—</span>
       </div>
 
       <div>
@@ -458,23 +450,17 @@ body {
           id="failedTests"
           class="mono"
           style="color:var(--green);font-weight:700;"
-        >
-          0
-        </span>
+        >—</span>
       </div>
 
       <div>
         <strong>Execution Time:</strong>
-        <span id="execDuration" class="mono">
-          124.8 ms
-        </span>
+        <span id="execDuration" class="mono">—</span>
       </div>
 
       <div>
         <strong>Last Run:</strong>
-        <span id="lastRunTime" class="mono">
-          Presentation Mode
-        </span>
+        <span id="lastRunTime" class="mono">—</span>
       </div>
 
     </div>
@@ -491,7 +477,7 @@ body {
     </h2>
 
     <p>
-      Demonstration verification matrix for the LOHA DRISHTI platform.
+      Live results from the in-process test battery at /api/system/run-tests.
     </p>
 
 
@@ -685,164 +671,78 @@ body {
 
 
 <script>
+/* Runs the platform's in-process test battery (/api/system/run-tests) and shows
+   exactly what it returns.
 
-/*
-====================================================
-LOHA DRISHTI — PRESENTATION VERIFICATION MODE
-====================================================
+   This page used to render a fixed list of seven passes - "100%, ALL SYSTEMS
+   PASS, 124.8 ms" - without calling anything. It would have reported a healthy
+   system with the backend down, which is the one thing a verification page
+   must never do. A failure, or a failure to run, is now shown as such. */
 
-The page is intentionally displaying a prepared
-presentation matrix.
-
-The real backend endpoint remains available at:
-
-/api/system/run-tests
-
-This keeps the presentation screen stable even if
-the ML environment has dependency issues.
-====================================================
-*/
-
-
-function executeTestSuite() {
-
-  const btn =
-    document.getElementById('btnRunTests');
-
-  btn.disabled = true;
-
-  btn.innerHTML =
-    '✓ Verification Complete';
-
-  /*
-  -----------------------------------------------
-  PRESENTATION RESULT
-  -----------------------------------------------
-  */
-
-  document.getElementById('healthScore')
-    .textContent = '100%';
-
-  document.getElementById('overallStatusLabel')
-    .textContent = 'ALL SYSTEMS PASS';
-
-  document.getElementById('overallStatusLabel')
-    .style.color = 'var(--green)';
-
-  document.getElementById('totalTests')
-    .textContent = '7';
-
-  document.getElementById('passedTests')
-    .textContent = '7';
-
-  document.getElementById('failedTests')
-    .textContent = '0';
-
-  document.getElementById('execDuration')
-    .textContent = '124.8 ms';
-
-  document.getElementById('lastRunTime')
-    .textContent = new Date().toISOString();
-
-  /*
-  -----------------------------------------------
-  ALL DEMONSTRATION RESULTS
-  -----------------------------------------------
-  */
-
-  const results = [
-
-    {
-      category: 'Authentication',
-      name: 'Bcrypt Hashing & JWT Signature',
-      details:
-        'Token generation and authentication verification'
-    },
-
-    {
-      category: 'Database',
-      name: 'SQLite ORM Read/Write Transaction',
-      details:
-        'Database persistence and query verification'
-    },
-
-    {
-      category: 'ML Pipeline',
-      name: 'Model Artifact & Feature Registry',
-      details:
-        'ML model artifact and feature pipeline demonstration'
-    },
-
-    {
-      category: 'ML Pipeline',
-      name: 'Inference Latency & Boundary Check',
-      details:
-        'Prediction pipeline latency and boundary validation'
-    },
-
-    {
-      category: 'Backend APIs',
-      name: 'Port & Vessel Infrastructure Database',
-      details:
-        'Indian East Coast ports and vessel classes available'
-    },
-
-    {
-      category: 'Decision Engine',
-      name: 'Minimax-Regret Optimization Matrix',
-      details:
-        'Scenario regret evaluation and optimization validation'
-    },
-
-    {
-      category: 'International Waterways',
-      name: 'Waterway Routes & Vessel Dataset',
-      details:
-        'Curated routes and vessel dataset available'
-    }
-
-  ];
-
-
-  const tbody =
-    document.getElementById('testTableBody');
-
-
-  tbody.innerHTML =
-    results.map(test => `
-
-      <tr>
-
-        <td>
-          <strong>${test.category}</strong>
-        </td>
-
-        <td>
-          ${test.name}
-        </td>
-
-        <td>
-          ${test.details}
-        </td>
-
-        <td>
-          <span class="badge-pass">
-            PASS
-          </span>
-        </td>
-
-      </tr>
-
-    `).join('');
-
-
-  btn.disabled = false;
-
-  btn.innerHTML =
-    '✓ Verification Complete';
-
+function setText(id, text){
+  const el = document.getElementById(id);
+  if(el) el.textContent = text;
 }
 
+function escapeHtml(text){
+  return String(text).replace(/[&<>"']/g, c => (
+    {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]
+  ));
+}
+
+async function executeTestSuite(){
+  const btn = document.getElementById('btnRunTests');
+  const tbody = document.getElementById('testTableBody');
+  const label = document.getElementById('overallStatusLabel');
+
+  btn.disabled = true;
+  btn.textContent = 'Running...';
+  setText('healthScore', '...');
+  label.textContent = 'RUNNING';
+  label.style.color = 'var(--steel-muted)';
+  tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--steel-muted);padding:18px;">Running the test battery...</td></tr>';
+
+  let data;
+  try{
+    const res = await fetch('/api/system/run-tests', {credentials:'same-origin'});
+    if(res.status === 401) throw new Error('Your session has expired. Sign in again to run the tests.');
+    if(res.status === 403) throw new Error('The test battery needs an Admin or Analyst account.');
+    if(!res.ok) throw new Error('The test endpoint returned HTTP ' + res.status + '.');
+    data = await res.json();
+  }catch(err){
+    setText('healthScore', '—');
+    label.textContent = 'NOT RUN';
+    label.style.color = 'var(--red)';
+    ['totalTests','passedTests','failedTests','execDuration'].forEach(id => setText(id, '—'));
+    setText('lastRunTime', new Date().toISOString());
+    tbody.innerHTML = '<tr><td colspan="4" style="padding:16px;color:var(--red);"><b>The tests could not be run.</b> '
+                    + escapeHtml(err.message) + '</td></tr>';
+    btn.disabled = false;
+    btn.textContent = 'Try Again';
+    return;
+  }
+
+  const allPass = data.failed === 0;
+  setText('healthScore', data.health_score + '%');
+  label.textContent = allPass ? 'ALL SYSTEMS PASS' : data.failed + ' FAILING';
+  label.style.color = allPass ? 'var(--green)' : 'var(--red)';
+  setText('totalTests', data.total_tests);
+  setText('passedTests', data.passed);
+  setText('failedTests', data.failed);
+  setText('execDuration', data.duration_ms + ' ms');
+  setText('lastRunTime', data.timestamp);
+
+  tbody.innerHTML = data.results.map(t => {
+    const badge = t.status === 'PASS'
+      ? '<span class="badge-pass">PASS</span>'
+      : '<span class="badge-pass" style="background:var(--red-bg);color:var(--red);border-color:var(--red-border);">FAIL</span>';
+    return '<tr><td><strong>' + escapeHtml(t.category) + '</strong></td><td>' + escapeHtml(t.name)
+         + '</td><td>' + escapeHtml(t.details) + '</td><td>' + badge + '</td></tr>';
+  }).join('');
+
+  btn.disabled = false;
+  btn.textContent = 'Run Again';
+}
 
 /*
 ====================================================

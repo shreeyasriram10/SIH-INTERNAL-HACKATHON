@@ -1392,3 +1392,129 @@ class TestSimulatorHonoursInputs:
         assert "blockedPorts=['paradip','dhamra']" not in body
         assert "spikeMult=1.15" not in body
         assert "Freight Spike +20%" not in body
+
+
+# ---------- 16. NOTHING IS IMAGINED ----------
+class TestNothingIsImagined:
+    """An audit found figures that were written into the pages rather than
+    computed: a hardcoded 87% confidence, a verification page that never ran a
+    test, an ML page animating a model comparison that did not happen, a
+    freight table made of random noise, a pressure gauge built from lookup
+    tables, canned alerts, and a card quoting each port's generic rail distance
+    whichever plant was chosen."""
+
+    # --- the model and its selection ---------------------------------------
+    def test_model_selection_really_compares_candidates(self):
+        result = model_registry.train_runtime_model(select_model=True)
+        meta = result["metadata"]
+        rows = meta["cv_results"]
+        assert len(rows) == 4
+        assert meta["cv_folds"] == 5
+        assert meta["algorithm"] == min(rows, key=lambda r: r["cv_mae_mean"])["algorithm"]
+        assert "cross-validation" in meta["selection"]
+        assert result["algorithm"] == meta["algorithm"]
+
+    def test_cold_start_does_not_claim_a_comparison(self):
+        meta = model_registry.train_runtime_model(select_model=False)["metadata"]
+        assert meta["cv_results"] == []
+        assert "no model comparison" in meta["selection"].lower()
+
+    def test_model_info_publishes_the_comparison(self, auth_client):
+        info = auth_client.get("/api/ml/info").json()
+        assert len(info["cv_results"]) == 4
+        assert info["algorithm"] == info["cv_results"][0]["algorithm"]
+
+    def test_the_model_is_in_the_decision_loop(self, monkeypatch):
+        """Replace the model with a constant and the recommendation must move."""
+        from database import SessionLocal
+        import models as m
+
+        with SessionLocal() as db:
+            ports, vessels = db.query(m.Port).all(), db.query(m.Vessel).all()
+        kw = dict(vessels=vessels, ports=ports, parcel_size=80000, cargo_type="Coking Coal",
+                  origin="USA", plant="Rourkela", window_days=30, month=5,
+                  bunker_price=697.0, pressure_index=52.5, top_n=1)
+        real = decision_engine.evaluate(**kw)[0][0].landed_cost_usd_mt
+        monkeypatch.setattr(model_registry, "predict_rates", lambda rows: [20.0] * len(rows))
+        constant = decision_engine.evaluate(**kw)[0][0].landed_cost_usd_mt
+        assert abs(real - constant) > 5.0, (real, constant)
+
+    # --- the plant and the nearest berth -----------------------------------
+    def test_nearest_berth_is_reported_when_it_loses(self, auth_client):
+        d = auth_client.post("/api/decision/optimize", json={
+            "parcel_size": 80000, "cargo_type": "Coking Coal", "origin": "South Africa",
+            "plant": "Durgapur Steel Plant (DSP)", "window_days": 30, "month": 9,
+            "persist": False}).json()
+        n = d["context"]["nearest_by_rail"]
+        assert n["port_name"] == "Haldia" and n["rail_km"] == 220
+        assert n["is_recommended"] is False
+        assert n["reasons"], "a losing nearest berth must say why"
+        assert n["recommended_rail_km"] == d["recommended"]["rail_km"]
+
+    def test_nearest_berth_is_flagged_when_it_wins(self, auth_client):
+        d = auth_client.post("/api/decision/optimize", json={
+            "parcel_size": 80000, "cargo_type": "Coking Coal", "origin": "South Africa",
+            "plant": "Rourkela Steel Plant (RSP)", "window_days": 30, "month": 9,
+            "persist": False}).json()
+        assert d["context"]["nearest_by_rail"]["is_recommended"] is True
+
+    def test_simulate_reports_the_baseline_nearest_berth(self, auth_client):
+        d = auth_client.post("/api/decision/simulate", json={
+            "parcel_size": 80000, "cargo_type": "Coking Coal", "origin": "South Africa",
+            "plant": "Durgapur", "window_days": 30, "month": 9, "persist": False,
+            "scenario": "cyclone"}).json()
+        assert d["baseline_context"]["nearest_by_rail"]["port_name"] == "Haldia"
+
+    def test_copilot_quotes_the_plant_specific_rail_distance(self, auth_client):
+        answer = auth_client.post("/api/copilot/ask", json={
+            "question": "Tell me about Haldia",
+            "context": {"recommended": {"plant": "Durgapur Steel Plant (DSP)"}}}).json()["answer"]
+        assert "220 km" in answer
+
+    # --- the pages ----------------------------------------------------------
+    def test_card_confidence_is_computed(self, client):
+        body = client.get("/app").text
+        assert "CONFIDENCE: 87%" not in body
+        assert "w.api.confidence" in body
+
+    def test_card_quotes_the_engine_rail_distance(self, client):
+        body = client.get("/app").text
+        assert "PORTS[w.portKey].evacKm} km (rail)" not in body
+        assert "w.api.rail_km" in body
+
+    def test_card_no_longer_claims_cheapest_unconditionally(self, client):
+        body = client.get("/app").text
+        assert "Lowest landed cost across all feasible ports" not in body
+
+    def test_risk_breakdown_matches_the_engine(self, client):
+        body = client.get("/app").text
+        assert "Inland Rail Evacuation Distance (10%)" not in body
+        assert "1. Berth Congestion (30%)" in body
+
+    def test_pressure_gauge_reads_the_engine(self, client):
+        body = client.get("/app").text
+        assert "baseVolMap" not in body and "portCongestMap" not in body
+        assert "+12%" not in body
+
+    def test_freight_table_is_scored_by_the_model(self, client):
+        body = client.get("/app").text
+        assert "o.baseFreight*(1+(rand()-0.5)*0.03)" not in body
+        assert "/api/ml/forecast-curve" in body
+
+    def test_alerts_are_built_from_data(self, client):
+        body = client.get("/app").text
+        assert "Capesize Spot Tightening" not in body
+        assert "function refreshAlerts" in body
+        assert 'id="alertCount" hidden' in body
+
+    def test_verification_page_runs_the_real_battery(self, client):
+        body = client.get("/verification").text
+        assert "PRESENTATION" not in body
+        assert "/api/system/run-tests" in body
+        assert "textContent = '100%'" not in body
+
+    def test_ml_page_does_not_script_its_training_log(self, client):
+        body = client.get("/ml-training").text
+        assert "const stages" not in body
+        assert "0.9891" not in body
+        assert "function renderModelMeta" in body

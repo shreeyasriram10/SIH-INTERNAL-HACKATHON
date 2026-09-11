@@ -2,6 +2,36 @@
   "model_name": "LOHA-DRISHTI Freight Predictor",
   "algorithm": "GradientBoostingRegressor",
   "version": "v2.3-runtime",
+  "selection": "5-fold cross-validation on the training split across 4 candidates; lowest mean absolute error selected",
+  "cv_folds": 5,
+  "cv_results": [
+    {
+      "algorithm": "GradientBoostingRegressor",
+      "cv_r2_mean": 0.9902,
+      "cv_r2_std": 0.001,
+      "cv_mae_mean": 0.667
+    },
+    {
+      "algorithm": "RandomForestRegressor",
+      "cv_r2_mean": 0.9802,
+      "cv_r2_std": 0.0016,
+      "cv_mae_mean": 0.946
+    },
+    {
+      "algorithm": "ExtraTreesRegressor",
+      "cv_r2_mean": 0.9771,
+      "cv_r2_std": 0.001,
+      "cv_mae_mean": 1.024
+    },
+    {
+      "algorithm": "Ridge",
+      "cv_r2_mean": 0.9632,
+      "cv_r2_std": 0.0017,
+      "cv_mae_mean": 1.294
+    }
+  ],
+  "train_rows": 1200,
+  "holdout_rows": 300,
   "dataset_type": "Synthetic / Calibrated Maritime Benchmark",
   "records_count": 1500,
   "features_list": [
@@ -20,6 +50,6 @@
   "rmse_usd": 0.84,
   "mape_pct": 2.9,
   "status": "PREDICTION_READY",
-  "training_duration_sec": 0.18,
-  "trained_at": "2026-09-05 04:59:12 UTC"
+  "training_duration_sec": 2.03,
+  "trained_at": "2026-09-11 05:54:29 UTC"
 }

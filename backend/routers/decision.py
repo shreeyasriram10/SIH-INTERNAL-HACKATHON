@@ -164,7 +164,9 @@ def _evaluate_lanes(*, vessels, ports, request, month, bunker_price,
             )
     if context is not None:
         context = {**context, "lanes": [origin for origin, _ in _lanes(request)],
-                   "candidates_evaluated": len(merged)}
+                   "candidates_evaluated": len(merged),
+                   "nearest_by_rail": decision_engine.nearest_by_rail(
+                       merged, ports, request.plant)}
     return merged[:top_n], context
 
 
@@ -183,7 +185,7 @@ def simulate_scenario(
     vessels, ports = _reference_data(db)
     month = _resolve_month(request.month)
 
-    baseline, _ = _evaluate_lanes(
+    baseline, baseline_context = _evaluate_lanes(
         vessels=vessels, ports=ports, request=request, month=month,
         bunker_price=request.bunker_price, top_n=request.top_n,
     )
@@ -230,6 +232,7 @@ def simulate_scenario(
         "blocked_port": shock["blocked_port"],
         "unavailable_class": shock["unavailable_class"],
         "context": context,
+        "baseline_context": baseline_context,
         "baseline": base_best.as_dict(),
         "disrupted": shock_best.as_dict(),
         "baseline_options": [option.as_dict() for option in baseline],

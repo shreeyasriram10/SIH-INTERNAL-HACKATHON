@@ -501,7 +501,7 @@ footer .data-disclaimer{font-size:10.5px;color:var(--steel-light);margin-top:6px
       <div class="topbar-actions">
         <span class="engine-source" id="engineSourceBadge" title="Checking the decision service...">CONNECTING</span>
         <span class="scenario-pill" id="scenarioPill">Scenario Active</span>
-        <button class="icon-btn" id="openNotifyBtn">Alerts <span class="badge-num">2</span></button>
+        <button class="icon-btn" id="openNotifyBtn">Alerts <span class="badge-num" id="alertCount" hidden>0</span></button>
         <button class="icon-btn" id="openSearchBtn">Search</button>
         <button class="icon-btn" id="openExportBtn">Report</button>
         <button class="icon-btn" id="topbarLogoutBtn" onclick="performLogout()" title="Sign out and return to the login gateway">Sign Out</button>
@@ -742,37 +742,37 @@ footer .data-disclaimer{font-size:10.5px;color:var(--steel-light);margin-top:6px
       <!-- MARKET PRESSURE GAUGE -->
       <div class="chart-card" style="display:flex;flex-direction:column;justify-content:space-between;">
         <div>
-          <h4 style="margin:0 0 4px;font-size:14px;">Freight Market Pressure Gauge</h4>
-          <p style="font-size:11.5px;color:var(--steel-muted);margin-bottom:12px;">Combined indicator from volatility, vessel availability, and seasonal demand.</p>
-          <div class="pressure-label" id="pressureGaugeValue" style="color:var(--saffron-dark);">NORMAL</div>
-          <div style="text-align:center;font-size:11.5px;color:var(--steel-muted);font-weight:600;margin-bottom:12px;">Market Pressure Index: <span id="pressureScore">42</span>/100</div>
+          <h4 style="margin:0 0 4px;font-size:14px;">Operating Pressure Gauge</h4>
+          <p style="font-size:11.5px;color:var(--steel-muted);margin-bottom:12px;">The engine's risk components for the recommended option. The index is its risk score.</p>
+          <div class="pressure-label" id="pressureGaugeValue" style="color:var(--steel-muted);">NO LIVE RESULT</div>
+          <div style="text-align:center;font-size:11.5px;color:var(--steel-muted);font-weight:600;margin-bottom:12px;">Composite risk index: <span id="pressureScore">—</span>/100</div>
           <div class="pressure-bars">
             <div class="p-bar-row">
               <span>Freight Volatility</span>
-              <div class="p-bar-track"><div class="p-bar-fill" id="pBarFillVol" style="width:44%;background:var(--saffron);"></div></div>
-              <span class="mono" id="pBarTextVol" style="font-size:11px;">44/100</span>
+              <div class="p-bar-track"><div class="p-bar-fill" id="pBarFillVol" style="width:0%;background:var(--saffron);"></div></div>
+              <span class="mono" id="pBarTextVol" style="font-size:11px;">—</span>
             </div>
             <div class="p-bar-row">
-              <span>Vessel Availability</span>
-              <div class="p-bar-track"><div class="p-bar-fill" id="pBarFillVessel" style="width:38%;background:var(--green);"></div></div>
-              <span class="mono" id="pBarTextVessel" style="font-size:11px;">38/100</span>
+              <span>Under-Keel Clearance</span>
+              <div class="p-bar-track"><div class="p-bar-fill" id="pBarFillVessel" style="width:0%;background:var(--green);"></div></div>
+              <span class="mono" id="pBarTextVessel" style="font-size:11px;">—</span>
             </div>
             <div class="p-bar-row">
-              <span>Seasonal Demand</span>
-              <div class="p-bar-track"><div class="p-bar-fill" id="pBarFillSeason" style="width:52%;background:var(--saffron);"></div></div>
-              <span class="mono" id="pBarTextSeason" style="font-size:11px;">52/100</span>
+              <span>Seasonal Exposure</span>
+              <div class="p-bar-track"><div class="p-bar-fill" id="pBarFillSeason" style="width:0%;background:var(--saffron);"></div></div>
+              <span class="mono" id="pBarTextSeason" style="font-size:11px;">—</span>
             </div>
             <div class="p-bar-row">
               <span>Port Congestion</span>
-              <div class="p-bar-track"><div class="p-bar-fill" id="pBarFillCongest" style="width:35%;background:var(--green);"></div></div>
-              <span class="mono" id="pBarTextCongest" style="font-size:11px;">35/100</span>
+              <div class="p-bar-track"><div class="p-bar-fill" id="pBarFillCongest" style="width:0%;background:var(--green);"></div></div>
+              <span class="mono" id="pBarTextCongest" style="font-size:11px;">—</span>
             </div>
           </div>
         </div>
         <div style="background:var(--bg-subtle);padding:10px;border-radius:8px;font-size:12px;margin-top:12px;">
           <div style="font-weight:700;color:var(--navy-deep);margin-bottom:2px;">Market Timing Signal</div>
-          <div id="marketSignalText" style="color:var(--saffron-dark);font-weight:600;">3-VOYAGE CONTRACT RECOMMENDED</div>
-          <div id="marketSignalDesc" style="font-size:11px;color:var(--steel-muted);margin-top:3px;">Spot rate upside risk +12% over 60 days. Lock in contract to limit exposure.</div>
+          <div id="marketSignalText" style="color:var(--steel-muted);font-weight:600;">Run a strategy to see where the pressure sits.</div>
+          <div id="marketSignalDesc" style="font-size:11px;color:var(--steel-muted);margin-top:3px;"></div>
         </div>
       </div>
     </div>
@@ -782,15 +782,13 @@ footer .data-disclaimer{font-size:10.5px;color:var(--steel-light);margin-top:6px
       <div class="section-header">
         <div>
           <h3>Freight Rates by Origin ($/MT, P50)</h3>
-          <p>Representative freight benchmarks for each origin corridor. SYNTHETIC benchmark model.</p>
+          <p>Predicted by the freight model for this month. The band is ±1.96 × hold-out RMSE; the swing is the model's twelve-month seasonal range. Trained on synthetic data.</p>
         </div>
         <span class="data-tag">SYNTHETIC</span>
       </div>
       <div class="table-responsive">
         <table class="battle-table" id="freightOriginTable">
-          <thead>
-            <tr><th>Origin</th><th>Base Freight ($/MT)</th><th>P10 Low</th><th>P90 High</th><th>Volatility</th><th>Typical Cargo</th></tr>
-          </thead>
+          <thead><tr><th>Origin</th><th>Rate this month (P50)</th><th>Low (model 95% band)</th><th>High</th><th>Seasonal swing (12 mo)</th><th>Cargo</th></tr></thead>
           <tbody id="freightOriginBody"></tbody>
         </table>
       </div>
@@ -1283,23 +1281,7 @@ footer .data-disclaimer{font-size:10.5px;color:var(--steel-light);margin-top:6px
     <div style="font-weight:700;font-family:'Space Grotesk';">Live Risk &amp; Market Alerts</div>
     <button class="close-btn" style="color:#FFF;" onclick="closeDrawerById('notifyDrawer')">✕</button>
   </div>
-  <div class="drawer-body">
-    <div style="background:var(--saffron-bg);border:1px solid var(--saffron-border);padding:10px 12px;border-radius:8px;font-size:12px;">
-      <b style="color:var(--saffron-dark);">Odisha Coast Monsoon Active</b><br>
-      Paradip &amp; Dhamra wait times elevated (+1.7× delay multiplier applied in model).
-      <div style="font-size:10.5px;color:var(--steel-muted);margin-top:4px;">Source: SYNTHETIC · Aug 2026</div>
-    </div>
-    <div style="background:var(--green-bg);border:1px solid var(--green-border);padding:10px 12px;border-radius:8px;font-size:12px;">
-      <b style="color:var(--green);">✓ Gangavaram Draft Optimal</b><br>
-      Deep draft 18.9m available for Capesize class. No tidal restriction in current window.
-      <div style="font-size:10.5px;color:var(--steel-muted);margin-top:4px;">Source: SYNTHETIC · Aug 2026</div>
-    </div>
-    <div style="background:var(--red-bg);border:1px solid var(--red-border);padding:10px 12px;border-radius:8px;font-size:12px;">
-      <b style="color:var(--red);">Capesize Spot Tightening</b><br>
-      Baltic Capesize Index up 8.2% this week. Consider locking contract now.
-      <div style="font-size:10.5px;color:var(--steel-muted);margin-top:4px;">Source: SYNTHETIC · Aug 2026</div>
-    </div>
-  </div>
+  <div class="drawer-body" id="notifyBody"></div>
 </div>
 
 <!-- AI COPILOT & QUESTIONS DRAWER (RIGHT) -->
@@ -1899,7 +1881,7 @@ async function runDecisionEngine(inputs, blockedPorts=[], blockedVesselClass=nul
           plant: PLANT_LABEL[inputs.plant],
           window_days: inputs.days,
           month: currentMonth(),
-          pressure_index: Math.round(50 + (ORIGINS[originKey].vol - 0.14) * 200),
+          pressure_index: lanePressure(originKey),
           top_n: 8,
           persist: false
         })
@@ -1908,7 +1890,9 @@ async function runDecisionEngine(inputs, blockedPorts=[], blockedVesselClass=nul
 
     const byName = portKeyByName();
     const candidates = [];
+    const laneContext = {};
     responses.forEach(({originKey, data}) => {
+      laneContext[originKey] = data.context;
       data.options
         .filter(o => !blockedPorts.includes(byName[o.port_name]))
         .filter(o => !blockedVesselClass || String(o.vessel_class).toLowerCase() !== blockedVesselClass)
@@ -1959,6 +1943,8 @@ async function runDecisionEngine(inputs, blockedPorts=[], blockedVesselClass=nul
       candidateCount: candidates.length,
       candidates, bestPerScenario,
       source: 'BACKEND',
+      /* The berth nearest the plant by rail, from the lane that won. */
+      nearest: laneContext[winner.originKey]?.nearest_by_rail || null,
       explanation: winner.api.explanation,
       warnings: winner.api.warnings || []
     };
@@ -2198,6 +2184,29 @@ function renderDecisionCard(result,inputs,targetId='decisionCardHost'){
      risk-adjusted cost - claiming it is dearer would be untrue. */
   const backupDelta=b.base.total-w.base.total;
 
+  /* The card used to say "lowest landed cost across all feasible ports"
+     whether or not it was true. When a cheaper option lost on risk, say so. */
+  const cheapest = result.candidates.reduce((m,c) => c.base.total < m.base.total ? c : m, w);
+  const cheapestLine = (cheapest !== w && w.api && cheapest.api)
+    ? `<li>Lowest <b>risk-adjusted</b> cost. ${PORTS[cheapest.portKey].name} via ${cheapest.api.vessel_class} is ${usd(w.base.total - cheapest.base.total)}/MT cheaper per tonne but carries risk ${cheapest.api.risk_index.toFixed(0)} against ${w.api.risk_index.toFixed(0)}.</li>`
+    : `<li>Lowest landed cost of the ${result.candidateCount} options scored: <b>${usd(w.base.total)}/MT</b>.</li>`;
+
+  /* The berth nearest the plant is the one a planner expects to win. If it
+     did not, explain why - otherwise the plant looks like it was ignored. */
+  const n = result.nearest;
+  const plantName = PLANT_LABEL[inputs.plant].split('(')[0].trim();
+  let nearestLine = '';
+  if(n && !n.is_recommended){
+    nearestLine = n.feasible
+      ? `<li><b>Nearest berth to ${plantName}: ${escapeHtml(n.port_name)}</b> (${Math.round(n.rail_km)} km rail, against ${Math.round(n.recommended_rail_km)} km from ${PORTS[w.portKey].name}). `
+        + (n.cost_vs_recommended_usd_mt < 0
+            ? `It is ${usd(-n.cost_vs_recommended_usd_mt)}/MT cheaper, `
+            : `It costs ${usd(n.cost_vs_recommended_usd_mt)}/MT more, `)
+        + `but its risk is ${n.risk_index.toFixed(0)} against ${w.api ? w.api.risk_index.toFixed(0) : result.risk}`
+        + (n.reasons.length ? ` - ${n.reasons.map(escapeHtml).join('; ')}` : '') + '.</li>'
+      : `<li><b>Nearest berth to ${plantName}: ${escapeHtml(n.port_name)}</b> (${Math.round(n.rail_km)} km rail) - ${escapeHtml(n.reasons[0])}.</li>`;
+  }
+
   // Build regret table rows
   const scenarios=['normal','monsoon_delay','congestion_spike','freight_spike'];
   const scenLabels={normal:'Normal Market',monsoon_delay:'Monsoon Delay',congestion_spike:'Congestion Spike',freight_spike:'Freight Spike'};
@@ -2217,10 +2226,10 @@ function renderDecisionCard(result,inputs,targetId='decisionCardHost'){
     <div class="decision-header">
       <div class="title-area">
         <h3>Recommended: ${ORIGINS[w.originKey].short} → ${PORTS[w.portKey].name}</h3>
-        <div class="subtitle">Via ${vc.name} Class · ${PLANT_LABEL[inputs.plant]} · ${fmt(inputs.qty)} MT ${CARGO_LABEL[inputs.cargoType]} · ${inputs.days}d window</div>
+        <div class="subtitle">Via ${vc.name} Class · ${PLANT_LABEL[inputs.plant]} · ${fmt(inputs.qty)} MT ${CARGO_LABEL[inputs.cargoType]} · ${inputs.days}d window${w.api ? ` · <b>${Math.round(w.api.rail_km)} km rail to plant</b>` : ''}</div>
       </div>
       <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;">
-        <div class="confidence-badge">✓ CONFIDENCE: 87%</div>
+        <div class="confidence-badge" title="Computed by the engine from model accuracy, utilisation and risk">✓ CONFIDENCE: ${Math.round(w.api ? w.api.confidence : result.confidence || 0)}%</div>
         <span class="data-tag">SYNTHETIC</span>
       </div>
     </div>
@@ -2328,9 +2337,12 @@ function renderDecisionCard(result,inputs,targetId='decisionCardHost'){
           <h5>✓ WHY ${PORTS[w.portKey].name.toUpperCase()}?</h5>
           <ul>
             <li>Clears ${vc.name} draft requirement (port: ${PORTS[w.portKey].draft}m, vessel needs: ${vc.draft}m).</li>
-            <li>Lowest landed cost across all feasible ports: <b>${usd(w.base.total)}/MT</b>.</li>
-            <li>Reasonable queue: ${PORTS[w.portKey].waitDays}d avg. wait → low demurrage exposure.</li>
-            <li>Evacuation distance to ${PLANT_LABEL[inputs.plant].split('(')[0].trim()}: ${PORTS[w.portKey].evacKm} km (rail).</li>
+            ${cheapestLine}
+            <li>${w.api
+                ? `Expected berth wait ${w.api.wait_days.toFixed(1)} days; demurrage ${usd(w.api.demurrage_usd / Math.max(inputs.qty,1))}/MT.`
+                : `Reasonable queue: ${PORTS[w.portKey].waitDays}d avg. wait.`}</li>
+            <li>Rail to ${PLANT_LABEL[inputs.plant].split('(')[0].trim()}: <b>${w.api ? Math.round(w.api.rail_km) : PORTS[w.portKey].evacKm} km</b>${
+                result.nearest && result.nearest.is_recommended ? ' - the nearest berth to this plant.' : '.'}</li>
             <li>${w.base.isMonsoon?' Active monsoon — delay multiplier applied in model.':'✓ Outside monsoon window — no weather delay factor.'}</li>
           </ul>
         </div>
@@ -2344,9 +2356,8 @@ function renderDecisionCard(result,inputs,targetId='decisionCardHost'){
                   ? 'Is '+usd(Math.abs(backupDelta))+'/MT cheaper per tonne, but carries a higher risk index ('+b.api.risk_index.toFixed(0)+' against '+w.api.risk_index.toFixed(0)+'), so it loses on risk-adjusted cost.'
                   : 'Is within a cent per tonne on cost; the recommendation turns on its lower risk index ('+w.api.risk_index.toFixed(0)+' against '+b.api.risk_index.toFixed(0)+').'
             }</li>
-            ${PORTS.paradip.name!==PORTS[w.portKey].name?`<li><b>Paradip:</b> ${PORTS.paradip.waitDays}d avg. wait adds demurrage risk. ${result.winner.base.isMonsoon?'Monsoon exposed.':''}</li>`:''}
-            <li><b>Spot charter only:</b> Freight forecast shows +12% upside risk over 60d — contract hedge recommended.</li>
-            <li><b>High regret routes:</b> ${result.candidates.length-1} alternatives scored higher max-regret — eliminated by optimizer.</li>
+            ${nearestLine}
+            <li>${result.candidateCount} feasible vessel-and-berth options were scored and ranked on risk-adjusted landed cost.</li>
           </ul>
         </div>
       </div>
@@ -2367,17 +2378,23 @@ function updateRiskModalContent(result,inputs){
   const p=PORTS[w.portKey];
   const vc=VESSEL_CLASSES[result.vesselClassKey];
   
-  const draftMargin = (p.draft - vc.draft).toFixed(1);
-  const draftScore = draftMargin > 2.5 ? 12 : draftMargin > 1.0 ? 28 : 65;
-  const draftDesc = draftMargin > 2.0 ? `Deep clearance (${p.draft}m port vs ${vc.draft}m vessel, +${draftMargin}m buffer)` : `Tight clearance (${p.draft}m port vs ${vc.draft}m vessel)`;
-
-  const factors=[
-    {name:'1. Freight Market Volatility (25%)', score:Math.round(o.vol*100*0.5*2), icon:'', desc:`${o.short} corridor baseline volatility = ${(o.vol*100).toFixed(0)}%`},
-    {name:'2. Discharge Port Congestion (30%)', score:Math.round(p.waitDays*11), icon:'', desc:`${p.name}: ${p.waitDays}d avg pre-berthing wait time`},
-    {name:'3. Monsoon & Cyclone Exposure (20%)', score:isMonsoon?35:8, icon:'', desc:isMonsoon?'Active Bay of Bengal monsoon window (delay factor 1.7×)':'Optimal calm weather window'},
-    {name:'4. Vessel Draft & Navigational Clearance (15%)', score:draftScore, icon:'', desc:draftDesc},
-    {name:'5. Inland Rail Evacuation Distance (10%)', score:Math.round(p.evacKm/48), icon:'', desc:`${p.evacKm} km freight haul to ${PLANT_LABEL[inputs.plant].split('(')[0].trim()}`},
-  ];
+  /* These are the engine's own components and weights. The previous list was
+     a separate invented model - different weights, and rail distance scored
+     as a risk - so its factors never added up to the number above them. */
+  const a = w.api || {};
+  const factors = w.api ? [
+    {name:'1. Berth Congestion (30%)', score:Math.round(a.congestion_score),
+     desc:`${p.name}: ${a.wait_days.toFixed(1)} days expected wait${p.berths<=1?', single berth':''}`},
+    {name:'2. Monsoon & Cyclone Exposure (25%)', score:Math.round(a.monsoon_risk_score),
+     desc: isMonsoon ? `${p.name} lists this month as monsoon/cyclone affected` : 'Seasonal baseline for this month'},
+    {name:'3. Freight Market Volatility (25%)', score:Math.round(a.freight_volatility_score),
+     desc:`Market pressure on the ${o.short} lane`},
+    {name:'4. Under-Keel Clearance (20%)', score:Math.round(a.draft_risk_score),
+     desc: a.requires_lightering ? `Laden draft exceeds ${p.name}'s usable depth - lightering required` : `Laden ${vc.name} clears ${p.name}`},
+  ] : [];
+  const railNote = w.api
+    ? `Rail to ${PLANT_LABEL[inputs.plant].split('(')[0].trim()} (${Math.round(a.rail_km)} km) is priced into landed cost, not scored as risk.`
+    : 'Offline estimate - component breakdown unavailable.';
 
   const listEl=document.getElementById('riskFactorList');
   if(listEl){
@@ -2387,7 +2404,7 @@ function updateRiskModalContent(result,inputs){
           <span style="font-weight:700;color:var(--navy-deep);">Composite Operational Risk Score:</span>
           <span class="mono" style="font-size:15px;font-weight:700;color:${result.risk>60?'var(--red)':result.risk>35?'var(--saffron-dark)':'var(--green)'};">${result.risk} / 100</span>
         </div>
-        <div style="font-size:11.5px;color:var(--steel-muted);">Evaluation for <b>${o.short} → ${p.name}</b> (${vc.name}) delivering to <b>${PLANT_LABEL[inputs.plant].split('(')[0].trim()}</b>.</div>
+        <div style="font-size:11.5px;color:var(--steel-muted);">Evaluation for <b>${o.short} → ${p.name}</b> (${vc.name}) delivering to <b>${PLANT_LABEL[inputs.plant].split('(')[0].trim()}</b>. ${railNote}</div>
       </div>
     ` + factors.map(f=>`
       <div style="background:#FFF;border:1px solid var(--steel-border);border-radius:8px;padding:10px 12px;margin-bottom:8px;">
@@ -2447,6 +2464,57 @@ function toggleCostMode(totalMode){
 }
 
 /* ======= DISRUPTION CHALLENGES ======= */
+/* ======= ALERTS ======= */
+/* Built from the current data. The drawer used to hold three permanent
+   messages - one quoting a "Baltic Capesize Index up 8.2%" that no data backed
+   - under a badge that always read 2. */
+function refreshAlerts(result){
+  const body = document.getElementById('notifyBody');
+  const badge = document.getElementById('alertCount');
+  if(!body || !badge) return;
+
+  const month = currentMonth();
+  const monthName = new Date(2000, month - 1, 1).toLocaleString('en-IN', {month:'long'});
+  const alerts = [];
+
+  const seasonal = Object.values(PORTS).filter(p => (p.monsoon || []).includes(month)).map(p => p.name);
+  if(seasonal.length){
+    alerts.push({tone:'warn', title:`Monsoon / cyclone season at ${seasonal.length} berths`,
+      text:`${seasonal.join(', ')} list ${monthName} as weather-affected. Their seasonal risk is raised in the ranking.`,
+      src:'Port calendar'});
+  }
+
+  const a = result && result.winner && result.winner.api;
+  if(a){
+    const port = PORTS[result.winner.portKey]?.name || a.port_name;
+    (a.warnings || []).forEach(t => alerts.push({tone:'risk', title:`Recommended option at ${port}`, text:t, src:'Decision engine'}));
+    const n = result.nearest;
+    if(n && !n.is_recommended){
+      alerts.push({tone:'info', title:`Nearest berth not selected: ${n.port_name}`,
+        text: n.feasible
+          ? `${Math.round(n.rail_km)} km from the plant, but risk ${Math.round(n.risk_index)}${n.reasons.length ? ' - ' + n.reasons.join('; ') : ''}.`
+          : n.reasons[0],
+        src:'Decision engine'});
+    }
+  }
+  if(activeScenarioType){
+    alerts.push({tone:'risk', title:'Scenario active',
+      text:'The What-If panel shows a simulated disruption, not baseline conditions.', src:'What-If Simulator'});
+  }
+
+  const tones = {warn:['--saffron-bg','--saffron-border','--saffron-dark'],
+                 risk:['--red-bg','--red-border','--red'],
+                 info:['--blue-bg','--blue-border','--blue']};
+  body.innerHTML = alerts.length
+    ? alerts.map(x => { const [bg, bd, fg] = tones[x.tone];
+        return `<div style="background:var(${bg});border:1px solid var(${bd});padding:10px 12px;border-radius:8px;font-size:12px;">`
+             + `<b style="color:var(${fg});">${escapeHtml(x.title)}</b><br>${escapeHtml(x.text)}`
+             + `<div style="font-size:10.5px;color:var(--steel-muted);margin-top:4px;">Source: ${x.src}</div></div>`; }).join('')
+    : '<div style="font-size:12px;color:var(--steel-muted);">No alerts for the current plan.</div>';
+  badge.textContent = alerts.length;
+  badge.hidden = alerts.length === 0;
+}
+
 /* ======= INTAKE ======= */
 /* The single reader of the intake form. Disruptions used to act on a copy of
    the inputs taken the last time "Apply" was pressed - or, on a fresh page, on
@@ -2493,10 +2561,17 @@ function syncCargoBar(inputs){
 
 /* Each lane with the market pressure the Command Centre scores it at, so a
    scenario is evaluated on exactly the same inputs. */
+/* Market pressure fed to the model for each lane. A fixed baseline per lane
+   derived from its historical volatility; in production this would come from a
+   market feed. Defined once so every caller scores a lane on the same input. */
+function lanePressure(originKey){
+  return Math.round(50 + (ORIGINS[originKey].vol - 0.14) * 200);
+}
+
 function lanesFor(inputs){
   return candidateOrigins(inputs).map(k => ({
     origin: ORIGINS[k].api,
-    pressure_index: Math.round(50 + (ORIGINS[k].vol - 0.14) * 200)
+    pressure_index: lanePressure(k)
   }));
 }
 
@@ -2575,6 +2650,8 @@ async function handleChallenge(type){
   );
   const before = toResult(data.baseline_options);
   const after = toResult(data.disrupted_options);
+  if(before) before.nearest = data.baseline_context?.nearest_by_rail || null;
+  if(after) after.nearest = data.context?.nearest_by_rail || null;
   if(!before || !after){ showScenarioError('no feasible option returned'); return; }
 
   /* The form changed since the last run, so the Command Centre is stale too.
@@ -2620,6 +2697,7 @@ async function handleChallenge(type){
   renderDecisionCard(after, inputs, 'scenarioDecisionHost');
   renderBattleTable(after.candidates, 'scenarioBattleBody');
   updateMarketPressureGauge(after, inputs, type);
+  refreshAlerts(after);
 
   const blocked = data.blocked_port ? [portKeyByName()[data.blocked_port]].filter(Boolean) : [];
   drawBaseMap(blocked, 'scenarioMap', inputs);
@@ -2663,6 +2741,7 @@ function resetBaseline(){
     drawBaseMap([], 'routemap', activeInputs);
     animateRouteBattle(baselineResult.candidates, baselineResult.winner, 'routemap');
     updateMarketPressureGauge(baselineResult, activeInputs, null);
+    refreshAlerts(baselineResult);
   }
 }
 
@@ -2918,22 +2997,44 @@ function setHorizon(days){
 }
 
 /* ======= FREIGHT ORIGIN TABLE ======= */
-function renderFreightOriginTable(){
-  const tbody=document.getElementById('freightOriginBody');
+/* Each lane scored by the freight model: this month's predicted rate, the
+   model's own error band, and its twelve-month seasonal swing. The table used
+   to be a hand-typed base rate per lane multiplied by random noise, labelled
+   as the freight benchmark. */
+async function renderFreightOriginTable(){
+  const tbody = document.getElementById('freightOriginBody');
   if(!tbody) return;
-  const rand=seededRand(12345);
-  tbody.innerHTML=Object.entries(ORIGINS).map(([k,o])=>{
-    const vol=o.vol;
-    const p50=o.baseFreight*(1+(rand()-0.5)*0.03);
-    return `<tr>
+  tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--steel-muted);padding:16px;">Scoring each lane with the freight model...</td></tr>';
+
+  const month = currentMonth();
+  const horizons = Array.from({length:12}, (_, i) => i === 0 ? 1 : i * 30 + 1);
+  const monthName = m => new Date(2000, m - 1, 1).toLocaleString('en-IN', {month:'short'});
+
+  try{
+    const rows = await Promise.all(Object.entries(ORIGINS).map(async ([k, o]) => {
+      const d = await api('/api/ml/forecast-curve', {
+        method:'POST',
+        body: JSON.stringify({origin:o.api, distance_nm:o.distanceNm, month,
+                              bunker_price:697, pressure_index:lanePressure(k), horizons})
+      });
+      const pts = d.points;
+      const rates = pts.map(p => p.predicted_rate_usd);
+      const mean = rates.reduce((x, y) => x + y, 0) / rates.length;
+      const peak = pts.reduce((m, p) => p.predicted_rate_usd > m.predicted_rate_usd ? p : m, pts[0]);
+      return {o, now: pts[0], swing: (Math.max(...rates) - Math.min(...rates)) / mean * 100, peak};
+    }));
+    tbody.innerHTML = rows.map(({o, now, swing, peak}) => `<tr>
       <td><b>${o.short}</b></td>
-      <td class="mono">${usd(p50)}</td>
-      <td class="mono" style="color:var(--green);">${usd(p50*(1-vol))}</td>
-      <td class="mono" style="color:var(--red);">${usd(p50*(1+vol))}</td>
-      <td><span style="color:${vol>0.15?'var(--red)':vol>0.12?'var(--saffron-dark)':'var(--green)'};">${(vol*100).toFixed(0)}%</span></td>
-      <td style="font-size:11.5px;">${o.cargo.map(c=>CARGO_LABEL[c]).join(', ')}</td>
-    </tr>`;
-  }).join('');
+      <td class="mono">${usd(now.predicted_rate_usd)}</td>
+      <td class="mono" style="color:var(--green);">${usd(now.ci_lower_usd)}</td>
+      <td class="mono" style="color:var(--red);">${usd(now.ci_upper_usd)}</td>
+      <td><span style="color:${swing > 10 ? 'var(--red)' : swing > 6 ? 'var(--saffron-dark)' : 'var(--green)'};">${swing.toFixed(1)}%</span>
+          <span style="font-size:10.5px;color:var(--steel-muted);">peak ${monthName(peak.month)}</span></td>
+      <td style="font-size:11.5px;">${o.cargo.map(c => CARGO_LABEL[c]).join(', ')}</td>
+    </tr>`).join('');
+  }catch(err){
+    tbody.innerHTML = `<tr><td colspan="6" style="padding:14px;color:var(--red);">The freight model could not be reached (${escapeHtml(err.message)}). No rates are shown rather than estimates.</td></tr>`;
+  }
 }
 
 /* ======= LOADING ======= */
@@ -2998,6 +3099,7 @@ async function runPipeline(){
   drawFreightChart(30);
   renderFreightOriginTable();
   updateMarketPressureGauge(result, inputs, activeScenarioType);
+  refreshAlerts(result);
 
   // Update vessel grid with correct recommendation
   renderVesselGrid();
@@ -3256,6 +3358,7 @@ buildStepper();
 syncReferenceData().then(() => {
   setEngineSource(REFERENCE_SYNCED ? 'BACKEND' : 'OFFLINE',
                   REFERENCE_SYNCED ? '' : 'Reference data could not be loaded.');
+  refreshAlerts(activeResult);
 });
 renderPortGrid();
 renderVesselGrid();
@@ -3268,125 +3371,69 @@ renderFreightOriginTable();
 setTimeout(()=>runPipeline(), 400);
 
 /* ======= DYNAMIC MARKET PRESSURE GAUGE LOGIC ======= */
+/* Operating pressure on the recommended option, read from the scores the
+   ranking itself used. The gauge used to be built from lookup tables keyed by
+   port and origin ("dhamra: 18, haldia: 66") plus fixed bumps per scenario, so
+   it moved on a script rather than on the data, and its advice quoted figures
+   (a fixed rate rise, a fixed forward/spot split) that nothing computed. The composite is
+   now the option's risk index, weighted exactly as the engine weights it. */
 function updateMarketPressureGauge(result, inputs, disruptionType=null){
   const labelEl = document.getElementById('pressureGaugeValue');
   const scoreEl = document.getElementById('pressureScore');
   const sigTextEl = document.getElementById('marketSignalText');
   const sigDescEl = document.getElementById('marketSignalDesc');
-
-  const fillVol = document.getElementById('pBarFillVol');
-  const textVol = document.getElementById('pBarTextVol');
-  const fillVessel = document.getElementById('pBarFillVessel');
-  const textVessel = document.getElementById('pBarTextVessel');
-  const fillSeason = document.getElementById('pBarFillSeason');
-  const textSeason = document.getElementById('pBarTextSeason');
-  const fillCongest = document.getElementById('pBarFillCongest');
-  const textCongest = document.getElementById('pBarTextCongest');
-
   if(!labelEl || !scoreEl) return;
 
-  const originKey = result ? result.winner.originKey : (inputs?.origin || 'australia');
-  const portKey = result ? result.winner.portKey : 'dhamra';
-  const qty = inputs ? inputs.qty : 80000;
-  const month = currentMonth();
+  const color = v => v >= 65 ? 'var(--red)' : v >= 38 ? 'var(--saffron)' : 'var(--green)';
+  const setBar = (suffix, value) => {
+    const fill = document.getElementById('pBarFill' + suffix);
+    const text = document.getElementById('pBarText' + suffix);
+    if(fill){ fill.style.width = (value ?? 0) + '%'; fill.style.background = value == null ? 'var(--steel-border)' : color(value); }
+    if(text) text.textContent = value == null ? '—' : value + '/100';
+  };
 
-  // 1. Freight Volatility (0-100): Clear corridor distinction
-  const baseVolMap = { australia: 22, south_africa: 46, indonesia: 65, usa: 36 };
-  let vol = baseVolMap[originKey] || 35;
-  if(disruptionType === 'freight') vol = Math.min(96, vol + 44);
-  if(disruptionType === 'bunker') vol = Math.min(92, vol + 32);
+  const a = result && result.winner && result.winner.api;
+  if(!a){
+    ['Vol','Vessel','Season','Congest'].forEach(k => setBar(k, null));
+    scoreEl.textContent = '—';
+    labelEl.textContent = 'NO LIVE RESULT';
+    labelEl.style.color = 'var(--steel-muted)';
+    if(sigTextEl){ sigTextEl.textContent = 'Run a strategy to see where the pressure sits.'; sigTextEl.style.color = 'var(--steel-muted)'; }
+    if(sigDescEl) sigDescEl.textContent = '';
+    return;
+  }
 
-  // 2. Vessel Availability (0-100): Size sensitivity
-  let vesselScore = qty >= 150000 ? 58 : qty >= 70000 ? 28 : 22;
-  if(disruptionType === 'vessel') vesselScore = 86;
+  setBar('Vol', Math.round(a.freight_volatility_score));
+  setBar('Vessel', Math.round(a.draft_risk_score));
+  setBar('Season', Math.round(a.monsoon_risk_score));
+  setBar('Congest', Math.round(a.congestion_score));
 
-  // 3. Seasonal Demand (0-100)
-  const isMonsoonSeason = [7, 8].includes(month);
-  let seasonScore = isMonsoonSeason ? 45 : 28;
-  if(disruptionType === 'monsoon') seasonScore = 84;
-  if(disruptionType === 'cyclone') seasonScore = 88;
-
-  // 4. Port Congestion (0-100): Port turnaround speed
-  const portCongestMap = { haldia: 66, paradip: 48, vizag: 34, dhamra: 18, gangavaram: 14 };
-  let congest = portCongestMap[portKey] || 25;
-  if(disruptionType === 'cyclone' || disruptionType === 'port') congest = 92;
-  if(disruptionType === 'monsoon') congest = Math.min(90, congest + 30);
-
-  // Composite Weighted Score
-  const overall = Math.round((vol * 0.35) + (vesselScore * 0.20) + (seasonScore * 0.20) + (congest * 0.25));
-
-  // Update Score Display
+  const overall = Math.round(a.risk_index);
   scoreEl.textContent = overall;
+  const band = overall >= 73 ? ['CRITICAL', 'var(--red)']
+             : overall >= 55 ? ['ELEVATED', 'var(--saffron-dark)']
+             : overall >= 36 ? ['MODERATE', 'var(--saffron)']
+             : ['LOW', 'var(--green)'];
+  labelEl.textContent = band[0];
+  labelEl.style.color = band[1];
 
-  function getTrackColor(val){
-    if(val >= 65) return 'var(--red)';
-    if(val >= 38) return 'var(--saffron)';
-    return 'var(--green)';
+  /* Name the component doing the damage, in the data's own terms. */
+  const port = PORTS[result.winner.portKey]?.name || a.port_name;
+  const parts = [
+    {name:'Freight market volatility', v:a.freight_volatility_score,
+     advice:'A period charter or contract of affreightment caps exposure to spot-rate moves on this lane.'},
+    {name:`Berth congestion at ${port}`, v:a.congestion_score,
+     advice:`Expected wait is ${a.wait_days.toFixed(1)} days; a berth with a shorter queue lowers demurrage exposure.`},
+    {name:'Monsoon and cyclone exposure', v:a.monsoon_risk_score,
+     advice:'Moving tonnage outside the season, or widening the laycan, reduces weather delay.'},
+    {name:'Under-keel clearance', v:a.draft_risk_score,
+     advice: a.requires_lightering ? 'The laden draft needs lightering at this berth.' : 'Clearance is tight; a part cargo or deeper berth adds margin.'},
+  ].sort((x, y) => y.v - x.v);
+  if(sigTextEl){
+    sigTextEl.textContent = `Largest pressure: ${parts[0].name} (${Math.round(parts[0].v)}/100)`;
+    sigTextEl.style.color = color(parts[0].v);
   }
-
-  if(fillVol && textVol){
-    fillVol.style.width = vol + '%';
-    fillVol.style.background = getTrackColor(vol);
-    textVol.textContent = vol + '/100';
-  }
-  if(fillVessel && textVessel){
-    fillVessel.style.width = vesselScore + '%';
-    fillVessel.style.background = getTrackColor(vesselScore);
-    textVessel.textContent = vesselScore + '/100';
-  }
-  if(fillSeason && textSeason){
-    fillSeason.style.width = seasonScore + '%';
-    fillSeason.style.background = getTrackColor(seasonScore);
-    textSeason.textContent = seasonScore + '/100';
-  }
-  if(fillCongest && textCongest){
-    fillCongest.style.width = congest + '%';
-    fillCongest.style.background = getTrackColor(congest);
-    textCongest.textContent = congest + '/100';
-  }
-
-  // Dynamic States: LOW / STABLE (<36), BALANCED (36-54), ELEVATED (55-72), CRITICAL (>72)
-  if(overall >= 73){
-    labelEl.textContent = 'CRITICAL SPIKE ';
-    labelEl.style.color = 'var(--red)';
-    if(sigTextEl) {
-      sigTextEl.textContent = 'EMERGENCY DEFENSIVE COA / ROUTE DIVERSION';
-      sigTextEl.style.color = 'var(--red)';
-    }
-    if(sigDescEl) {
-      sigDescEl.textContent = 'Severe market volatility active. Reroute vessels away from disrupted berths to deep-water ports immediately.';
-    }
-  } else if(overall >= 55){
-    labelEl.textContent = 'ELEVATED PRESSURE ';
-    labelEl.style.color = 'var(--saffron-dark)';
-    if(sigTextEl) {
-      sigTextEl.textContent = '3-VOYAGE FORWARD CONTRACT RECOMMENDED';
-      sigTextEl.style.color = 'var(--saffron-dark)';
-    }
-    if(sigDescEl) {
-      sigDescEl.textContent = 'Spot rate volatility elevated. Lock in multi-voyage contract to cap procurement cost exposure.';
-    }
-  } else if(overall >= 36){
-    labelEl.textContent = 'BALANCED MARKET ';
-    labelEl.style.color = 'var(--saffron)';
-    if(sigTextEl) {
-      sigTextEl.textContent = 'BALANCED SPOT / CONTRACT PORTFOLIO';
-      sigTextEl.style.color = 'var(--saffron-dark)';
-    }
-    if(sigDescEl) {
-      sigDescEl.textContent = 'Market conditions stable. Maintain standard chartering schedule with 70% forward contract and 30% spot.';
-    }
-  } else {
-    labelEl.textContent = 'LOW PRESSURE ✓';
-    labelEl.style.color = 'var(--green)';
-    if(sigTextEl) {
-      sigTextEl.textContent = 'SPOT FIXTURE HIGHLY FAVORABLE';
-      sigTextEl.style.color = 'var(--green)';
-    }
-    if(sigDescEl) {
-      sigDescEl.textContent = 'Corridor freight rates & port queues optimal. Take advantage of competitive spot market rates for near-term laycans.';
-    }
-  }
+  if(sigDescEl) sigDescEl.textContent = parts[0].advice;
 }
 
 
@@ -3808,127 +3855,9 @@ function toggleAnimPlay(){
   }
 }
 
-/* ======= DYNAMIC MARKET PRESSURE GAUGE LOGIC ======= */
-function updateMarketPressureGauge(result, inputs, disruptionType=null){
-  const labelEl = document.getElementById('pressureGaugeValue');
-  const scoreEl = document.getElementById('pressureScore');
-  const sigTextEl = document.getElementById('marketSignalText');
-  const sigDescEl = document.getElementById('marketSignalDesc');
-
-  const fillVol = document.getElementById('pBarFillVol');
-  const textVol = document.getElementById('pBarTextVol');
-  const fillVessel = document.getElementById('pBarFillVessel');
-  const textVessel = document.getElementById('pBarTextVessel');
-  const fillSeason = document.getElementById('pBarFillSeason');
-  const textSeason = document.getElementById('pBarTextSeason');
-  const fillCongest = document.getElementById('pBarFillCongest');
-  const textCongest = document.getElementById('pBarTextCongest');
-
-  if(!labelEl || !scoreEl) return;
-
-  const originKey = result ? result.winner.originKey : (inputs?.origin || 'australia');
-  const portKey = result ? result.winner.portKey : 'dhamra';
-  const qty = inputs ? inputs.qty : 80000;
-  const month = currentMonth();
-
-  // 1. Freight Volatility (0-100): Clear corridor distinction
-  const baseVolMap = { australia: 22, south_africa: 46, indonesia: 65, usa: 36 };
-  let vol = baseVolMap[originKey] || 35;
-  if(disruptionType === 'freight') vol = Math.min(96, vol + 44);
-  if(disruptionType === 'bunker') vol = Math.min(92, vol + 32);
-
-  // 2. Vessel Availability (0-100): Size sensitivity
-  let vesselScore = qty >= 150000 ? 58 : qty >= 70000 ? 28 : 22;
-  if(disruptionType === 'vessel') vesselScore = 86;
-
-  // 3. Seasonal Demand (0-100)
-  const isMonsoonSeason = [7, 8].includes(month);
-  let seasonScore = isMonsoonSeason ? 45 : 28;
-  if(disruptionType === 'monsoon') seasonScore = 84;
-  if(disruptionType === 'cyclone') seasonScore = 88;
-
-  // 4. Port Congestion (0-100): Port turnaround speed
-  const portCongestMap = { haldia: 66, paradip: 48, vizag: 34, dhamra: 18, gangavaram: 14 };
-  let congest = portCongestMap[portKey] || 25;
-  if(disruptionType === 'cyclone' || disruptionType === 'port') congest = 92;
-  if(disruptionType === 'monsoon') congest = Math.min(90, congest + 30);
-
-  // Composite Weighted Score
-  const overall = Math.round((vol * 0.35) + (vesselScore * 0.20) + (seasonScore * 0.20) + (congest * 0.25));
-
-  // Update Score Display
-  scoreEl.textContent = overall;
-
-  function getTrackColor(val){
-    if(val >= 65) return 'var(--red)';
-    if(val >= 38) return 'var(--saffron)';
-    return 'var(--green)';
-  }
-
-  if(fillVol && textVol){
-    fillVol.style.width = vol + '%';
-    fillVol.style.background = getTrackColor(vol);
-    textVol.textContent = vol + '/100';
-  }
-  if(fillVessel && textVessel){
-    fillVessel.style.width = vesselScore + '%';
-    fillVessel.style.background = getTrackColor(vesselScore);
-    textVessel.textContent = vesselScore + '/100';
-  }
-  if(fillSeason && textSeason){
-    fillSeason.style.width = seasonScore + '%';
-    fillSeason.style.background = getTrackColor(seasonScore);
-    textSeason.textContent = seasonScore + '/100';
-  }
-  if(fillCongest && textCongest){
-    fillCongest.style.width = congest + '%';
-    fillCongest.style.background = getTrackColor(congest);
-    textCongest.textContent = congest + '/100';
-  }
-
-  // Dynamic States: LOW / STABLE (<36), BALANCED (36-54), ELEVATED (55-72), CRITICAL (>72)
-  if(overall >= 73){
-    labelEl.textContent = 'CRITICAL SPIKE ';
-    labelEl.style.color = 'var(--red)';
-    if(sigTextEl) {
-      sigTextEl.textContent = 'EMERGENCY DEFENSIVE COA / ROUTE DIVERSION';
-      sigTextEl.style.color = 'var(--red)';
-    }
-    if(sigDescEl) {
-      sigDescEl.textContent = 'Severe market volatility active. Reroute vessels away from disrupted berths to deep-water ports immediately.';
-    }
-  } else if(overall >= 55){
-    labelEl.textContent = 'ELEVATED PRESSURE ';
-    labelEl.style.color = 'var(--saffron-dark)';
-    if(sigTextEl) {
-      sigTextEl.textContent = '3-VOYAGE FORWARD CONTRACT RECOMMENDED';
-      sigTextEl.style.color = 'var(--saffron-dark)';
-    }
-    if(sigDescEl) {
-      sigDescEl.textContent = 'Spot rate volatility elevated. Lock in multi-voyage contract to cap procurement cost exposure.';
-    }
-  } else if(overall >= 36){
-    labelEl.textContent = 'BALANCED MARKET ';
-    labelEl.style.color = 'var(--saffron)';
-    if(sigTextEl) {
-      sigTextEl.textContent = 'BALANCED SPOT / CONTRACT PORTFOLIO';
-      sigTextEl.style.color = 'var(--saffron-dark)';
-    }
-    if(sigDescEl) {
-      sigDescEl.textContent = 'Market conditions stable. Maintain standard chartering schedule with 70% forward contract and 30% spot.';
-    }
-  } else {
-    labelEl.textContent = 'LOW PRESSURE ✓';
-    labelEl.style.color = 'var(--green)';
-    if(sigTextEl) {
-      sigTextEl.textContent = 'SPOT FIXTURE HIGHLY FAVORABLE';
-      sigTextEl.style.color = 'var(--green)';
-    }
-    if(sigDescEl) {
-      sigDescEl.textContent = 'Corridor freight rates & port queues optimal. Take advantage of competitive spot market rates for near-term laycans.';
-    }
-  }
-}
+/* The pressure gauge is drawn by updateMarketPressureGauge above, from the
+   engine's own risk components. A second copy here used to override it with
+   per-origin and per-port lookup tables that ignored the actual scoring. */
 
 </script>
 

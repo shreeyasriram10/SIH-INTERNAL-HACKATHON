@@ -212,27 +212,27 @@
       <div class="lifecycle-card">
         <div class="step-num">STAGE 1</div>
         <div class="step-title">Dataset Ready</div>
-        <div class="step-detail">1,500 Samples Generated</div>
+        <div class="step-detail" id="stageData">—</div>
       </div>
       <div class="lifecycle-card">
         <div class="step-num">STAGE 2</div>
         <div class="step-title">Validation &amp; Schema</div>
-        <div class="step-detail">Outlier &amp; Range Checks</div>
+        <div class="step-detail">Numeric coercion &amp; null-row removal</div>
       </div>
       <div class="lifecycle-card">
         <div class="step-num">STAGE 3</div>
         <div class="step-title">Feature Engineering</div>
-        <div class="step-detail">8 Encodings Prepared</div>
+        <div class="step-detail" id="stageFeatures">—</div>
       </div>
       <div class="lifecycle-card">
         <div class="step-num">STAGE 4</div>
-        <div class="step-title">5-Fold CV Benchmark</div>
-        <div class="step-detail">4 Candidate Models</div>
+        <div class="step-title" id="stageCvTitle">Model Comparison</div>
+        <div class="step-detail" id="stageCv">—</div>
       </div>
       <div class="lifecycle-card active">
         <div class="step-num" style="color:var(--saffron-dark);">STAGE 5 (DEPLOYED)</div>
         <div class="step-title">Best Model Selected</div>
-        <div class="step-detail" style="font-weight:700;color:var(--saffron-dark);">GradientBoostingRegressor</div>
+        <div class="step-detail" id="stageAlgo" style="font-weight:700;color:var(--saffron-dark);">—</div>
       </div>
     </div>
 
@@ -240,22 +240,22 @@
     <div class="metrics-grid">
       <div class="metric-card">
         <div class="metric-label">Coefficient of Determination (R²)</div>
-        <div class="metric-value" id="dispR2" style="color:var(--green);">0.9891</div>
-        <div class="metric-sub">98.91% Variance Explained</div>
+        <div class="metric-value" id="dispR2" style="color:var(--green);">—</div>
+        <div class="metric-sub">Share of variance explained on the hold-out</div>
       </div>
       <div class="metric-card">
         <div class="metric-label">Mean Absolute Error (MAE)</div>
-        <div class="metric-value" id="dispMAE" style="color:var(--navy-deep);">$0.67</div>
+        <div class="metric-value" id="dispMAE" style="color:var(--navy-deep);">—</div>
         <div class="metric-sub">USD per Metric Ton ($/MT)</div>
       </div>
       <div class="metric-card">
         <div class="metric-label">Root Mean Squared Error (RMSE)</div>
-        <div class="metric-value" id="dispRMSE" style="color:var(--navy-deep);">$0.90</div>
+        <div class="metric-value" id="dispRMSE" style="color:var(--navy-deep);">—</div>
         <div class="metric-sub">USD per Metric Ton ($/MT)</div>
       </div>
       <div class="metric-card">
         <div class="metric-label">Mean Absolute Percentage Error</div>
-        <div class="metric-value" id="dispMAPE" style="color:var(--navy-deep);">3.03%</div>
+        <div class="metric-value" id="dispMAPE" style="color:var(--navy-deep);">—</div>
         <div class="metric-sub">Hold-Out Validation Partition</div>
       </div>
     </div>
@@ -294,13 +294,21 @@
 
       <!-- Training Execution Console -->
       <div style="margin-top:20px;">
+        <div style="font-size:11px;font-weight:700;color:var(--steel-muted);text-transform:uppercase;">Candidate Comparison</div>
+        <div id="cvSelection" style="font-size:12px;color:var(--steel-muted);margin:4px 0 8px;"></div>
+        <table style="width:100%;border-collapse:collapse;font-size:12.5px;">
+          <thead><tr style="text-align:left;border-bottom:2px solid var(--steel-border);">
+            <th style="padding:7px 8px;">Algorithm</th><th style="padding:7px 8px;">CV R²</th>
+            <th style="padding:7px 8px;">CV MAE ($/MT)</th><th style="padding:7px 8px;"></th>
+          </tr></thead>
+          <tbody id="cvTableBody"><tr><td colspan="4" style="padding:10px 8px;color:var(--steel-muted);">Loading...</td></tr></tbody>
+        </table>
+      </div>
+
+      <div style="margin-top:20px;">
         <div style="font-size:11px;font-weight:700;color:var(--steel-muted);text-transform:uppercase;">Live Backend Training Execution Console</div>
         <div class="console-box" id="trainConsole">
-          <div>> [System] ML Pipeline initialized and ready.</div>
-          <div>> [Registry] Model artifact loaded: model.pkl</div>
-          <div>> [Verification] 5-Fold Cross Validation confirmed GradientBoostingRegressor as best candidate.</div>
-          <div>> [Evaluation] Hold-out test partition (20%) confirmed R² = 0.9891, MAE = $0.67/MT.</div>
-          <div>> [Status] Ready for live inference requests from dashboard and API callers.</div>
+          <div id="consoleInit">> Loading model metadata...</div>
         </div>
       </div>
     </div>
@@ -354,19 +362,59 @@
 <script>
   const delay = ms => new Promise(r => setTimeout(r, ms));
 
+  /* Everything on this page comes from the model's own metadata. The page used
+     to ship hardcoded metrics from an older artifact and a stage list claiming
+     a 5-fold, 4-model comparison the backend never ran. */
+  function renderModelMeta(m) {
+    const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+    set('dispR2', m.r2_score ?? '—');
+    set('dispMAE', m.mae_usd != null ? '$' + m.mae_usd : '—');
+    set('dispRMSE', m.rmse_usd != null ? '$' + m.rmse_usd : '—');
+    set('dispMAPE', m.mape_pct != null ? m.mape_pct + '%' : '—');
+    set('dispAlgo', m.algorithm || '—');
+    if (m.trained_at) set('dispTrainedAt', m.trained_at);
+
+    set('stageData', m.records_count
+        ? `${Number(m.records_count).toLocaleString()} records` + (m.train_rows ? ` (${m.train_rows} train / ${m.holdout_rows} hold-out)` : '')
+        : '—');
+    set('stageFeatures', m.features_list ? `${m.features_list.length} features: 4 numeric, 4 origin one-hot` : '—');
+    set('stageAlgo', m.algorithm || '—');
+
+    const rows = m.cv_results || [];
+    const tbody = document.getElementById('cvTableBody');
+    if (rows.length) {
+      set('stageCvTitle', `${m.cv_folds}-Fold CV Benchmark`);
+      set('stageCv', `${rows.length} candidate models compared`);
+      set('cvSelection', m.selection || '');
+      tbody.innerHTML = rows.map(r => `<tr style="border-bottom:1px solid var(--steel-border);">
+          <td style="padding:7px 8px;${r.algorithm === m.algorithm ? 'font-weight:700;' : ''}">${r.algorithm}</td>
+          <td style="padding:7px 8px;" class="mono">${r.cv_r2_mean} ± ${r.cv_r2_std}</td>
+          <td style="padding:7px 8px;" class="mono">$${r.cv_mae_mean}</td>
+          <td style="padding:7px 8px;color:var(--green);font-weight:700;">${r.algorithm === m.algorithm ? 'SELECTED' : ''}</td>
+        </tr>`).join('');
+    } else {
+      set('stageCvTitle', 'No Comparison Run');
+      set('stageCv', 'Default algorithm fitted directly');
+      set('cvSelection', m.selection || 'No cross-validation has been run for the current artifact.');
+      tbody.innerHTML = '<tr><td colspan="4" style="padding:10px 8px;color:var(--steel-muted);">Retrain to compare candidates by cross-validation.</td></tr>';
+    }
+  }
+
   async function fetchModelInfo() {
+    const init = document.getElementById('consoleInit');
     try {
       const res = await fetch('/api/ml/info', {credentials:'same-origin'});
-      if (res.ok) {
-        const d = await res.json();
-        document.getElementById('dispR2').textContent = d.r2_score;
-        document.getElementById('dispMAE').textContent = '$' + d.mae_usd;
-        document.getElementById('dispRMSE').textContent = '$' + d.rmse_usd;
-        document.getElementById('dispMAPE').textContent = (d.mape_pct || 3.03) + '%';
-        document.getElementById('dispAlgo').textContent = d.algorithm + ' (Best Validated)';
-        if(d.trained_at) document.getElementById('dispTrainedAt').textContent = d.trained_at;
-      }
-    } catch (e) {}
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const m = await res.json();
+      renderModelMeta(m);
+      if (init) init.innerHTML =
+        `> [Registry] ${m.model_artifact_present ? 'Model artifact loaded' : 'No artifact on disk - trained in memory at start-up'}: ${m.algorithm}<br>`
+        + `> [Selection] ${m.selection || 'not recorded'}<br>`
+        + `> [Hold-out] ${m.holdout_rows || 'n/a'} rows: R² = ${m.r2_score}, MAE = $${m.mae_usd}/MT<br>`
+        + `> [Data] ${m.dataset_type}`;
+    } catch (e) {
+      if (init) init.textContent = '> Could not load model metadata: ' + e.message;
+    }
   }
 
   async function retrainModel() {
@@ -378,20 +426,8 @@
     con.innerHTML += `<div>> [${new Date().toLocaleTimeString()}] Triggering /api/ml/train pipeline...</div>`;
     con.scrollTop = con.scrollHeight;
 
-    const stages = [
-      "Validating dataset and schema integrity...",
-      "Preparing predictive features & categorical encodings...",
-      "Training candidate models (RandomForest, GradientBoosting, ExtraTrees, Ridge)...",
-      "Running 5-Fold Cross-Validation & Hyperparameter Tuning...",
-      "Evaluating hold-out validation performance on unseen test split...",
-      "Persisting best model artifact to disk & updating database metadata..."
-    ];
-
-    for (let s of stages) {
-      await delay(320);
-      con.innerHTML += `<div>> ${s}</div>`;
-      con.scrollTop = con.scrollHeight;
-    }
+    con.innerHTML += `<div>> Comparing candidate models by 5-fold cross-validation, then scoring the winner on the hold-out...</div>`;
+    con.scrollTop = con.scrollHeight;
 
     try {
       const res = await fetch('/api/ml/train', {
@@ -403,7 +439,13 @@
       }
       if (res.ok) {
         const d = await res.json();
-        con.innerHTML += `<div style="color:#10B981;font-weight:700;">>SUCCESS: Deployed ${d.metadata.algorithm} | R² = ${d.metadata.r2_score} | MAE = $${d.metadata.mae_usd}/MT</div>`;
+        const m = d.metadata;
+        (m.cv_results || []).forEach(r => {
+          con.innerHTML += `<div>>   ${r.algorithm.padEnd(26)} CV R² ${r.cv_r2_mean} ± ${r.cv_r2_std}   MAE $${r.cv_mae_mean}</div>`;
+        });
+        con.innerHTML += `<div style="color:#10B981;font-weight:700;">> Selected ${m.algorithm}. Hold-out (${m.holdout_rows} rows): R² = ${m.r2_score}, MAE = $${m.mae_usd}/MT. `
+                       + `${m.persisted ? 'Artifact saved.' : 'In memory only (read-only filesystem).'} ${m.training_duration_sec}s.</div>`;
+        renderModelMeta(m);
         document.getElementById('dispR2').textContent = d.metadata.r2_score;
         document.getElementById('dispMAE').textContent = '$' + d.metadata.mae_usd;
         document.getElementById('dispRMSE').textContent = '$' + d.metadata.rmse_usd;
