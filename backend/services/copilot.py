@@ -345,8 +345,9 @@ def _answer_cost(ports, vessels, context, question):
             "Landed cost is assembled from ocean freight (predicted per tonne by the model), "
             "deadfreight on unfilled booked space, vessel hire across sea and port days, port "
             "dues, demurrage beyond free laytime, lightering where a berth is draft-limited, "
-            "and inland rail to the plant. Cargo FOB price sits on top. Run a strategy and I "
-            "will break down the actual figures.",
+            "and inland rail to the plant. The cargo's FOB price, which differs by origin, sits "
+            "on top and is what decides between origins. Run a strategy and I will break down "
+            "the actual figures.",
             "Costing", ["decision engine"],
             ["Run a strategy", "What is deadfreight?"])
 
@@ -368,9 +369,13 @@ def _answer_cost(ports, vessels, context, question):
         f"Logistics cost for {parcel:,.0f} MT via <b>{best.get('vessel_class')}</b> into "
         f"<b>{best.get('port_name')}</b> totals {_fmt_usd(best.get('landed_cost_usd', 0))} "
         f"({_fmt_usd(best.get('landed_cost_usd_mt', 0))}/MT):{lines}"
-        "<br><br>The dashboard adds cargo FOB price, origin-side charges, marine insurance and "
-        "working-capital financing on top to reach the figure on the card. Every line here "
-        "comes from the same calculation that produced the recommendation."
+        + (f"<br><br>Cargo price from {best.get('origin')}: {_fmt_usd(best['fob_usd_mt'])}/MT FOB "
+           f"(indicative, quality-adjusted), so {_fmt_usd(best.get('delivered_cost_usd_mt', 0))}/MT "
+           "delivered. That price is what decides between origins."
+           if best.get("fob_usd_mt") else "")
+        + "<br><br>The dashboard adds origin-side charges, marine insurance and working-capital "
+        "financing to reach the figure on the card. Every line here comes from the same "
+        "calculation that produced the recommendation."
     )
     return Answer(text, "Costing", ["/api/decision/optimize"],
                   ["What is deadfreight?", "How is demurrage calculated?",

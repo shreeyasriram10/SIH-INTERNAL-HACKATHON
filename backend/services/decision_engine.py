@@ -103,9 +103,23 @@ class Candidate:
     rail_km: float = 0.0
     effective_capacity_mt: float = 0.0
     stowage_limit: str = "weight"
+    fob_usd_mt: float = 0.0
+    delivered_cost_usd_mt: float = 0.0
 
     def as_dict(self) -> dict:
         return asdict(self)
+
+
+def ranking_score(candidate) -> float:
+    """What every option is ranked on: cargo price plus risk-adjusted logistics.
+
+    The risk loading applies to the logistics cost only - risk is about the
+    voyage, the port and the rail leg, not about the price of the coal. Within
+    one origin the cargo price is the same for every option, so it only decides
+    between origins."""
+    return candidate.fob_usd_mt + candidate.landed_cost_usd_mt * (
+        1.0 + RISK_WEIGHT * candidate.risk_index / 100.0
+    )
 
 
 def _clamp(value: float, low: float = 0.0, high: float = 100.0) -> float:
@@ -222,7 +236,7 @@ def nearest_by_rail(candidates, ports, plant):
         "landed_cost_usd_mt": option.landed_cost_usd_mt,
         "risk_index": option.risk_index,
         "cost_vs_recommended_usd_mt": round(
-            option.landed_cost_usd_mt - winner.landed_cost_usd_mt, 2),
+            option.delivered_cost_usd_mt - winner.delivered_cost_usd_mt, 2),
         "risk_vs_recommended": round(option.risk_index - winner.risk_index, 1),
         "recommended_rail_km": winner.rail_km,
         "reasons": reasons,
@@ -249,6 +263,7 @@ def evaluate(
     distance_nm = model_registry.ORIGIN_DISTANCE_NM.get(origin, 4500.0)
     # Cargo density decides whether a ship fills by weight or by volume.
     profile = network.cargo_profile(cargo_type)
+    fob = network.fob_usd_mt(cargo_type, origin)
 
     # One model call covers the whole grid. The rate depends on the lane and
     # market inputs rather than the berth, so it is predicted once per vessel
@@ -451,18 +466,18 @@ def evaluate(
                     rail_km=round(rail, 1),
                     effective_capacity_mt=round(eff_cap, 0),
                     stowage_limit=network.binding_limit(vessel.capacity_mt, profile),
+                    fob_usd_mt=fob,
+                    delivered_cost_usd_mt=round(fob + landed_per_mt, 2),
                 )
             )
 
-    # Rank on risk-adjusted cost per tonne.
-    candidates.sort(
-        key=lambda c: c.landed_cost_usd_mt * (1.0 + RISK_WEIGHT * c.risk_index / 100.0)
-    )
+    # Rank on cargo price plus risk-adjusted logistics cost per tonne.
+    candidates.sort(key=ranking_score)
 
     if candidates:
-        best_cost = candidates[0].landed_cost_usd_mt
+        best_cost = candidates[0].delivered_cost_usd_mt
         for rank, candidate in enumerate(candidates, start=1):
-            delta = candidate.landed_cost_usd_mt - best_cost
+            delta = candidate.delivered_cost_usd_mt - best_cost
             candidate.explanation = _explain(candidate, rank, delta, cargo_type)
 
     context = {
@@ -474,6 +489,8 @@ def evaluate(
         "parcel_mt": round(parcel_size, 1),
         "cargo_type": cargo_type,
         "cargo_profile": profile,
+        "fob_usd_mt": fob,
+        "fob_basis": network.FOB_BASIS,
         "plant": plant,
         "nearest_by_rail": nearest_by_rail(candidates, ports, plant),
         "window_days": window_days,

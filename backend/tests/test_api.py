@@ -1518,3 +1518,90 @@ class TestNothingIsImagined:
         assert "const stages" not in body
         assert "0.9891" not in body
         assert "function renderModelMeta" in body
+
+
+# ---------- 17. ORIGIN ECONOMICS ----------
+class TestOriginEconomics:
+    """Origins used to be compared on logistics alone, with the cargo priced
+    the same wherever it came from. The shortest haul therefore always won and
+    the dashboard showed South Africa for almost every coking-coal parcel,
+    whatever plant or cargo was entered."""
+
+    @staticmethod
+    def _winner(cargo, origins, plant="Rourkela", month=9, qty=80000):
+        from database import SessionLocal
+        import models as m
+
+        with SessionLocal() as db:
+            ports, vessels = db.query(m.Port).all(), db.query(m.Vessel).all()
+        options = []
+        for origin in origins:
+            options += decision_engine.evaluate(
+                vessels=vessels, ports=ports, parcel_size=qty, cargo_type=cargo,
+                origin=origin, plant=plant, window_days=30, month=month,
+                bunker_price=697.0, pressure_index=52.5, top_n=25)[0]
+        options.sort(key=decision_engine.ranking_score)
+        return options[0]
+
+    def test_options_carry_the_cargo_price(self, auth_client):
+        d = auth_client.post("/api/decision/optimize", json={
+            "parcel_size": 80000, "cargo_type": "Thermal Coal", "origin": "Indonesia",
+            "plant": "Rourkela", "window_days": 30, "month": 9, "persist": False}).json()
+        best = d["recommended"]
+        assert best["fob_usd_mt"] == d["context"]["fob_usd_mt"] > 0
+        assert abs(best["delivered_cost_usd_mt"]
+                   - (best["fob_usd_mt"] + best["landed_cost_usd_mt"])) < 0.02
+        assert "synthetic" in d["context"]["fob_basis"]
+
+    def test_the_cargo_price_depends_on_the_origin(self):
+        from services import network
+        prices = {o: network.fob_usd_mt("Coking Coal", o)
+                  for o in ("Australia", "South Africa", "USA")}
+        assert len(set(prices.values())) == 3
+
+    def test_unknown_origin_is_never_the_cheapest(self):
+        from services import network
+        assert network.fob_usd_mt("Coking Coal", "Atlantis") == max(
+            network.COMMODITY_FOB_USD_MT["coking_coal"].values())
+
+    def test_shortest_haul_no_longer_wins_by_default(self):
+        """South Africa has the cheapest coking-coal logistics to the east
+        coast, but not the cheapest delivered coal."""
+        w = self._winner("Coking Coal", ["Australia", "South Africa", "USA"])
+        assert w.origin != "South Africa"
+
+    def test_the_origin_follows_the_cargo(self):
+        coking = self._winner("Coking Coal", ["Australia", "South Africa", "USA"])
+        thermal = self._winner("Thermal Coal", ["Australia", "Indonesia", "South Africa", "USA"])
+        assert coking.origin != thermal.origin
+        assert thermal.origin == "Indonesia"
+
+    def test_the_port_follows_the_plant(self):
+        east = self._winner("Coking Coal", ["Australia"], plant="Rourkela")
+        west = self._winner("Coking Coal", ["Australia"], plant="Bhilai")
+        assert east.port_name != west.port_name
+
+    def test_lane_merge_ranks_on_delivered_cost(self, auth_client):
+        d = auth_client.post("/api/decision/simulate", json={
+            "parcel_size": 80000, "cargo_type": "Coking Coal", "origin": "Australia",
+            "plant": "Rourkela", "window_days": 30, "month": 9, "persist": False,
+            "scenario": "freight_spike",
+            "lanes": [{"origin": o, "pressure_index": 52.5}
+                      for o in ("Australia", "South Africa", "USA")]}).json()
+        scores = [o["fob_usd_mt"] + o["landed_cost_usd_mt"] * (1 + 0.35 * o["risk_index"] / 100)
+                  for o in d["baseline_options"]]
+        assert scores == sorted(scores)
+
+    def test_dashboard_takes_the_price_from_the_engine(self, client):
+        body = client.get("/app").text
+        assert "option.fob_usd_mt ?? CARGO_FOB" in body
+        assert "(candidate.api.fob_usd_mt || 0)" in body
+
+    def test_strategy_table_uses_engine_risk(self, client):
+        body = client.get("/app").text
+        assert "c.api ? Math.round(c.api.risk_index) : riskScore" in body
+
+    def test_walkthrough_describes_the_current_run(self, client):
+        body = client.get("/app").text
+        assert "Australia → Dhamra Port via Panamax ($38.40/MT)" not in body
+        assert "function syncDemoNarrative" in body

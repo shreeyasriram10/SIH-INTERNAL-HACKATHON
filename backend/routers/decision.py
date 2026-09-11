@@ -119,9 +119,7 @@ def optimize_route(
 
 
 def _risk_adjusted(candidate) -> float:
-    return candidate.landed_cost_usd_mt * (
-        1.0 + decision_engine.RISK_WEIGHT * candidate.risk_index / 100.0
-    )
+    return decision_engine.ranking_score(candidate)
 
 
 def _lanes(request: schemas.ScenarioRequest):
@@ -157,10 +155,10 @@ def _evaluate_lanes(*, vessels, ports, request, month, bunker_price,
     merged.sort(key=_risk_adjusted)
     if merged:
         # Explanations were ranked within each lane; re-rank them across the set.
-        best_cost = merged[0].landed_cost_usd_mt
+        best_cost = merged[0].delivered_cost_usd_mt
         for rank, candidate in enumerate(merged, start=1):
             candidate.explanation = decision_engine._explain(
-                candidate, rank, candidate.landed_cost_usd_mt - best_cost, request.cargo_type
+                candidate, rank, candidate.delivered_cost_usd_mt - best_cost, request.cargo_type
             )
     if context is not None:
         context = {**context, "lanes": [origin for origin, _ in _lanes(request)],

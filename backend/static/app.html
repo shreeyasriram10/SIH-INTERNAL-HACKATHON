@@ -1809,9 +1809,9 @@ function mapOption(option, inputs, originKey){
   const lightering          = option.lightering_usd / qty;
   const evac                = option.inland_rail_usd / qty;
 
-  /* Cargo price and origin-side charges are commercial inputs the service does
-     not model; they stay here and sit on top of the logistics stack. */
-  const fob            = CARGO_FOB[inputs.cargoType];
+  /* Cargo price now comes from the engine, per origin, because it is what
+     decides between origins. CARGO_FOB is only the offline fallback. */
+  const fob            = option.fob_usd_mt ?? CARGO_FOB[inputs.cargoType];
   const loadPortCharge = 3.2 * origin.distFactor;
   const insurance      = 0.9 + (isMonsoon ? 0.4 : 0);
   const transitDays    = Math.round(option.sea_days);
@@ -1861,8 +1861,11 @@ function candidateOrigins(inputs){
   return matching.length ? matching : Object.keys(ORIGINS);
 }
 
+/* Mirrors services/decision_engine.ranking_score: cargo price plus
+   risk-adjusted logistics. */
 function riskAdjusted(candidate){
-  return candidate.api.landed_cost_usd_mt * (1 + 0.35 * candidate.api.risk_index / 100);
+  return (candidate.api.fob_usd_mt || 0)
+       + candidate.api.landed_cost_usd_mt * (1 + 0.35 * candidate.api.risk_index / 100);
 }
 
 async function runDecisionEngine(inputs, blockedPorts=[], blockedVesselClass=null, seedOffset=0, freightSpikeMult=1.0){
@@ -2430,8 +2433,8 @@ function renderBattleTable(candidates, tbodyId='battleTableBody'){
   const tbody=document.getElementById(tbodyId);
   if(!tbody) return;
   tbody.innerHTML=candidates.slice(0,5).map((c,i)=>{
-    const risk=riskScore(c.originKey,c.portKey);
-    const cont=Math.round(100-c.maxRegret*1.5);
+    const risk=c.api ? Math.round(c.api.risk_index) : riskScore(c.originKey,c.portKey);
+    const cont=c.api ? Math.round(c.api.supply_continuity) : Math.round(100-c.maxRegret*1.5);
     return `<tr class="${i===0?'winner-row':''}">
       <td>#${i+1}</td>
       <td><b>${ORIGINS[c.originKey].short} → ${PORTS[c.portKey].name}</b> ${i===0?'<span class="winner-badge">BEST OVERALL</span>':''}</td>
@@ -3789,12 +3792,24 @@ let isAnimPlaying = false;
 const animData = [
   { step: "STAGE 1 / 5: CARGO INPUT", icon: "", title: "1. Cargo Requirement Input", desc: "User inputs 80,000 MT Coking Coal for Rourkela Steel Plant with 30-day laycan delivery window." },
   { step: "STAGE 2 / 5: FREIGHT ANALYSIS", icon: "", title: "2. Freight Corridor Analysis", desc: "Ingests voyage parameters across 4 global corridors (Australia, South Africa, Indonesia, USA) to 5 East Coast ports." },
-  { step: "STAGE 3 / 5: ML FORECASTING", icon: "", title: "3. ML Freight Rate Forecasting", desc: "GradientBoosting ML pipeline computes P10/P50/P90 rate projections calibrated on BDI and bunker price dynamics (R²=0.989)." },
+  { step: "STAGE 3 / 5: ML FORECASTING", icon: "", title: "3. ML Freight Rate Forecasting", desc: "The trained freight model prices every lane for the month, bunker price and market pressure entered. Its hold-out accuracy is on the ML Model page." },
   { step: "STAGE 4 / 5: RISK ANALYSIS", icon: "", title: "4. Multi-Factor Risk & Scenario Regret", desc: "Simulates 4 market disruption scenarios (Normal, Monsoon, Congestion, Freight Spike) to identify minimal worst-case regret." },
-  { step: "STAGE 5 / 5: STRATEGY RECOMMENDATION", icon: "", title: "5. Optimal Strategy Recommendation", desc: "Selected Winner: Australia → Dhamra Port via Panamax ($38.40/MT) with ₹25.6 Cr voyage value and 88/100 Supply Continuity." }
+  { step: "STAGE 5 / 5: STRATEGY RECOMMENDATION", icon: "", title: "5. Optimal Strategy Recommendation", desc: "The best option on cargo price plus risk-adjusted logistics is selected, with a backup route. Run a strategy and this step shows the actual result." }
 ];
 
+/* The walkthrough describes the run on screen, not a fixed example. */
+function syncDemoNarrative(){
+  const r = typeof activeResult !== 'undefined' ? activeResult : null;
+  const i = typeof activeInputs !== 'undefined' ? activeInputs : null;
+  if(!r || !i) return;
+  const w = r.winner;
+  animData[0].desc = `${fmt(i.qty)} MT ${CARGO_LABEL[i.cargoType]} for ${PLANT_LABEL[i.plant]} with a ${i.days}-day delivery window.`;
+  animData[4].desc = `Selected: ${ORIGINS[w.originKey].short} → ${PORTS[w.portKey].name} via ${w.api ? w.api.vessel_class : VESSEL_CLASSES[r.vesselClassKey].name}, `
+    + `${usd(w.base.total)}/MT delivered, risk ${Math.round(w.api ? w.api.risk_index : r.risk)}/100, continuity ${Math.round(w.api ? w.api.supply_continuity : r.continuity)}/100.`;
+}
+
 function openDemoAnimation(){
+  syncDemoNarrative();
   openModal('demoAnimationModal');
   restartAnim();
 }

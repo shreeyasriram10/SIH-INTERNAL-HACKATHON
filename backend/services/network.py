@@ -97,3 +97,37 @@ def rail_km(port, plant: str) -> float:
     if key and key in by_plant:
         return float(by_plant[key])
     return float(getattr(port, "rail_evac_km", 0.0) or 0.0)
+
+
+# Cargo price at the load port (FOB, USD per tonne), per cargo and origin.
+#
+# Without this the engine compared origins on logistics alone. The cargo was
+# priced the same wherever it came from, so the shortest haul always won:
+# every coking-coal parcel went to Richards Bay, although South Africa ships
+# little coking coal and its semi-soft grades take more tonnes to make the same
+# coke. The cargo price differs between origins by more than the freight does,
+# so an origin can only be chosen on delivered cost.
+#
+# Figures are indicative of recent index levels and quality-adjusted to one
+# reference specification per cargo (a tonne of a weaker grade costs more per
+# tonne of equivalent quality). They are synthetic planning values like the
+# rest of the dataset - replace them with contract prices in production.
+COMMODITY_FOB_USD_MT = {
+    "coking_coal":    {"Australia": 232.0, "USA": 214.0, "South Africa": 241.0, "Indonesia": 250.0},
+    "thermal_coal":   {"Indonesia": 84.0, "South Africa": 98.0, "Australia": 121.0, "USA": 104.0},
+    "iron_ore_fines": {"Australia": 104.0, "South Africa": 109.0, "USA": 112.0, "Indonesia": 112.0},
+    "iron_ore_lumps": {"Australia": 118.0, "South Africa": 121.0, "USA": 126.0, "Indonesia": 126.0},
+}
+FOB_BASIS = ("Indicative FOB, quality-adjusted to a reference specification per cargo; "
+             "synthetic planning values, not contract prices.")
+
+
+def fob_usd_mt(cargo_type: str, origin: str) -> float:
+    """FOB price for this cargo from this origin; the cargo's highest listed
+    price when the origin is not in the table, so an unknown lane is never
+    made to look cheap."""
+    prices = COMMODITY_FOB_USD_MT[cargo_key(cargo_type)]
+    for name, price in prices.items():
+        if name.lower() == (origin or "").strip().lower():
+            return price
+    return max(prices.values())
