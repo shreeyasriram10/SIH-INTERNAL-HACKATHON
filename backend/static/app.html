@@ -3465,18 +3465,34 @@ function populateIdleControls(){
   portSel.value = PORTS.haldia ? PORTS.haldia.code : Object.values(PORTS)[0].code;
 }
 
+/* The route map and route comparison belong to the six disruption scenarios.
+   A repositioning decision has no cargo route, so they would sit there empty -
+   hidden while this panel is up and restored the moment a disruption runs.
+   Toggled from here by element, so those handlers stay untouched. */
+function setDisruptionOutputVisible(visible){
+  const blocks = [
+    document.getElementById('scenarioMap')?.closest('.map-card'),
+    document.getElementById('scenarioBattleBody')?.closest('.battle-card'),
+    document.getElementById('scenarioDecisionHost'),
+    document.getElementById('scenarioViz'),
+  ];
+  blocks.forEach(el => { if(el) el.style.display = visible ? '' : 'none'; });
+}
+
 function hideIdlePanel(){
   ['idleCard','idleViz','idleTableCard'].forEach(id => {
     const el = document.getElementById(id);
     if(el) el.style.display = 'none';
   });
   document.getElementById('btn-idle')?.classList.remove('active-scenario');
+  setDisruptionOutputVisible(true);
 }
 
 function openIdlePanel(){
   populateIdleControls();
   document.querySelectorAll('.btn-challenge').forEach(b => b.classList.remove('active-scenario'));
   document.getElementById('btn-idle')?.classList.add('active-scenario');
+  setDisruptionOutputVisible(false);
   const card = document.getElementById('idleCard');
   card.style.display = 'block';
   card.scrollIntoView({behavior:'smooth', block:'nearest'});

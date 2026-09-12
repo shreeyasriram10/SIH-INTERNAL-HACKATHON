@@ -1768,3 +1768,11 @@ class TestIdleVesselRepositioning:
         assert body.count("handleChallenge('cyclone')") == 1
         assert "/api/decision/idle-reposition" in body
         assert 'id="idleBasisTag"' in body
+
+    def test_route_only_output_is_hidden_while_repositioning(self, client):
+        """A repositioning decision has no cargo route, so the disruption
+        scenarios' route map and route comparison must not sit there empty."""
+        body = client.get("/app").text
+        assert "function setDisruptionOutputVisible" in body
+        assert "setDisruptionOutputVisible(false)" in body
+        assert "setDisruptionOutputVisible(true)" in body
