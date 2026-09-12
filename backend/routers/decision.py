@@ -7,7 +7,7 @@ import auth
 import models
 import schemas
 from database import get_db
-from services import decision_engine
+from services import decision_engine, idle
 
 router = APIRouter()
 
@@ -372,3 +372,34 @@ def recommendation_history(
         }
         for row in rows
     ]}
+
+
+@router.post("/idle-reposition")
+def idle_reposition(
+    request: schemas.IdleVesselRequest,
+    db: Session = Depends(get_db),
+    user: models.User = Depends(auth.get_current_user),
+):
+    """Wait or ballast, for a vessel sitting idle with no cargo fixed.
+
+    The inverse of the six disruption scenarios: those re-route a cargo that
+    has lost its plan, this one finds work for a ship that has none. Nothing
+    in the routing path is touched.
+
+    Authenticated: it discloses hire economics and where tonnage is expected to
+    open up, which is commercially sensitive in the same way landed cost is.
+    """
+    vessels, ports = _reference_data(db)
+    try:
+        return idle.evaluate_idle(
+            vessels=vessels,
+            ports=ports,
+            vessel_class=request.vessel_class,
+            port_code=request.port_code,
+            days_idle=request.days_idle,
+            month=_resolve_month(request.month),
+            bunker_price=request.bunker_price,
+            pressure_index=request.pressure_index,
+        )
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail=str(error))

@@ -151,6 +151,19 @@ class ScenarioRequest(OptimizeRequest):
     unavailable_class: Optional[str] = None
 
 
+class IdleVesselRequest(BaseModel):
+    """A vessel with nothing booked: which class, where she lies, how long she
+    has been idle. Market inputs default to the dataset means, as elsewhere."""
+
+    vessel_class: str = Field(min_length=1, max_length=40)
+    port_code: str = Field(min_length=3, max_length=10,
+                           description="Code of the berth where she discharged, e.g. INHAL")
+    days_idle: float = Field(default=0.0, ge=0, le=365)
+    month: int = Field(default=0, ge=0, le=12, description="0 = current month")
+    bunker_price: float = Field(default=697.0, gt=0, le=5000)
+    pressure_index: float = Field(default=52.5, ge=0, le=100)
+
+
 class RecommendationBase(BaseModel):
     landed_cost_usd: float
     confidence: float

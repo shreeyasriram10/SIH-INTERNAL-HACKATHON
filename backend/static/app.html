@@ -816,9 +816,88 @@ footer .data-disclaimer{font-size:10.5px;color:var(--steel-light);margin-top:6px
         <button class="btn-challenge danger" id="btn-bunker" onclick="handleChallenge('bunker')">Bunker Price Spike</button>
         <button class="btn-challenge danger" id="btn-vessel" onclick="handleChallenge('vessel')">Vessel Unavailable</button>
         <button class="btn-challenge danger" id="btn-monsoon" onclick="handleChallenge('monsoon')">Monsoon Delay</button>
+        <button class="btn-challenge" id="btn-idle" onclick="openIdlePanel()">Vessel Idle / Repositioning</button>
         <button class="btn-challenge btn-reset" onclick="resetBaseline()">Reset to Baseline</button>
       </div>
       <div class="diff-banner" id="diffBanner"></div>
+    </div>
+
+    <!-- ===== IDLE VESSEL / REPOSITIONING =====
+         The inverse of the six disruption scenarios: they re-route a cargo
+         whose plan broke, this one finds work for a ship that has none. It
+         renders into its own nodes so the disruption path is untouched. -->
+    <div class="challenge-card" id="idleCard" style="display:none;margin-top:14px;">
+      <div class="section-header" style="margin-bottom:10px;">
+        <div>
+          <h3 style="margin:0;font-size:15px;">Idle Vessel: Wait or Reposition</h3>
+          <p style="margin:3px 0 0;">A vessel has discharged with nothing fixed and is burning hire. Compare holding her where she lies against ballasting to a berth that can work her sooner.</p>
+        </div>
+        <span class="data-tag" id="idleBasisTag">SYNTHETIC (CALIBRATED)</span>
+      </div>
+
+      <div style="display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end;">
+        <div class="field" style="margin:0;min-width:170px;">
+          <label for="idleVesselClass">Vessel Class</label>
+          <select id="idleVesselClass"></select>
+        </div>
+        <div class="field" style="margin:0;min-width:200px;">
+          <label for="idlePort">Current Port (last discharge)</label>
+          <select id="idlePort"></select>
+        </div>
+        <div class="field" style="margin:0;min-width:130px;">
+          <label for="idleDays">Days Idle So Far</label>
+          <input type="number" id="idleDays" value="6" min="0" max="365" step="1">
+        </div>
+        <button class="btn-challenge" style="height:34px;" onclick="runIdleScenario()">Evaluate Options</button>
+      </div>
+      <div class="diff-banner" id="idleBanner"></div>
+    </div>
+
+    <div class="scenario-viz" id="idleViz" style="display:none;">
+      <div class="scenario-phases">
+        <div class="scenario-phase before">
+          <div class="scenario-phase-label" id="idle-state-label">Idle at &mdash;</div>
+          <div class="scenario-phase-route" id="idle-state-route">&mdash;</div>
+          <div class="scenario-phase-cost">Idle so far: <span id="idle-state-days">&mdash;</span> days</div>
+          <div class="scenario-phase-cost">Hire spent: <span id="idle-state-sunk">&mdash;</span></div>
+        </div>
+        <div class="scenario-arrow">&rarr;</div>
+        <div class="scenario-phase during">
+          <div class="scenario-phase-label">Do Nothing (Wait)</div>
+          <div class="scenario-phase-route" id="idle-wait-route" style="font-size:12px;">&mdash;</div>
+          <div class="scenario-phase-cost">Cost: <span id="idle-wait-cost">&mdash;</span></div>
+          <div class="scenario-phase-cost">Risk: <span id="idle-wait-risk">&mdash;</span>/100</div>
+        </div>
+        <div class="scenario-arrow">&rarr;</div>
+        <div class="scenario-phase after">
+          <div class="scenario-phase-label" id="idle-move-label">Reposition</div>
+          <div class="scenario-phase-route" id="idle-move-route">&mdash;</div>
+          <div class="scenario-phase-cost">Cost: <span id="idle-move-cost">&mdash;</span></div>
+          <div class="scenario-phase-cost">Risk: <span id="idle-move-risk">&mdash;</span>/100</div>
+          <div class="scenario-phase-cost">Delta: <span id="idle-move-delta">&mdash;</span></div>
+          <div class="scenario-phase-cost" id="idle-move-confidence" style="font-size:11px;"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="battle-card" id="idleTableCard" style="display:none;margin-top:16px;">
+      <div class="section-header">
+        <div>
+          <h3>Berths Considered</h3>
+          <p id="idleMarketNote">Every berth this class can physically work, with the ballast leg and the expected wait once alongside.</p>
+        </div>
+      </div>
+      <div class="table-responsive">
+        <table class="battle-table">
+          <thead>
+            <tr>
+              <th>Berth</th><th>Distance</th><th>Ballast</th><th>Bunkers</th><th>Expected Wait</th><th>Total Cost</th><th>Risk</th><th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="idleAltBody"></tbody>
+        </table>
+      </div>
+      <p id="idleBasisNote" style="font-size:11px;color:var(--steel-muted);margin:10px 0 0;"></p>
     </div>
 
     <!-- BEFORE → SCENARIO → AFTER VISUALIZATION -->
@@ -3369,6 +3448,169 @@ drawFreightChart(30);
 drawBaseMap();
 renderFreightOriginTable();
 // updateMarketPressureGauge is called inside runPipeline() after result is ready
+
+/* ======= IDLE VESSEL / REPOSITIONING =======
+   Additive: the six disruption handlers are not touched. This panel owns its
+   nodes, and clears itself when a disruption button is pressed through a
+   delegated listener rather than by editing handleChallenge(). */
+function populateIdleControls(){
+  const classSel = document.getElementById('idleVesselClass');
+  const portSel = document.getElementById('idlePort');
+  if(!classSel || !portSel || classSel.options.length) return;
+  classSel.innerHTML = Object.values(VESSEL_CLASSES)
+    .map(v => `<option value="${v.name}">${v.name}</option>`).join('');
+  portSel.innerHTML = Object.values(PORTS)
+    .map(p => `<option value="${p.code}">${p.name}</option>`).join('');
+  classSel.value = 'Supramax';
+  portSel.value = PORTS.haldia ? PORTS.haldia.code : Object.values(PORTS)[0].code;
+}
+
+function hideIdlePanel(){
+  ['idleCard','idleViz','idleTableCard'].forEach(id => {
+    const el = document.getElementById(id);
+    if(el) el.style.display = 'none';
+  });
+  document.getElementById('btn-idle')?.classList.remove('active-scenario');
+}
+
+function openIdlePanel(){
+  populateIdleControls();
+  document.querySelectorAll('.btn-challenge').forEach(b => b.classList.remove('active-scenario'));
+  document.getElementById('btn-idle')?.classList.add('active-scenario');
+  const card = document.getElementById('idleCard');
+  card.style.display = 'block';
+  card.scrollIntoView({behavior:'smooth', block:'nearest'});
+}
+
+async function runIdleScenario(){
+  const banner = document.getElementById('idleBanner');
+  const vesselClass = document.getElementById('idleVesselClass').value;
+  const portCode = document.getElementById('idlePort').value;
+  const daysIdle = Math.max(0, parseFloat(document.getElementById('idleDays').value) || 0);
+
+  banner.textContent = 'Scoring every berth this class can work...';
+  banner.style.display = 'block';
+
+  let data;
+  try{
+    data = await api('/api/decision/idle-reposition', {
+      method:'POST',
+      body: JSON.stringify({
+        vessel_class: vesselClass,
+        port_code: portCode,
+        days_idle: daysIdle,
+        month: currentMonth()
+      })
+    });
+  }catch(err){
+    banner.textContent = 'Could not evaluate: ' + err.message;
+    return;
+  }
+  renderIdleResult(data);
+}
+
+function renderIdleResult(data){
+  const wait = data.wait_option, move = data.reposition_option, rec = data.recommendation;
+  const banner = document.getElementById('idleBanner');
+  banner.textContent = rec.headline;
+  banner.style.display = 'block';
+
+  document.getElementById('idleViz').style.display = 'block';
+  document.getElementById('idleTableCard').style.display = 'block';
+
+  document.getElementById('idle-state-label').textContent = `Idle at ${data.inputs.port_name}`;
+  document.getElementById('idle-state-route').textContent =
+    `${data.vessel.class} · ${fmt(data.vessel.capacity_mt)} MT · hire ${usd(data.vessel.daily_hire_usd)}/day`;
+  document.getElementById('idle-state-days').textContent = data.inputs.days_idle;
+  document.getElementById('idle-state-sunk').textContent = usd(data.sunk_cost_usd) + ' (sunk)';
+
+  const waitRoute = document.getElementById('idle-wait-route');
+  if(wait.feasible){
+    waitRoute.textContent = `Hold at ${wait.port_name} · ${wait.expected_days_to_cargo} days to cargo + ${wait.berth_queue_days} days berth queue`;
+    document.getElementById('idle-wait-cost').textContent = usd(wait.total_cost_usd);
+  }else{
+    waitRoute.textContent = wait.reason || `${wait.port_name} cannot work this class`;
+    document.getElementById('idle-wait-cost').textContent = 'not an option';
+  }
+  document.getElementById('idle-wait-risk').textContent = Math.round(wait.risk_index);
+
+  const moveLabel = document.getElementById('idle-move-label');
+  const moveRoute = document.getElementById('idle-move-route');
+  if(move){
+    moveLabel.textContent = `Reposition to ${move.port_name}`;
+    moveRoute.textContent = `${Math.round(move.distance_nm)} nm · ${move.ballast_days} days ballast · then ${move.idle_days_after_arrival} days idle`;
+    document.getElementById('idle-move-cost').textContent = usd(move.total_cost_usd);
+    document.getElementById('idle-move-risk').textContent = Math.round(move.risk_index);
+  }else{
+    moveLabel.textContent = 'Reposition';
+    moveRoute.textContent = 'No other berth on this coast can work this class.';
+    document.getElementById('idle-move-cost').textContent = '—';
+    document.getElementById('idle-move-risk').textContent = '—';
+  }
+
+  const deltaEl = document.getElementById('idle-move-delta');
+  if(wait.feasible && move){
+    const delta = move.total_cost_usd - wait.total_cost_usd;
+    deltaEl.textContent = (delta >= 0 ? '+' : '') + usd(delta) + ' vs waiting';
+    deltaEl.style.color = delta > 0 ? 'var(--red)' : 'var(--green)';
+  }else{
+    deltaEl.textContent = '—';
+    deltaEl.style.color = '';
+  }
+  document.getElementById('idle-move-confidence').textContent =
+    `Recommended: ${rec.choice === 'wait' ? 'wait at ' + rec.port_name : 'reposition to ' + rec.port_name}`
+    + ` · confidence ${Math.round(rec.confidence)}%`;
+
+  document.getElementById('idleMarketNote').textContent =
+    `Freight market ${data.market.direction}: spot ${usd(data.market.spot_rate_usd_mt)}/MT against `
+    + `${usd(data.market.forward_rate_usd_mt)}/MT at 30 days, from the ${data.market.model} freight model. `
+    + `Expected waits are scaled by ${data.market.wait_multiplier}x on that.`;
+
+  const rows = [];
+  if(wait.feasible){
+    rows.push({
+      port_name: wait.port_name + ' (current)', distance_nm: 0, ballast_days: 0,
+      bunker_tonnes: 0, expected_days_to_cargo: wait.expected_days_to_cargo,
+      total_cost_usd: wait.total_cost_usd, risk_index: wait.risk_index, feasible: true,
+      chosen: rec.choice === 'wait'
+    });
+  }else{
+    rows.push({port_name: wait.port_name + ' (current)', feasible: false,
+               reason: wait.reason, risk_index: wait.risk_index});
+  }
+  data.alternatives.forEach(a =>
+    rows.push({...a, chosen: rec.choice === 'reposition' && a.port_code === rec.port_code}));
+
+  document.getElementById('idleAltBody').innerHTML = rows.map(r => {
+    if(!r.feasible){
+      return `<tr><td><b>${r.port_name}</b></td><td colspan="6" style="color:var(--steel-muted);">${r.reason || 'cannot work this class'}</td>`
+           + `<td><span style="color:var(--red);font-weight:700;">UNUSABLE</span></td></tr>`;
+    }
+    return `<tr class="${r.chosen ? 'winner-row' : ''}">
+      <td><b>${r.port_name}</b></td>
+      <td class="mono">${Math.round(r.distance_nm)} nm</td>
+      <td class="mono">${r.ballast_days} d</td>
+      <td class="mono">${Math.round(r.bunker_tonnes)} t</td>
+      <td class="mono">${r.expected_days_to_cargo} d</td>
+      <td class="mono"><b>${usd(r.total_cost_usd)}</b></td>
+      <td class="${riskClass(Math.round(r.risk_index))}">${Math.round(r.risk_index)}/100</td>
+      <td>${r.chosen ? '<span style="color:var(--green);font-weight:700;">RECOMMENDED</span>' : '<span style="color:var(--steel-muted);">ALTERNATIVE</span>'}</td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('idleBasisTag').textContent = data.data_basis.tag;
+  document.getElementById('idleBasisNote').innerHTML =
+    `<b>${data.data_basis.tag}.</b> ${data.data_basis.does_not_exist}`
+    + `<br>Calibrated, not measured: ${data.data_basis.calibrated_not_measured.join('; ')}.`;
+}
+
+/* Pressing any disruption scenario clears this panel, without those handlers
+   needing to know it exists. */
+document.querySelector('.challenge-buttons')?.addEventListener('click', event => {
+  const button = event.target.closest('button');
+  if(button && button.id !== 'btn-idle') hideIdlePanel();
+});
+populateIdleControls();
 
 // Auto-run on load
 setTimeout(()=>runPipeline(), 400);

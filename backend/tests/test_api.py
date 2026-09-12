@@ -1605,3 +1605,166 @@ class TestOriginEconomics:
         body = client.get("/app").text
         assert "Australia → Dhamra Port via Panamax ($38.40/MT)" not in body
         assert "function syncDemoNarrative" in body
+
+
+# ---------- 18. IDLE VESSEL REPOSITIONING ----------
+class TestIdleVesselRepositioning:
+    """The seventh scenario runs the other way round: a vessel with no cargo
+    fixed, deciding whether to wait or ballast. The risk it carries is a
+    plausible-looking answer that never moves - a fixed destination port or a
+    fixed cost whatever the class, port, month or idle time."""
+
+    ENDPOINT = "/api/decision/idle-reposition"
+    CLASSES = ("Handysize", "Supramax", "Panamax", "Capesize")
+    CODES = ("INPRT", "INDHM", "INGGV", "INVTZ", "INGOP", "INHAL", "INSAG")
+
+    def _ask(self, client, **overrides):
+        body = {"vessel_class": "Supramax", "port_code": "INHAL", "days_idle": 6,
+                "month": 9, "bunker_price": 697.0, "pressure_index": 52.5}
+        body.update(overrides)
+        response = client.post(self.ENDPOINT, json=body)
+        assert response.status_code == 200, response.text
+        return response.json()
+
+    # --- it has to be wired up like every other commercial endpoint --------
+    def test_requires_authentication(self, client):
+        assert client.post(self.ENDPOINT, json={
+            "vessel_class": "Supramax", "port_code": "INHAL"}).status_code == 401
+
+    def test_rejects_an_unknown_class_or_berth(self, auth_client):
+        assert auth_client.post(self.ENDPOINT, json={
+            "vessel_class": "Battleship", "port_code": "INHAL"}).status_code == 400
+        assert auth_client.post(self.ENDPOINT, json={
+            "vessel_class": "Supramax", "port_code": "ZZZZZ"}).status_code == 400
+
+    # --- the output must depend on the inputs ------------------------------
+    def test_vessel_class_changes_the_numbers(self, auth_client):
+        handy = self._ask(auth_client, vessel_class="Handysize", port_code="INGGV")
+        cape = self._ask(auth_client, vessel_class="Capesize", port_code="INGGV")
+        assert handy["wait_option"]["total_cost_usd"] != cape["wait_option"]["total_cost_usd"]
+        assert (handy["recommendation"]["port_name"]
+                != cape["recommendation"]["port_name"]), "class must be able to change the berth"
+
+    def test_current_port_changes_the_recommendation(self, auth_client):
+        results = {code: self._ask(auth_client, port_code=code)["recommendation"]
+                   for code in self.CODES}
+        assert len({r["port_name"] for r in results.values()}) > 1, \
+            "the berth recommended must depend on where she is lying"
+        assert len({r["total_cost_usd"] for r in results.values()}) == len(self.CODES)
+        assert len({r["risk_index"] for r in results.values()}) > 1
+
+    def test_days_idle_changes_the_expected_wait(self, auth_client):
+        fresh = self._ask(auth_client, days_idle=0)
+        stale = self._ask(auth_client, days_idle=45)
+        assert stale["sunk_cost_usd"] > fresh["sunk_cost_usd"] == 0
+        # Elapsed idle time is evidence the arrival rate is slower than assumed.
+        assert (stale["reposition_option"]["expected_days_to_cargo"]
+                > fresh["reposition_option"]["expected_days_to_cargo"])
+
+    def test_month_changes_the_answer(self, auth_client):
+        monsoon = self._ask(auth_client, vessel_class="Panamax", port_code="INVTZ", month=9)
+        dry = self._ask(auth_client, vessel_class="Panamax", port_code="INVTZ", month=1)
+        assert (monsoon["wait_option"]["total_cost_usd"]
+                != dry["wait_option"]["total_cost_usd"])
+        assert monsoon["wait_option"]["monsoon_at_berth"] is True
+        assert dry["wait_option"]["monsoon_at_berth"] is False
+
+    # --- the fixed-answer trap ---------------------------------------------
+    def test_no_fixed_destination_port(self, auth_client):
+        """Fails if the endpoint ever settles on one berth regardless of input."""
+        recommended = set()
+        for vessel_class in self.CLASSES:
+            for month in (1, 9):
+                for code in self.CODES:
+                    recommended.add(self._ask(
+                        auth_client, vessel_class=vessel_class, port_code=code,
+                        month=month)["recommendation"]["port_name"])
+        assert len(recommended) >= 3, f"only ever recommends {recommended}"
+
+    def test_no_fixed_cost(self, auth_client):
+        costs = {self._ask(auth_client, vessel_class=vessel_class, port_code=code
+                           )["recommendation"]["total_cost_usd"]
+                 for vessel_class in self.CLASSES for code in self.CODES}
+        assert len(costs) >= len(self.CLASSES) * 3
+
+    def test_both_courses_of_action_occur(self, auth_client):
+        choices = [self._ask(auth_client, vessel_class=vessel_class, port_code=code
+                             )["recommendation"]["choice"]
+                   for vessel_class in self.CLASSES for code in self.CODES]
+        assert "wait" in choices and "reposition" in choices
+
+    # --- it must not pretend to know things the platform does not ----------
+    def test_labels_what_is_calibrated_and_what_does_not_exist(self, auth_client):
+        basis = self._ask(auth_client)["data_basis"]
+        assert basis["tag"] == "SYNTHETIC (CALIBRATED)"
+        assert "FreightHistory holds no rows" in basis["does_not_exist"]
+        assert any("distance" in item for item in basis["calibrated_not_measured"])
+        assert any("bunker" in item.lower() for item in basis["calibrated_not_measured"])
+
+    def test_sunk_cost_is_excluded_from_the_comparison(self, auth_client):
+        data = self._ask(auth_client, days_idle=20)
+        assert data["sunk_cost_usd"] == 20 * data["vessel"]["daily_hire_usd"]
+        assert data["sunk_cost_usd"] not in (
+            data["wait_option"]["total_cost_usd"],
+            data["reposition_option"]["total_cost_usd"])
+        assert "excluded" in data["sunk_cost_note"]
+
+    # --- it must reuse what already exists ---------------------------------
+    def test_berths_that_cannot_work_the_class_are_refused(self, auth_client):
+        """Haldia carries 8.5 m; a Capesize draws 18 m."""
+        data = self._ask(auth_client, vessel_class="Capesize", port_code="INHAL")
+        assert data["wait_option"]["feasible"] is False
+        assert data["recommendation"]["choice"] == "reposition"
+        blocked = [a for a in data["alternatives"] if not a["feasible"]]
+        assert blocked and all(a["reason"] for a in blocked)
+
+    def test_distances_come_from_one_symmetric_table(self):
+        from services import idle
+        for a in TestIdleVesselRepositioning.CODES:
+            for b in TestIdleVesselRepositioning.CODES:
+                assert idle.coastal_distance_nm(a, b) == idle.coastal_distance_nm(b, a)
+                if a == b:
+                    assert idle.coastal_distance_nm(a, b) == 0
+        assert idle.coastal_distance_nm("INHAL", "ZZZZZ") is None
+
+    def test_market_direction_comes_from_the_trained_model(self, auth_client):
+        market = self._ask(auth_client)["market"]
+        assert market["model"] == model_registry.get_payload()["metadata"]["algorithm"]
+        assert market["spot_rate_usd_mt"] > 0 and market["forward_rate_usd_mt"] > 0
+        assert market["direction"] in ("tightening", "softening", "flat")
+
+    def test_risk_uses_the_same_components_as_every_other_scenario(self, auth_client):
+        wait = self._ask(auth_client, port_code="INPRT")["wait_option"]
+        expected = round(0.30 * wait["congestion_score"] + 0.25 * wait["monsoon_risk_score"]
+                         + 0.25 * wait["freight_volatility_score"]
+                         + 0.20 * wait["draft_risk_score"], 1)
+        assert wait["risk_index"] == expected
+
+    def test_hire_basis_matches_the_cost_waterfall(self, auth_client):
+        from database import SessionLocal
+        import models as m
+
+        data = self._ask(auth_client, vessel_class="Panamax")
+        with SessionLocal() as db:
+            vessel = db.query(m.Vessel).filter(m.Vessel.class_type == "Panamax").first()
+        assert data["vessel"]["daily_hire_usd"] == vessel.daily_cost_usd
+
+    # --- the existing six must be untouched ---------------------------------
+    def test_the_six_disruption_scenarios_still_run(self, auth_client):
+        for scenario in ("cyclone", "port_blocked", "freight_spike",
+                         "bunker_spike", "vessel_unavail", "monsoon"):
+            response = auth_client.post("/api/decision/simulate", json={
+                "parcel_size": 80000, "cargo_type": "Coking Coal", "origin": "Australia",
+                "plant": "Rourkela", "window_days": 30, "month": 9, "persist": False,
+                "scenario": scenario})
+            assert response.status_code == 200, scenario
+            assert response.json()["disrupted_options"]
+
+    def test_dashboard_exposes_the_scenario_without_touching_the_others(self, client):
+        body = client.get("/app").text
+        assert 'id="btn-idle"' in body
+        assert "function runIdleScenario" in body
+        # the six keep their own handler
+        assert body.count("handleChallenge('cyclone')") == 1
+        assert "/api/decision/idle-reposition" in body
+        assert 'id="idleBasisTag"' in body
