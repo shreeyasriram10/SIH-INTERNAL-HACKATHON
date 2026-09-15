@@ -1907,7 +1907,7 @@ class TestDashboardPolish:
 
     def test_hovering_a_berth_shows_its_engine_figures(self, client):
         js = client.get("/static/ld-dash.js").text
-        assert "const ho = optionFor(C.hover, C.cls);" in js
+        assert "const ho = optionFor(k, C.cls);" in js
 
     def test_loading_screen_animates_a_ship_toward_the_forecast(self, client):
         js = client.get("/static/ld-dash.js").text
@@ -2017,3 +2017,28 @@ class TestBugSweep:
             "question": "Tell me about Paradip"}).json()["answer"]
         assert "Usable draft 18.1" not in answer
         assert "usable 17.5 m" in answer
+
+
+class TestBerthClickMovesRoute:
+    """Clicking a berth did nothing: hover rebuilt the pins under the cursor,
+    so the press and release never reached the same element."""
+
+    def test_hover_restyles_instead_of_rebuilding(self, client):
+        js = client.get("/static/ld-dash.js").text
+        assert "el.addEventListener('mouseenter', () => setHover(k));" in js
+        assert "C.hover = k; renderPins();" not in js
+        assert "function stylePins()" in js
+
+    def test_pins_are_not_rebuilt_on_every_render(self, client):
+        js = client.get("/static/ld-dash.js").text
+        body = js[js.index("function renderCommand()"):js.index("function renderBuild()")]
+        assert "renderPins()" not in body and "stylePins()" in body
+
+    def test_tooltip_has_its_own_layer(self, client):
+        js = client.get("/static/ld-dash.js").text
+        assert 'id="ldcTip" pointer-events="none"' in js
+
+    def test_a_new_route_draws_in_quickly(self, client):
+        css = client.get("/static/ld-dash.css").text
+        assert "animation:ldRouteIn .85s" in css
+        assert ".ldc-map .pin-hit:focus{outline:none;}" in css
