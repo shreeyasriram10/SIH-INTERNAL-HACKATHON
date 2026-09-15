@@ -2017,3 +2017,18 @@ class TestBugSweep:
             "question": "Tell me about Paradip"}).json()["answer"]
         assert "Usable draft 18.1" not in answer
         assert "usable 17.5 m" in answer
+
+
+class TestBerthSelect:
+    """Clicking a berth must switch the route and the details, as in the design.
+    Hover re-rendered the pins, so a click's press and release could land on two
+    different elements and never register."""
+
+    def test_berth_selects_on_press(self, client):
+        js = client.get("/static/ld-dash.js").text
+        assert "el.addEventListener('pointerdown', e => { if(C.result && e.button === 0) select(k, null); });" in js
+
+    def test_hover_does_not_rebuild_in_a_loop(self, client):
+        js = client.get("/static/ld-dash.js").text
+        assert "if(C.hover !== k){ C.hover = k; renderPins(); }" in js
+        assert "el.addEventListener('mouseenter', () => { C.hover = k; renderPins(); });" not in js

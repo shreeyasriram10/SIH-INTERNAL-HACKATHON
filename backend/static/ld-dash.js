@@ -282,10 +282,12 @@
     }
     g.querySelectorAll('.pin-hit').forEach(el => {
       const k = el.getAttribute('data-port');
-      el.addEventListener('click', () => { if(C.result) select(k, null); });
+      // Select on press: hover re-renders the pins, so a click's press and release
+      // could land on two different elements and never register.
+      el.addEventListener('pointerdown', e => { if(C.result && e.button === 0) select(k, null); });
       el.addEventListener('keydown', e => { if((e.key === 'Enter' || e.key === ' ') && C.result){ e.preventDefault(); select(k, null); } });
-      el.addEventListener('mouseenter', () => { C.hover = k; renderPins(); });
-      el.addEventListener('mouseleave', () => { C.hover = null; renderPins(); });
+      el.addEventListener('mouseenter', () => { if(C.hover !== k){ C.hover = k; renderPins(); } });
+      el.addEventListener('mouseleave', () => { if(C.hover === k){ C.hover = null; renderPins(); } });
     });
   }
 
