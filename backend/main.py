@@ -1,5 +1,7 @@
+import hashlib
 import logging
 import os
+import re
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -84,6 +86,42 @@ app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 # filename -> (stat signature, body)
 _PAGE_CACHE: dict[str, tuple] = {}
 
+# Stylesheets and scripts under /static have the same frozen-mtime problem as
+# the pages: StaticFiles answers If-Modified-Since with 304 on a timestamp that
+# never changes between deployments, so a browser keeps the previous build's
+# CSS and JS against the new HTML. Each /static URL in a page is therefore
+# stamped with a hash of the file's content; a changed file is a new URL.
+_ASSET_URL = re.compile(r'((?:href|src)=")(/static/([^"?#]+))(")')
+# relative path -> (stat signature, short content hash)
+_ASSET_HASH: dict[str, tuple] = {}
+
+
+def _asset_version(relative: str) -> str | None:
+    path = os.path.normpath(os.path.join(STATIC_DIR, relative))
+    if not path.startswith(os.path.normpath(STATIC_DIR)):
+        return None
+    try:
+        stat = os.stat(path)
+    except OSError:
+        return None
+    signature = (stat.st_mtime_ns, stat.st_size)
+    cached = _ASSET_HASH.get(relative)
+    if cached is not None and cached[0] == signature:
+        return cached[1]
+    with open(path, "rb") as handle:
+        digest = hashlib.sha256(handle.read()).hexdigest()[:12]
+    _ASSET_HASH[relative] = (signature, digest)
+    return digest
+
+
+def _fingerprint(body: str) -> str:
+    def stamp(match):
+        version = _asset_version(match.group(3))
+        if not version:
+            return match.group(0)
+        return f"{match.group(1)}{match.group(2)}?v={version}{match.group(4)}"
+    return _ASSET_URL.sub(stamp, body)
+
 
 def _page(filename: str) -> HTMLResponse:
     """Serve an HTML shell with caching switched off.
@@ -118,7 +156,7 @@ def _page(filename: str) -> HTMLResponse:
         _PAGE_CACHE[filename] = (signature, body)
 
     return HTMLResponse(
-        content=body,
+        content=_fingerprint(body),
         headers={
             "Cache-Control": "no-store, must-revalidate",
             "Pragma": "no-cache",

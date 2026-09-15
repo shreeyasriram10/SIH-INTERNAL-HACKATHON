@@ -165,6 +165,7 @@ html[data-ldmode="light"] .sidenav{border-radius:0;box-shadow:0 8px 24px rgba(11
 html[data-ldmode="light"] .sidenav a{border-radius:0;}
 .sidenav a svg{width:18px;height:18px;flex:0 0 18px;opacity:1;stroke-width:1.7;}
 .sidenav a .ext{display:none;}
+.sidenav a,.sidenav a.active{border-bottom:0;white-space:nowrap;}
 .sidenav a:hover{background:var(--bg-hover);color:var(--ld-text);}
 .sidenav a.active{background:var(--ld-accent);color:#04121A;border-left:0;font-weight:600;
   box-shadow:0 8px 20px -10px rgba(63,184,206,.9);}
@@ -324,7 +325,21 @@ html[data-ldmode="light"] .about-hero h2{color:#FFFFFF;}
 .leaflet-popup-content-wrapper,.leaflet-popup-tip{background:var(--ld-overlay) !important;color:var(--ld-text) !important;}
 
 /* -------------------------------------------------------- RESPONSIVE ----- */
+/* gov-shell wraps the header at 1024px; keep it on one row down to tablet width. */
+.masthead-inner{flex-wrap:nowrap;}
+.topbar-actions{flex-wrap:nowrap;}
+@media(max-width:1180px){
+  .brand-sub{display:none;}
+  .ld-mode button{font-size:0;gap:0;padding:5px 7px;}
+  .ld-mode button svg{width:14px;height:14px;}
+}
 @media(max-width:1024px){
+  .masthead-inner{height:56px;padding:0 14px;}
+  .brand-text{font-size:13px;letter-spacing:.12em;}
+  .topbar-actions .icon-btn{padding:6px 9px;}
+}
+@media(max-width:860px){
+  .masthead-inner,.topbar-actions{flex-wrap:wrap;}
   .masthead-inner{height:auto;padding:8px 14px;}
 }
 /* Phones: the bar docks along the bottom edge, still icons only. */
@@ -343,3 +358,9 @@ html[data-ldmode="light"] .about-hero h2{color:#FFFFFF;}
 
 /* secondary pages: the training console stays a terminal in both modes */
 .console-box{background:#04121A !important;border:1px solid var(--ld-hair) !important;border-radius:var(--ld-r-sm) !important;}
+
+/* Leaflet tiles are light by design; invert them in the dark theme so the
+   waterways map does not glare out of the page. Markers and routes are drawn
+   in SVG panes and keep their colours. */
+html:not([data-ldmode="light"]) .leaflet-tile-pane{filter:invert(1) hue-rotate(180deg) brightness(.92) contrast(.88) saturate(.7);}
+html:not([data-ldmode="light"]) .leaflet-container{background:#0B2230;}

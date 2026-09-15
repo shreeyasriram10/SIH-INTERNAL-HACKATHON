@@ -363,9 +363,15 @@ def evaluate(
             landed_per_mt = landed / parcel_size
 
             if deadfreight_mt > 0:
+                # Quote the real empty space; only the part beyond the
+                # customary tolerance is charged. The message used to call the
+                # charged part "unused", understating the empty space by the
+                # tolerance (23,846 MT quoted where 35,384 MT sat empty).
+                unused_mt = booked_mt - parcel_size
                 warnings.append(
-                    f"{deadfreight_mt:,.0f} MT of booked space unused - "
-                    f"${deadfreight:,.0f} deadfreight at {utilisation * 100:.0f}% utilisation."
+                    f"{unused_mt:,.0f} MT of booked space unused at {utilisation * 100:.0f}% utilisation; "
+                    f"{deadfreight_mt:,.0f} MT beyond the {DEADFREIGHT_TOLERANCE * 100:.0f}% tolerance "
+                    f"is charged as ${deadfreight:,.0f} deadfreight."
                 )
 
             # --- risk -----------------------------------------------------

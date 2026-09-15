@@ -1914,3 +1914,106 @@ class TestDashboardPolish:
         assert 'class="ld-loader"' in js
         assert 'mpath href="#ldLoaderRoute"' in js
         assert "prefers-reduced-motion" in js
+
+
+# ---------- 22. BUG SWEEP ----------
+class TestBugSweep:
+    """Defects found in a full pass over the app after the redesign."""
+
+    # --- stale assets after a deploy ---------------------------------------
+    def test_static_assets_are_fingerprinted_by_content(self, client):
+        import re
+        body = client.get("/app").text
+        for asset in ("gov-shell.css", "ld-theme.css", "ld-dash.css", "ld-dash.js"):
+            assert re.search(r"/static/" + re.escape(asset) + r"\?v=[0-9a-f]{12}\"", body), asset
+
+    def test_fingerprint_changes_with_content(self, tmp_path, monkeypatch):
+        import main
+        (tmp_path / "x.css").write_text("a{}")
+        monkeypatch.setattr(main, "STATIC_DIR", str(tmp_path))
+        main._ASSET_HASH.clear()
+        first = main._fingerprint('<link href="/static/x.css">')
+        (tmp_path / "x.css").write_text("a{color:red}")
+        second = main._fingerprint('<link href="/static/x.css">')
+        main._ASSET_HASH.clear()
+        assert first != second and "?v=" in first and "?v=" in second
+
+    def test_fingerprint_ignores_paths_outside_static(self, client):
+        import main
+        html = '<script src="/static/../main.py"></script>'
+        assert main._fingerprint(html) == html
+
+    # --- layout -------------------------------------------------------------
+    def test_header_height_is_tracked_after_load(self, client):
+        js = client.get("/static/ld-dash.js").text
+        assert "new ResizeObserver(apply).observe(header)" in js
+
+    def test_header_stays_on_one_row_on_laptops(self, client):
+        css = client.get("/static/ld-theme.css").text
+        assert ".masthead-inner{flex-wrap:nowrap;}" in css
+
+    def test_active_rail_icon_has_no_legacy_underline(self, client):
+        css = client.get("/static/ld-theme.css").text
+        assert ".sidenav a,.sidenav a.active{border-bottom:0;" in css
+
+    def test_map_tiles_follow_the_dark_theme(self, client):
+        css = client.get("/static/ld-theme.css").text
+        assert ".leaflet-tile-pane{filter:invert(1)" in css
+
+    def test_headline_leads_the_chart_on_phones(self, client):
+        assert ".ldc-intro{order:-1;}" in client.get("/static/ld-dash.css").text
+
+    # --- data shown -----------------------------------------------------------
+    def test_freight_lane_follows_a_new_recommendation(self, client):
+        js = client.get("/static/ld-dash.js").text
+        assert "if(engineLane && !I.picked) I.origin = engineLane;" in js
+        assert "if(fresh) I.picked = false;" in js
+
+    def test_copilot_route_prompt_follows_the_plant(self, client):
+        assert "function syncCopilotPrompts" in client.get("/static/ld-dash.js").text
+
+    def test_deadfreight_warning_quotes_the_real_empty_space(self):
+        from database import SessionLocal
+        import models as m
+
+        with SessionLocal() as db:
+            ports, vessels = db.query(m.Port).all(), db.query(m.Vessel).all()
+        options = decision_engine.evaluate(
+            vessels=vessels, ports=ports, parcel_size=80000, cargo_type="Coking Coal",
+            origin="Australia", plant="Rourkela", window_days=30, month=9,
+            bunker_price=697.0, pressure_index=52.5, top_n=25)[0]
+        split = [o for o in options if o.shipments > 1 and o.deadfreight_usd > 0]
+        assert split, "expected a multi-shipment option with deadfreight"
+        o = split[0]
+        unused = o.shipments * o.effective_capacity_mt - o.parcel_mt
+        text = next(w for w in o.warnings if "booked space unused" in w)
+        quoted = float(text.split(" MT of booked space unused")[0].replace(",", ""))
+        assert abs(quoted - unused) <= 2, (quoted, unused)  # capacity field is rounded
+        assert "beyond the 10% tolerance" in text
+
+    # --- copilot --------------------------------------------------------------
+    def _context(self, auth_client):
+        d = auth_client.post("/api/decision/optimize", json={
+            "parcel_size": 80000, "cargo_type": "Thermal Coal", "origin": "Indonesia",
+            "plant": "Bhilai Steel Plant (BSP)", "window_days": 30, "month": 9,
+            "top_n": 25, "persist": False}).json()
+        return {"recommended": d["recommended"], "options": d["options"]}
+
+    def test_copilot_compares_two_named_ports(self, auth_client):
+        answer = auth_client.post("/api/copilot/ask", json={
+            "question": "Why Gangavaram over Visakhapatnam?",
+            "context": self._context(auth_client)}).json()["answer"]
+        assert "Gangavaram vs Visakhapatnam" in answer
+        assert "ranks ahead" in answer and "Berth wait" in answer
+
+    def test_copilot_comparison_follows_question_order(self, auth_client):
+        answer = auth_client.post("/api/copilot/ask", json={
+            "question": "Why not Haldia instead of Gangavaram?",
+            "context": self._context(auth_client)}).json()["answer"]
+        assert "Haldia vs Gangavaram" in answer
+
+    def test_copilot_does_not_call_total_draft_usable(self, auth_client):
+        answer = auth_client.post("/api/copilot/ask", json={
+            "question": "Tell me about Paradip"}).json()["answer"]
+        assert "Usable draft 18.1" not in answer
+        assert "usable 17.5 m" in answer

@@ -19,6 +19,7 @@ Two boundaries protect the answers:
          regardless of how it got there.
 """
 
+import html
 import re
 from dataclasses import dataclass, field
 
@@ -282,16 +283,100 @@ def _answer_vessel(ports, vessels, context, question):
                   ["Why this port?", "What is deadfreight?", "How is the cost built up?"])
 
 
+def _score(option: dict) -> float:
+    """The engine's ranking basis: cargo price plus risk-adjusted logistics."""
+    return (option.get("fob_usd_mt") or 0.0) + option.get("landed_cost_usd_mt", 0.0) * (
+        1.0 + 0.35 * option.get("risk_index", 0.0) / 100.0)
+
+
+def _compare_ports(a, b, context):
+    """'Why X over Y' - the best option the engine offered at each berth, side by side."""
+    options = [o for o in (context or {}).get("options") or [] if isinstance(o, dict)]
+    at = {}
+    for port in (a, b):
+        mine = [o for o in options if o.get("port_name") == port.name]
+        at[port.name] = min(mine, key=_score) if mine else None
+
+    oa, ob = at[a.name], at[b.name]
+    title = f"<b>{html.escape(a.name)} vs {html.escape(b.name)}</b>"
+
+    if not oa and not ob:
+        text = (
+            f"{title}<br>No strategy on screen covers either berth yet, so here is how they "
+            f"compare on the reference data:<br>"
+            f"&bull; Draft {a.draft_m:.1f} m vs {b.draft_m:.1f} m<br>"
+            f"&bull; Average pre-berthing wait {a.avg_wait_days:.1f} vs {b.avg_wait_days:.1f} days<br>"
+            f"&bull; Handling {a.mech_rate_mt_d:,.0f} vs {b.mech_rate_mt_d:,.0f} MT/day<br>"
+            f"&bull; Rail to {_plant_label(context)} {_rail_for(a, context):.0f} vs {_rail_for(b, context):.0f} km"
+            "<br><br>Run a strategy to compare their actual costs for your parcel."
+        )
+        return Answer(text, "Ports", ["/api/ports"], ["Why was this port chosen?", "How is the Risk Index calculated?"])
+
+    if not oa or not ob:
+        present, missing = (a, b) if oa else (b, a)
+        opt = oa or ob
+        text = (
+            f"{title}<br>The engine offered no option at <b>{html.escape(missing.name)}</b> for this "
+            f"parcel ({missing.draft_m:.1f} m draft), so {html.escape(present.name)} wins by default "
+            f"at {_fmt_usd(opt.get('landed_cost_usd_mt', 0))}/MT, risk {opt.get('risk_index', 0):.0f}/100."
+        )
+        return Answer(text, "Ports", ["decision engine"], ["Why is Haldia draft restricted?", "What is lightering?"])
+
+    winner, loser = (a, b) if _score(oa) <= _score(ob) else (b, a)
+    ow, ol = at[winner.name], at[loser.name]
+
+    def row(label, fa, fb):
+        return f"&bull; {label}: {fa(oa)} vs {fb(ob)}<br>"
+
+    money = lambda key: (lambda o: _fmt_usd(o.get(key, 0)) + "/MT")
+    lines = (
+        row("Vessel", lambda o: html.escape(str(o.get("vessel_class", "-"))), lambda o: html.escape(str(o.get("vessel_class", "-"))))
+        + row("Landed cost", money("landed_cost_usd_mt"), money("landed_cost_usd_mt"))
+        + row("Risk index", lambda o: f"{o.get('risk_index', 0):.0f}", lambda o: f"{o.get('risk_index', 0):.0f}")
+        + row("Berth wait", lambda o: f"{o.get('wait_days', 0):.1f} d", lambda o: f"{o.get('wait_days', 0):.1f} d")
+        + row("Rail to plant", lambda o: f"{o.get('rail_km', 0):.0f} km", lambda o: f"{o.get('rail_km', 0):.0f} km")
+        + row("Lightering", lambda o: "yes" if o.get("requires_lightering") else "no",
+              lambda o: "yes" if o.get("requires_lightering") else "no")
+    )
+
+    reasons = []
+    if ol.get("requires_lightering") and not ow.get("requires_lightering"):
+        reasons.append(f"{html.escape(loser.name)} needs lightering")
+    if ol.get("wait_days", 0) - ow.get("wait_days", 0) >= 0.5:
+        reasons.append(f"{ol['wait_days'] - ow['wait_days']:.1f} more days of berth queue at {html.escape(loser.name)}")
+    if ol.get("rail_km", 0) - ow.get("rail_km", 0) >= 40:
+        reasons.append(f"{ol['rail_km'] - ow['rail_km']:.0f} km more rail from {html.escape(loser.name)}")
+    if ol.get("monsoon_risk_score", 0) - ow.get("monsoon_risk_score", 0) >= 10:
+        reasons.append(f"higher seasonal exposure at {html.escape(loser.name)}")
+    if ol.get("congestion_score", 0) - ow.get("congestion_score", 0) >= 10:
+        reasons.append(f"heavier congestion at {html.escape(loser.name)}")
+
+    gap = _score(ol) - _score(ow)
+    cheaper_but_riskier = ol.get("landed_cost_usd_mt", 0) < ow.get("landed_cost_usd_mt", 0)
+    verdict = (
+        f"<br><b>{html.escape(winner.name)} ranks ahead</b> by {_fmt_usd(gap)}/MT on the risk-adjusted basis the engine uses"
+        + (f" - {html.escape(loser.name)} is cheaper per tonne but carries more risk" if cheaper_but_riskier else "")
+        + (". Main differences: " + "; ".join(reasons) + "." if reasons else ".")
+    )
+    text = f"{title} for the parcel on screen<br>{lines}{verdict}"
+    return Answer(text, "Ports", ["decision engine"],
+                  ["How is the Risk Index calculated?", "How are competing strategies ranked?"])
+
+
 def _answer_port(ports, vessels, context, question):
     lowered = question.lower()
     named = [p for p in ports if p.name.lower().split("/")[0] in lowered]
+    named.sort(key=lambda p: lowered.find(p.name.lower().split("/")[0]))
     best = _best(context)
+
+    if len(named) >= 2:
+        return _compare_ports(named[0], named[1], context)
 
     if named:
         p = named[0]
         text = (
             f"<b>{p.name} ({p.code})</b><br>"
-            f"Usable draft {p.draft_m:.1f} m &middot; LOA limit {p.max_loa:.0f} m &middot; "
+            f"Berth draft {p.draft_m:.1f} m (usable {p.draft_m - 0.6:.1f} m after under-keel clearance) &middot; LOA limit {p.max_loa:.0f} m &middot; "
             f"{p.berths} berth(s)<br>"
             f"Mechanised handling {p.mech_rate_mt_d:,.0f} MT/day &middot; "
             f"average pre-berthing wait {p.avg_wait_days:.1f} days<br>"

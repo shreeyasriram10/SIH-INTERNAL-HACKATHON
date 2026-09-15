@@ -495,18 +495,37 @@
     C.result = result;
     C.inputs = inputs || activeInputs;
     if(fresh) C.runAt = new Date();
+    if(fresh) I.picked = false;
     if(fresh || !C.port){
       C.port = result.winner.portKey;
       C.cls = result.winner.vesselClassKey;
     }
     renderCommand();
+    syncCopilotPrompts(C.inputs);
     if(isShown('intelligence')) renderIntel();
     if(isShown('approved')) renderBrief();
     landByRole();
   }
 
+  // The quick prompt named Rourkela whatever plant was on screen.
+  function syncCopilotPrompts(inputs){
+    const plant = (PLANT_LABEL[inputs && inputs.plant] || '').replace(/\s*\(.*\)/, '');
+    if(!plant) return;
+    document.querySelectorAll('.prompt-btn').forEach(btn => {
+      if(/best route for|optimal route for/i.test(btn.getAttribute('onclick') || '')){
+        btn.textContent = `What is the optimal route for ${plant}?`;
+        btn.onclick = () => askCopilot(`What is the best route for ${plant}?`);
+        btn.removeAttribute('onclick');
+        btn.dataset.routePrompt = '1';
+      }else if(btn.dataset.routePrompt){
+        btn.textContent = `What is the optimal route for ${plant}?`;
+        btn.onclick = () => askCopilot(`What is the best route for ${plant}?`);
+      }
+    });
+  }
+
   /* ============================================================= INTEL */
-  const I = {origin:null, curves:null, key:'', loading:false, mounted:false};
+  const I = {origin:null, picked:false, curves:null, key:'', loading:false, mounted:false};
 
   function isShown(name){ return !!$('panel-' + name)?.classList.contains('active'); }
 
@@ -578,8 +597,10 @@
     const key = month + '|' + keys.map(k => lanePressure(k)).join(',');
     $('ldiLanes').textContent = String(keys.length).padStart(2, '0');
 
+    const engineLane = laneOf(activeResult);
+    if(engineLane && !I.picked) I.origin = engineLane;
     if(!I.origin){
-      const lane = laneOf(activeResult);
+      const lane = engineLane;
       I.origin = lane || keys.find(k => ORIGINS[k].cargo.includes(inputs.cargoType)) || keys[0];
     }
 
@@ -670,7 +691,7 @@
       </tr>`;
     }).join('');
     $('ldiRows').querySelectorAll('[data-origin]').forEach(tr => {
-      const pickLane = () => { I.origin = tr.getAttribute('data-origin'); drawIntel(); };
+      const pickLane = () => { I.origin = tr.getAttribute('data-origin'); I.picked = true; drawIntel(); };
       tr.addEventListener('click', pickLane);
       tr.addEventListener('keydown', e => { if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); pickLane(); } });
     });
@@ -861,9 +882,19 @@
     }
   }
 
+  function trackHeaderHeight(){
+    const header = document.querySelector('.gov-header');
+    if(!header) return;
+    const apply = () => document.documentElement.style.setProperty('--header-h', header.offsetHeight + 'px');
+    apply();
+    if(window.ResizeObserver) new ResizeObserver(apply).observe(header);
+    else window.addEventListener('resize', apply);
+  }
+
   mountCommand();
   mountIntel();
   mountLoader();
+  trackHeaderHeight();
 
   window.LDDash = {select, renderIntel, renderBrief, state:{command:C, intel:I}};
 })();
