@@ -145,27 +145,40 @@ html[data-ldmode="light"] .ld-mode button[aria-pressed="true"]{color:#FFFFFF;}
 .badge-num{background:var(--ld-ink) !important;color:#FFFFFF !important;}
 
 /* ------------------------------------------------------------- ICON RAIL -- */
-.app-shell{max-width:none;}
-.sidenav{top:var(--header-h);width:var(--rail-w);flex:0 0 var(--rail-w);height:calc(100vh - var(--header-h));
-  background:var(--ld-chrome);border-right:1px solid var(--ld-hair);padding:12px 0 14px;overflow:visible;
-  display:flex;flex-direction:column;}
-.sidenav-group{padding:0 14px;margin:0;display:flex;flex-direction:column;gap:6px;}
-.sidenav-group + .sidenav-group{margin-top:10px;padding-top:10px;border-top:1px solid var(--ld-hair);}
-.sidenav-label{display:none;}
-.sidenav a{position:relative;width:44px;height:40px;padding:0;margin:0;justify-content:center;gap:0;
-  font-size:0;border-left:0;border-radius:var(--ld-r-sm);color:var(--ld-mute);}
+/* A detached, always-collapsed bar floating beside the content. Icons only;
+   the section name appears as a tooltip on hover or keyboard focus. */
+html{--rail-float-w:58px;--rail-gutter:88px;}
+.app-shell{display:block;max-width:none;}
+.app-main{margin-left:var(--rail-gutter);min-width:0;}
+.sidenav{position:fixed;left:14px;top:calc(var(--header-h) + 14px);z-index:130;
+  width:var(--rail-float-w);height:auto;max-height:calc(100vh - var(--header-h) - 28px);flex:none;
+  display:flex;flex-direction:column;align-items:center;gap:0;padding:8px 0;overflow:visible;
+  background:var(--ld-chrome);border:1px solid var(--ld-hair-strong);border-radius:16px;
+  box-shadow:0 22px 48px -24px rgba(0,8,14,.9),0 1px 0 rgba(255,255,255,.05) inset;
+  backdrop-filter:blur(14px) saturate(120%);-webkit-backdrop-filter:blur(14px) saturate(120%);}
+html[data-ldmode="light"] .sidenav{border-radius:0;box-shadow:0 8px 24px rgba(11,30,41,.14);background:#FFFFFF;}
+.sidenav-group{padding:0 7px;margin:0;display:flex;flex-direction:column;align-items:center;gap:4px;}
+.sidenav-group + .sidenav-group{margin-top:8px;padding-top:8px;border-top:1px solid var(--ld-hair);}
+.sidenav-label,.sidenav-foot{display:none;}
+.sidenav a{position:relative;width:42px;height:40px;padding:0;margin:0;justify-content:center;gap:0;
+  font-size:0;border-left:0;border-radius:10px;color:var(--ld-mute);}
+html[data-ldmode="light"] .sidenav a{border-radius:0;}
 .sidenav a svg{width:18px;height:18px;flex:0 0 18px;opacity:1;stroke-width:1.7;}
 .sidenav a .ext{display:none;}
 .sidenav a:hover{background:var(--bg-hover);color:var(--ld-text);}
-.sidenav a.active{background:var(--ld-accent);color:#04121A;border-left:0;font-weight:600;}
-html[data-ldmode="light"] .sidenav a.active{color:#FFFFFF;}
+.sidenav a.active{background:var(--ld-accent);color:#04121A;border-left:0;font-weight:600;
+  box-shadow:0 8px 20px -10px rgba(63,184,206,.9);}
+html[data-ldmode="light"] .sidenav a.active{color:#FFFFFF;box-shadow:none;}
+.sidenav a::before{content:"";position:absolute;left:calc(100% + 8px);top:50%;width:8px;height:8px;
+  background:var(--ld-overlay);border-left:1px solid var(--ld-hair-strong);border-bottom:1px solid var(--ld-hair-strong);
+  transform:translateY(-50%) rotate(45deg);opacity:0;pointer-events:none;transition:opacity .12s ease;z-index:301;}
 .sidenav a::after{content:attr(data-label);position:absolute;left:calc(100% + 12px);top:50%;transform:translateY(-50%) translateX(-4px);
   white-space:nowrap;font:600 12px var(--ld-font-body);letter-spacing:0;color:var(--ld-text);background:var(--ld-overlay);
   border:1px solid var(--ld-hair-strong);border-radius:var(--ld-r-sm);padding:6px 10px;box-shadow:var(--shadow-lg);
   opacity:0;pointer-events:none;transition:opacity .12s ease,transform .12s ease;z-index:300;}
 .sidenav a:hover::after,.sidenav a:focus-visible::after{opacity:1;transform:translateY(-50%) translateX(0);}
-.sidenav-foot{margin-top:auto;border-top:0;padding:10px 0 0;text-align:center;font-size:0;color:var(--ld-faint);}
-.sidenav-foot #railBuild{font-size:10px;letter-spacing:.06em;}
+.sidenav a:hover::before,.sidenav a:focus-visible::before{opacity:1;}
+.gov-footer{margin-left:0;}
 
 /* ------------------------------------------------------------ CONTENT ----- */
 /* --gov-navy is both a text colour and a dark fill in the original CSS; give
@@ -312,14 +325,19 @@ html[data-ldmode="light"] .about-hero h2{color:#FFFFFF;}
 
 /* -------------------------------------------------------- RESPONSIVE ----- */
 @media(max-width:1024px){
-  html{--rail-w:100%;}
-  .sidenav{position:static;width:100%;height:auto;flex-direction:row;padding:6px 10px;overflow-x:auto;border-right:0;border-bottom:1px solid var(--ld-hair);}
-  .sidenav-group{flex-direction:row;padding:0;}
-  .sidenav-group + .sidenav-group{margin:0 0 0 6px;padding:0 0 0 6px;border-top:0;border-left:1px solid var(--ld-hair);}
-  .sidenav a{width:auto;padding:0 12px;font-size:12.5px;gap:8px;white-space:nowrap;}
-  .sidenav a::after{display:none;}
-  .sidenav-foot{display:none;}
   .masthead-inner{height:auto;padding:8px 14px;}
+}
+/* Phones: the bar docks along the bottom edge, still icons only. */
+@media(max-width:640px){
+  html{--rail-gutter:0px;}
+  .app-main{padding-bottom:78px;}
+  .sidenav{top:auto;bottom:10px;left:10px;right:10px;width:auto;max-height:none;flex-direction:row;justify-content:space-between;
+    padding:6px 8px;overflow-x:auto;}
+  .sidenav-group{flex-direction:row;padding:0;gap:2px;}
+  .sidenav-group + .sidenav-group{margin:0 0 0 4px;padding:0 0 0 4px;border-top:0;border-left:1px solid var(--ld-hair);}
+  .sidenav a{width:38px;height:38px;}
+  .sidenav a::after,.sidenav a::before{display:none;}
+  .copilot-fab{bottom:84px !important;}
 }
 @media(prefers-reduced-motion:reduce){*{transition:none !important;}}
 

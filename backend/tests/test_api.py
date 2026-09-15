@@ -1881,3 +1881,36 @@ class TestDashboards:
         """The ranked list needs every offered pairing; the endpoint allows 25."""
         import schemas
         assert schemas.OptimizeRequest.model_fields["top_n"].metadata[-1].le >= 25
+
+
+# ---------- 21. DASHBOARD POLISH ----------
+class TestDashboardPolish:
+    """Follow-ups from review: the strategy panel hid the route, the section
+    rail unfolded into a labelled strip on laptop widths, and the engine's
+    loading screen was a bare spinner."""
+
+    def test_rail_is_a_detached_collapsed_bar_at_every_desktop_width(self, client):
+        css = client.get("/static/ld-theme.css").text
+        assert ".sidenav{position:fixed;" in css
+        assert "content:attr(data-label)" in css
+        assert ".masthead-inner{height:auto;padding:8px 14px;}" in css
+        assert ".sidenav a{width:auto;padding:0 12px;font-size:12.5px" not in css
+
+    def test_chart_keeps_clear_of_the_strategy_panel(self, client):
+        css = client.get("/static/ld-dash.css").text
+        assert "width:calc(100% - min(350px,42vw) - 64px)" in css
+        assert ".ldc-hero.panel-min .ldc-map{width:100%;}" in css
+
+    def test_strategy_panel_can_be_minimised(self, client):
+        js = client.get("/static/ld-dash.js").text
+        assert 'id="ldcMin"' in js and "panel-min" in js
+
+    def test_hovering_a_berth_shows_its_engine_figures(self, client):
+        js = client.get("/static/ld-dash.js").text
+        assert "const ho = optionFor(C.hover, C.cls);" in js
+
+    def test_loading_screen_animates_a_ship_toward_the_forecast(self, client):
+        js = client.get("/static/ld-dash.js").text
+        assert 'class="ld-loader"' in js
+        assert 'mpath href="#ldLoaderRoute"' in js
+        assert "prefers-reduced-motion" in js

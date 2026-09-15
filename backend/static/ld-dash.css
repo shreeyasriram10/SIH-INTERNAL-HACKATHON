@@ -209,12 +209,34 @@ html[data-ldmode="light"] .ldc-class.on{color:#FFFFFF;}
 .ldb-readonly{display:inline-flex;align-items:center;gap:6px;font-size:11px;color:var(--ld-mute);border:1px solid var(--ld-hair);padding:5px 9px;border-radius:var(--ld-r-sm);}
 .ldb-readonly svg{width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:2;}
 
+/* ---- hero layout: the chart keeps clear of the headline and the panel ---- */
+.ldc-hero{height:min(66vh,620px);min-height:480px;}
+.ldc-map{inset:auto;left:0;top:clamp(150px,26%,178px);width:calc(100% - min(350px,42vw) - 64px);
+  height:calc(100% - clamp(150px,26%,178px) - 40px);transition:width .35s cubic-bezier(.2,.8,.25,1);}
+.ldc-hero.panel-min .ldc-map{width:100%;}
+.ldc-hero.panel-min .ldc-panel-body{display:none;}
+.ldc-hero.panel-min .ldc-panel{width:auto;}
+.ldc-min{width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;padding:0;cursor:pointer;
+  background:transparent;border:1px solid var(--ld-hair-strong);border-radius:var(--ld-r-sm);color:var(--ld-dim);}
+.ldc-min:hover{background:var(--bg-hover);color:var(--ld-text);}
+.ldc-min svg{width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;}
+
+/* ---- loading screen ---- */
+.loading-overlay{gap:12px !important;}
+.ld-loader{width:min(440px,84vw);height:auto;display:block;margin-bottom:4px;}
+.ld-loader .wave{stroke-dasharray:10 12;animation:ldWave 2.2s linear infinite;}
+.ld-loader .wave.w2{animation-duration:3.1s;animation-direction:reverse;}
+.ld-loader .trail{stroke-dasharray:2 8;animation:ldDashFlow 1.1s linear infinite;opacity:.85;}
+@keyframes ldWave{to{stroke-dashoffset:-44;}}
+@keyframes ldDashFlow{to{stroke-dashoffset:-20;}}
+@media(prefers-reduced-motion:reduce){.ld-loader .wave,.ld-loader .trail{animation:none;}}
+
 @keyframes ldTrace{from{stroke-dashoffset:760;}to{stroke-dashoffset:0;}}
 @keyframes ldRiseIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
 @media(prefers-reduced-motion:reduce){.ldc-map .route{animation:none;stroke-dasharray:none;}}
 @media(max-width:900px){
   .ldc-hero{height:auto;min-height:0;display:flex;flex-direction:column;}
-  .ldc-map{position:relative;height:300px;}
+  .ldc-map{position:relative;top:auto;width:100%;height:300px;}
   .ldc-intro,.ldc-legend{position:static;padding:14px 18px 0;max-width:none;}
   .ldc-panel{position:relative;top:auto;right:auto;width:auto;margin:14px 18px 18px;}
   .ld-wrap{padding:18px;}

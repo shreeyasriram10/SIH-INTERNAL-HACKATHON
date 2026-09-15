@@ -31,7 +31,7 @@
     INPRT:[274,171,288,174], INGOP:[302,212,314,216], INGGV:[330,248,342,244],
     INVTZ:[352,270,364,282]
   };
-  const ORIGIN_AT = {australia:[862,298], indonesia:[866,150], south_africa:[612,334], usa:[612,334]};
+  const ORIGIN_AT = {australia:[700,304], indonesia:[706,130], south_africa:[560,336], usa:[560,336]};
   const INR_PER_USD = 83.5;
   const UKC_M = 0.6, MAX_LIGHTER_GAP_M = 4.0;
 
@@ -102,12 +102,12 @@
     host.id = 'ldCommand';
     host.innerHTML = `
       <section class="ldc-hero" aria-label="Live decision surface">
-        <svg class="ldc-map" viewBox="-60 -120 1000 480" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Schematic chart of India's east coast berths">
+        <svg class="ldc-map" viewBox="-20 20 740 332" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Schematic chart of India's east coast berths">
           <defs><pattern id="ldcSea" width="46" height="46" patternUnits="userSpaceOnUse"><path d="M0 0H46M0 0V46" fill="none" stroke="var(--ld-map-grid)" stroke-width="1"/></pattern></defs>
           <rect x="-60" y="-120" width="1000" height="480" fill="url(#ldcSea)"/>
           <path d="M-60 -120 L92 -120 L120 0 L150 30 L186 74 L206 92 L248 140 L274 171 L302 212 L330 248 L352 270 L372 300 L380 360 L-60 360 Z" fill="var(--ld-map-land)" stroke="var(--ld-map-land-bd)" stroke-width="1.5"/>
           <text x="96" y="248" fill="var(--ld-map-label)" font-size="14" letter-spacing="3" opacity=".8">INDIA</text>
-          <text x="548" y="86" fill="var(--ld-map-faint)" font-size="14" letter-spacing="3">BAY OF BENGAL</text>
+          <text x="470" y="90" fill="var(--ld-map-faint)" font-size="14" letter-spacing="3">BAY OF BENGAL</text>
           <g id="ldcRoute"></g>
           <g id="ldcPins"></g>
         </svg>
@@ -124,8 +124,8 @@
           <span>Schematic, not to scale</span>
         </div>
         <aside class="ldc-panel" id="ldcPanel" aria-live="polite">
-          <div class="ldc-panel-head"><span class="ldc-verdict" id="ldcVerdict">Decision engine</span><span class="ldc-rank" id="ldcRank"></span></div>
-          <div class="ldc-panel-body">
+          <div class="ldc-panel-head"><span class="ldc-verdict" id="ldcVerdict">Decision engine</span><span style="display:inline-flex;align-items:center;gap:8px"><span class="ldc-rank" id="ldcRank"></span><button class="ldc-min" id="ldcMin" type="button" aria-expanded="true" aria-controls="ldcPanelBody" title="Minimise panel"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 12h12"/></svg></button></span></div>
+          <div class="ldc-panel-body" id="ldcPanelBody">
             <div class="ldc-title" id="ldcTitle">Running the decision engine</div>
             <div class="ldc-meta" id="ldcMeta">Scoring every origin, berth and vessel class for the cargo on file.</div>
             <div id="ldcFigures">
@@ -213,6 +213,16 @@
       if(C.result) select(C.result.winner.portKey, C.result.winner.vesselClassKey);
     });
     $('ldcExpand').addEventListener('click', () => { C.expanded = !C.expanded; renderBuild(); });
+    $('ldcMin').addEventListener('click', () => {
+      const hero = host.querySelector('.ldc-hero');
+      const min = !hero.classList.contains('panel-min');
+      hero.classList.toggle('panel-min', min);
+      $('ldcMin').setAttribute('aria-expanded', String(!min));
+      $('ldcMin').title = min ? 'Expand panel' : 'Minimise panel';
+      $('ldcMin').innerHTML = min
+        ? '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 12h12M12 6v12"/></svg>'
+        : '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 12h12"/></svg>';
+    });
     $('ldAnalysisBtn').addEventListener('click', () => {
       const box = $('ldAnalysis'), open = !box.classList.contains('open');
       box.classList.toggle('open', open);
@@ -257,6 +267,19 @@
         <circle class="pin-hit" data-port="${k}" cx="${x}" cy="${y}" r="17" fill="transparent" tabindex="0" role="button" aria-label="Select ${esc(p.name)}"/>
       </g>`;
     }).join('');
+    if(C.hover && C.result && C.cls){
+      const hp = PORTS[C.hover], [hx, hy] = PIN[hp.code];
+      const ho = optionFor(C.hover, C.cls);
+      const line = ho
+        ? `${VESSEL_CLASSES[C.cls].name}: ${money(ho.base.total)}/MT \u00b7 risk ${Math.round(ho.api.risk_index)}`
+        : `${VESSEL_CLASSES[C.cls].name}: not offered`;
+      const tx = Math.min(hx + 16, 520), ty = Math.max(hy - 44, 24);
+      g.insertAdjacentHTML('beforeend', `<g pointer-events="none">
+        <rect x="${tx}" y="${ty}" width="190" height="38" rx="4" fill="var(--ld-map-card)" stroke="var(--ld-hair-strong)"/>
+        <text x="${tx + 10}" y="${ty + 16}" fill="var(--ld-text)" font-size="12" font-weight="700">${esc(hp.name)}</text>
+        <text x="${tx + 10}" y="${ty + 30}" fill="${ho ? 'var(--ld-map-label)' : 'var(--ld-crit-ink)'}" font-size="10.5">${esc(line)}</text>
+      </g>`);
+    }
     g.querySelectorAll('.pin-hit').forEach(el => {
       const k = el.getAttribute('data-port');
       el.addEventListener('click', () => { if(C.result) select(k, null); });
@@ -275,10 +298,11 @@
     const best = PIN[PORTS[C.result.winner.portKey].code];
     const o = ORIGINS[lane];
     const place = (o.name.match(/\(([^)]+)\)/) || [, ''])[1];
-    const bx = Math.min(ox - 12, 712), by = oy - 46;
+    const bx = ox - 196, by = oy - 104;
     g.innerHTML = `
       <path d="M${ox} ${oy} C${ox - 140} ${oy + 24} ${Math.round((best[0] + 520) / 2)} ${best[1] + 55} ${best[0]} ${best[1]}" fill="none" stroke="var(--ld-map-faint)" stroke-width="1.5" stroke-dasharray="2 7" opacity=".5"/>
       <path class="route" d="M${ox} ${oy} C${ox - 140} ${oy + 24} ${Math.round((px + 520) / 2)} ${py + 55} ${px} ${py}" fill="none" stroke="var(--ld-ink)" stroke-width="2.5" stroke-linecap="round"/>
+      <line x1="${ox}" y1="${oy - 6}" x2="${ox}" y2="${by + 40}" stroke="var(--ld-hair-strong)" stroke-width="1"/>
       <circle cx="${ox}" cy="${oy}" r="6" fill="var(--ld-map-faint)"/>
       <rect x="${bx}" y="${by}" width="196" height="40" fill="var(--ld-map-card)" stroke="var(--ld-hair)"/>
       <text x="${bx + 10}" y="${by + 18}" fill="var(--ld-text)" font-size="15" font-weight="600">${esc(o.short.toUpperCase())}</text>
@@ -795,8 +819,51 @@
     return out;
   };
 
+  function mountLoader(){
+    const overlay = $('loadingOverlay');
+    const spinner = overlay && overlay.querySelector('.spinner');
+    if(!spinner || overlay.querySelector('.ld-loader')) return;
+    spinner.insertAdjacentHTML('afterend', `
+      <svg class="ld-loader" viewBox="0 0 400 130" role="img" aria-label="A vessel steaming toward the freight forecast">
+        <defs>
+          <linearGradient id="ldLoaderWake" x1="0" x2="1"><stop offset="0" stop-color="#9BE3EF" stop-opacity="0"/><stop offset="1" stop-color="#9BE3EF" stop-opacity=".6"/></linearGradient>
+        </defs>
+        <path class="wave" d="M0 108 C40 102 80 114 120 108 S200 102 240 108 S320 114 360 108 S400 104 400 104" fill="none" stroke="rgba(234,243,246,.22)" stroke-width="1.5"/>
+        <path class="wave w2" d="M0 120 C40 114 80 126 120 120 S200 114 240 120 S320 126 360 120 S400 116 400 116" fill="none" stroke="rgba(234,243,246,.12)" stroke-width="1.5"/>
+        <path id="ldLoaderRoute" class="trail" d="M24 88 C96 72 170 100 238 82 S306 68 326 66" fill="none" stroke="#FF5436" stroke-width="2" stroke-linecap="round"/>
+        <g transform="translate(352 60)">
+          <circle r="26" fill="rgba(63,184,206,.14)" stroke="rgba(63,184,206,.45)"/>
+          <line x1="-14" y1="12" x2="14" y2="12" stroke="rgba(234,243,246,.3)"/>
+          <polyline points="-13,8 -5,1 2,5 12,-8" fill="none" stroke="#3FB8CE" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M5 -9 L12 -8 L11 -1" fill="none" stroke="#3FB8CE" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="12" cy="-8" r="3" fill="none" stroke="#9BE3EF" stroke-width="1.5" class="ld-anim">
+            <animate attributeName="r" values="3;17" dur="1.6s" repeatCount="indefinite"/>
+            <animate attributeName="opacity" values=".95;0" dur="1.6s" repeatCount="indefinite"/>
+          </circle>
+        </g>
+        <g id="ldLoaderShip">
+          <g transform="translate(0 -2)">
+            <path d="M-60 -1 C-44 -4 -34 -4 -24 -2" fill="none" stroke="url(#ldLoaderWake)" stroke-width="3" stroke-linecap="round"/>
+            <path d="M-24 -10 H26 L18 0 H-20 Z" fill="#EAF3F6"/>
+            <rect x="-20" y="-22" width="9" height="12" fill="#EAF3F6"/>
+            <rect x="-18" y="-19" width="5" height="3" fill="#0B2A3A"/>
+            <rect x="-8" y="-16" width="8" height="6" fill="#3FB8CE"/>
+            <rect x="1" y="-16" width="8" height="6" fill="#FF5436"/>
+            <rect x="10" y="-16" width="8" height="6" fill="#3FB8CE"/>
+          </g>
+          <animateMotion class="ld-anim" dur="3.2s" repeatCount="indefinite" rotate="auto" keyPoints="0;1" keyTimes="0;1" calcMode="spline" keySplines="0.45 0 0.35 1"><mpath href="#ldLoaderRoute"/></animateMotion>
+        </g>
+      </svg>`);
+    spinner.classList.add('ld-legacy');
+    if(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches){
+      overlay.querySelectorAll('.ld-loader animate, .ld-loader animateMotion').forEach(n => n.remove());
+      $('ldLoaderShip').setAttribute('transform', 'translate(238 80)');
+    }
+  }
+
   mountCommand();
   mountIntel();
+  mountLoader();
 
   window.LDDash = {select, renderIntel, renderBrief, state:{command:C, intel:I}};
 })();
