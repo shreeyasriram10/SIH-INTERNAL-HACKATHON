@@ -6,382 +6,447 @@
 <title>LOHA DRISHTI — Ministry of Steel Secure Gateway</title>
 <link rel="icon" type="image/svg+xml" href="/static/loha-drishti-logo.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
 <style>
-*{box-sizing:border-box;margin:0;padding:0;}
-body{
-  font-family:'IBM Plex Sans',sans-serif;
-  background:radial-gradient(ellipse at 50% 20%,#FFFFFF 0%,#F8FAFC 65%,#F1F5F9 100%);
-  min-height:100vh;
-  display:flex;flex-direction:column;
-  align-items:center;justify-content:center;
-  padding:24px 20px;color:#0F172A;
-}
-.brand{text-align:center;margin-bottom:28px;}
-.logo{
-  width:70px;height:70px;border-radius:16px;
-  background:linear-gradient(135deg,#1E293B,#0F172A);
-  border:2px solid #F59E0B;
-  display:inline-flex;align-items:center;justify-content:center;
-  font-size:30px;font-weight:700;font-family:'Space Grotesk';color:#FFF;
-  box-shadow:0 0 30px rgba(245,158,11,0.3);margin-bottom:12px;
-}
-.brand h1{font-family:'Space Grotesk';font-size:26px;font-weight:700;letter-spacing:0.04em;margin-bottom:4px;}
-.brand p{font-size:12px;color:#64748B;line-height:1.5;}
-.gov-badge{
-  display:inline-block;margin-top:8px;
-  background:#FFFBEB;border:1px solid #FDE68A;
-  padding:3px 12px;border-radius:20px;font-size:11px;color:#B45309;
-}
-.card{
-  width:100%;max-width:440px;
-  background:#FFFFFF;border:1px solid #E2E8F0;
-  border-radius:16px;padding:28px 24px;
-  box-shadow:0 20px 40px rgba(15,23,42,0.12);
-}
-.card-title{font-family:'Space Grotesk';font-size:17px;font-weight:700;margin-bottom:4px;}
-.card-sub{font-size:12px;color:#64748B;margin-bottom:18px;}
+*{box-sizing:border-box;}
+html,body{margin:0;height:100%;}
+body{font-family:'Inter',system-ui,-apple-system,sans-serif;background:#06161F;color:#FFFFFF;-webkit-font-smoothing:antialiased;}
+button,input{font-family:inherit;}
 
-/* Tabs */
-.tabs{display:flex;background:#F1F5F9;border-radius:8px;padding:3px;margin-bottom:20px;border:1px solid #E2E8F0;}
-.tab-btn{flex:1;padding:8px;font-size:12px;font-weight:600;color:#64748B;background:transparent;border:none;border-radius:6px;cursor:pointer;transition:all 0.15s;}
-.tab-btn.active{background:#FFFFFF;color:#0F172A;box-shadow:0 2px 4px rgba(15,23,42,0.08);}
-.panel{display:none;}
-.panel.active{display:block;}
+/* ---------- landing ---------- */
+.hero{position:relative;height:100vh;min-height:520px;overflow:hidden;background:#06161F;}
+.hero-ground{position:absolute;inset:0;background:
+  radial-gradient(1200px 680px at 72% 8%, #1E6B78 0%, rgba(30,107,120,0) 62%),
+  radial-gradient(900px 620px at 18% 92%, #072230 0%, rgba(7,34,48,0) 66%),
+  linear-gradient(168deg, #0A3140 0%, #0B2A3A 38%, #071C28 72%, #05131C 100%);}
+.hero-swell{position:absolute;inset:0;width:100%;height:100%;opacity:.55;}
+.hero-photo{position:absolute;inset:0;background:url('/static/login-hero.webp') center/cover no-repeat;}
+.hero-shade{position:absolute;inset:0;pointer-events:none;background:
+  linear-gradient(100deg, rgba(4,16,24,.86) 0%, rgba(4,16,24,.60) 34%, rgba(4,16,24,.12) 62%, rgba(4,16,24,.34) 100%),
+  linear-gradient(180deg, rgba(4,16,24,.58) 0%, rgba(4,16,24,0) 26%, rgba(4,16,24,0) 58%, rgba(4,16,24,.62) 100%);}
 
-/* Role pills */
-.role-title{font-size:10.5px;font-weight:700;color:#F59E0B;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:7px;}
-.roles{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:16px;}
-.role-btn{
-  padding:8px 6px;background:#F8FAFC;
-  border:1px solid #E2E8F0;border-radius:7px;
-  color:#334155;font-size:11px;cursor:pointer;text-align:left;
-  transition:all 0.15s;line-height:1.4;
+.hero-layout{position:relative;height:100%;display:flex;flex-direction:column;justify-content:space-between;
+  gap:clamp(20px,3vh,44px);padding:clamp(20px,3vw,44px);}
+
+.brand-row{display:flex;align-items:center;justify-content:space-between;gap:24px;flex-wrap:wrap;}
+.brand{display:flex;align-items:center;gap:16px;}
+.brand-mark{width:46px;height:46px;flex:0 0 46px;background:#FFFFFF;padding:4px;}
+.brand-mark img{width:100%;height:100%;display:block;}
+.brand-name{font-size:19px;font-weight:700;letter-spacing:.16em;line-height:1;}
+.brand-sub{font-size:11.5px;letter-spacing:.06em;color:rgba(255,255,255,.62);margin-top:6px;}
+
+.btn-ink{display:inline-flex;align-items:center;justify-content:center;gap:10px;min-height:46px;padding:0 24px;
+  font-size:13px;font-weight:700;letter-spacing:.14em;color:#FFFFFF;background:#D64426;border:1px solid #D64426;
+  border-radius:0;cursor:pointer;transition:background .16s ease,border-color .16s ease;}
+.btn-ink:hover{background:#BC3A1F;border-color:#BC3A1F;}
+.btn-ink:active{background:#A33218;}
+.btn-ink:disabled{opacity:.7;cursor:progress;}
+.btn-ink svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+.btn-ink:focus-visible,.link-btn:focus-visible,.close-btn:focus-visible,.chip:focus-visible{outline:2px solid #FF5436;outline-offset:2px;}
+
+.headline{max-width:min(940px,72vw);}
+.headline h1{margin:0;font-size:clamp(40px,7.4vw,112px);font-weight:700;line-height:.92;letter-spacing:-.035em;
+  text-shadow:0 2px 40px rgba(0,8,14,.45);}
+.headline .carrier{width:clamp(300px,34vw,470px);height:auto;display:block;margin-top:clamp(24px,3vw,40px);}
+
+.foot-row{display:flex;align-items:flex-end;justify-content:space-between;gap:40px;flex-wrap:wrap;}
+.foot-label{font-size:10px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:rgba(255,255,255,.5);}
+.foot-line{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-top:12px;}
+.foot-title{font-size:14px;font-weight:600;letter-spacing:.02em;color:rgba(255,255,255,.88);}
+.foot-sep{width:1px;height:16px;background:rgba(255,255,255,.22);}
+.foot-live{display:inline-flex;align-items:center;gap:7px;font-size:11px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.6);}
+.foot-live i{width:6px;height:6px;border-radius:50%;background:#4FD08A;display:inline-block;}
+.foot-live.down i{background:#FF5436;}
+.foot-ver{font-size:11px;font-weight:500;letter-spacing:.12em;color:rgba(255,255,255,.42);}
+.foot-note{font-size:11px;letter-spacing:.04em;color:rgba(255,255,255,.46);text-align:right;max-width:340px;line-height:1.55;}
+
+/* ---------- sign-in dialog ---------- */
+.scrim{position:fixed;inset:0;z-index:40;display:flex;align-items:center;justify-content:center;
+  padding:clamp(20px,4vw,48px);background:rgba(4,16,24,.52);backdrop-filter:blur(18px) saturate(115%);
+  -webkit-backdrop-filter:blur(18px) saturate(115%);animation:ldFade .2s ease both;}
+.scrim[hidden]{display:none;}
+.scrim-hit{position:absolute;inset:0;cursor:pointer;}
+.dialog{position:relative;width:100%;max-width:392px;max-height:calc(100vh - 40px);overflow:auto;background:#FFFFFF;color:#0B1E29;
+  padding:32px;box-shadow:0 40px 90px -30px rgba(2,12,20,.8),0 2px 8px rgba(2,12,20,.22);
+  animation:ldPop .22s cubic-bezier(.2,.8,.25,1) both;}
+.close-btn{position:absolute;top:12px;right:12px;width:32px;height:32px;display:inline-flex;align-items:center;justify-content:center;
+  background:transparent;border:1px solid transparent;border-radius:0;color:#7A8892;cursor:pointer;transition:background .16s ease,color .16s ease;}
+.close-btn:hover{background:#F1F4F6;color:#0B1E29;}
+.close-btn svg{width:17px;height:17px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;}
+.dialog h2{margin:0;font-size:23px;font-weight:700;letter-spacing:-.015em;line-height:1.15;}
+.dialog .lede{font-size:12.5px;color:#5A6B76;margin:8px 0 0;line-height:1.55;}
+
+.alert{border-left:3px solid #FF5436;background:#FFF3F0;color:#96301B;font-size:12.5px;padding:9px 12px;margin-top:16px;animation:ldRise .2s ease both;}
+.alert.ok{border-left-color:#1E9E62;background:#EEFAF3;color:#146B43;}
+.alert[hidden]{display:none;}
+
+.view[hidden]{display:none;}
+form{margin-top:22px;}
+label{display:block;font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#5A6B76;margin:14px 0 7px;}
+label:first-of-type{margin-top:0;}
+.field{position:relative;}
+input[type=text],input[type=email],input[type=password]{width:100%;min-height:44px;padding:0 12px;font-size:14.5px;color:#0B1E29;
+  background:#FFFFFF;border:1px solid #CFD8DE;border-radius:0;transition:border-color .16s ease,box-shadow .16s ease;}
+input:hover{border-color:#9FAEB8;}
+input:focus{outline:none;border-color:#FF5436;box-shadow:0 0 0 3px rgba(255,84,54,.16);}
+.field .reveal{position:absolute;right:4px;top:50%;transform:translateY(-50%);height:34px;padding:0 10px;font-size:10px;font-weight:700;
+  letter-spacing:.12em;text-transform:uppercase;color:#7A8892;background:transparent;border:0;cursor:pointer;}
+.field .reveal:hover{color:#0B1E29;}
+.field input[type=password],.field input.has-reveal{padding-right:64px;}
+.dialog .btn-ink{width:100%;margin-top:24px;min-height:48px;font-size:14px;}
+
+.demo{margin-top:16px;}
+.demo-label{font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#7A8892;margin-bottom:7px;}
+.chips{display:flex;gap:6px;flex-wrap:wrap;}
+.chip{font-size:11.5px;font-weight:600;color:#33434D;background:#F4F7F9;border:1px solid #DCE3E8;border-radius:0;padding:6px 10px;cursor:pointer;}
+.chip:hover{border-color:#9FAEB8;color:#0B1E29;}
+.chip[aria-pressed="true"]{border-color:#D64426;color:#96301B;background:#FFF3F0;}
+
+.dialog-foot{font-size:10.5px;color:#7A8892;margin-top:14px;padding-top:12px;border-top:1px solid #E6EBEE;line-height:1.5;
+  display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;}
+.link-btn{font-size:10.5px;font-weight:600;color:#96301B;background:none;border:0;padding:0;cursor:pointer;text-decoration:underline;text-underline-offset:2px;}
+.link-btn:hover{color:#D64426;}
+
+@keyframes ldSwell{0%,100%{opacity:.5;}50%{opacity:.85;}}
+@keyframes ldDash{to{stroke-dashoffset:-44px;}}
+@keyframes ldFade{from{opacity:0;}to{opacity:1;}}
+@keyframes ldPop{from{opacity:0;transform:translateY(14px) scale(.97);}to{opacity:1;transform:translateY(0) scale(1);}}
+@keyframes ldRise{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation:none !important;transition:none !important;}
 }
-.role-btn strong{display:block;font-size:10.5px;color:#0F172A;}
-.role-btn span{font-size:9.5px;color:#64748B;}
-.role-btn.active,.role-btn:hover{background:#FFFBEB;border-color:#FDE68A;color:#B45309;}
-.role-btn.active strong{color:#B45309;}
-
-/* Fields */
-.field{margin-bottom:14px;}
-.field label{display:block;font-size:11px;font-weight:700;color:#334155;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:5px;}
-.field input{
-  width:100%;padding:11px 14px;
-  background:#F8FAFC;border:1px solid #E2E8F0;
-  border-radius:8px;color:#0F172A;font-size:13px;font-family:'IBM Plex Sans';
-  transition:border-color 0.15s;
+@media (max-width:640px){
+  .headline{max-width:100%;}
+  .foot-note{text-align:left;}
 }
-.field input:focus{outline:none;border-color:#F59E0B;box-shadow:0 0 0 3px rgba(245,158,11,0.12);}
-.pwd-row{position:relative;}
-.pwd-row input{padding-right:44px;}
-.eye-btn{
-  position:absolute;right:12px;top:50%;transform:translateY(-50%);
-  background:none;border:none;color:#64748B;cursor:pointer;font-size:16px;
-  padding:4px;
-}
-.eye-btn:hover{color:#0F172A;}
-.pwd-hint{font-size:10.5px;color:#F59E0B;margin-top:4px;cursor:pointer;}
-.pwd-hint:hover{text-decoration:underline;}
-
-/* Submit */
-.submit-btn{
-  width:100%;padding:13px;margin-top:4px;
-  background:linear-gradient(135deg,#E8871E,#F59E0B);
-  border:none;border-radius:8px;color:#FFF;
-  font-weight:700;font-size:13px;font-family:'Space Grotesk';
-  letter-spacing:0.03em;cursor:pointer;
-  box-shadow:0 4px 14px rgba(232,135,30,0.35);
-  transition:all 0.2s;
-}
-.submit-btn:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(232,135,30,0.45);}
-.submit-btn:disabled{opacity:0.6;cursor:not-allowed;transform:none;}
-
-/* Alert */
-.alert{
-  padding:10px 12px;border-radius:7px;font-size:12px;
-  margin-bottom:14px;display:none;
-}
-.alert.error{display:block;background:#FEF2F2;border:1px solid #FECACA;color:#991B1B;}
-.alert.success{display:block;background:#F0FDF4;border:1px solid #BBF7D0;color:#166534;}
-.alert.info{display:block;background:#FFFBEB;border:1px solid #FDE68A;color:#B45309;}
-
-/* Process stages */
-.process{display:none;margin-top:12px;background:#F8FAFC;border:1px solid #E2E8F0;border-radius:8px;padding:12px 14px;}
-.process.show{display:block;}
-.stage{font-size:11.5px;color:#64748B;padding:3px 0;display:flex;gap:8px;align-items:center;}
-.stage.ok{color:#10B981;}
-.stage.run{color:#F59E0B;}
-@keyframes spin{to{transform:rotate(360deg);}}
-.spin{display:inline-block;width:10px;height:10px;border:2px solid #F59E0B;border-top-color:transparent;border-radius:50%;animation:spin 0.6s linear infinite;}
-
-.footer{margin-top:18px;text-align:center;font-size:11px;color:#64748B;line-height:1.6;}
 </style>
 </head>
 <body>
 
-<div class="brand">
-  <img class="logo" src="/static/loha-drishti-logo.svg" alt="Loha Drishti maritime emblem">
-  <h1>LOHA DRISHTI</h1>
-  <p>Maritime Cargo Chartering &amp; Decision Intelligence<br>Steel Authority of India Limited (SAIL)</p>
-  <div class="gov-badge">🇮🇳 Ministry of Steel · Government of India</div>
-</div>
+<main class="hero">
+  <div class="hero-ground" aria-hidden="true"></div>
 
-<div class="card">
-  <div class="card-title">Secure Authentication</div>
-  <div class="card-sub">Select your role or enter credentials below</div>
+  <svg class="hero-swell" aria-hidden="true" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice">
+    <defs>
+      <linearGradient id="ldSwellG" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="#8FD4E0" stop-opacity=".30"></stop>
+        <stop offset="1" stop-color="#8FD4E0" stop-opacity="0"></stop>
+      </linearGradient>
+    </defs>
+    <g stroke="url(#ldSwellG)" fill="none" stroke-width="1.4" style="animation:ldSwell 11s ease-in-out infinite">
+      <path d="M-60 148C180 96 360 182 600 132S1020 60 1260 118s300 46 420 12"></path>
+      <path d="M-60 320C190 268 350 354 590 304S1040 232 1280 290s260 42 400 8"></path>
+      <path d="M-60 512C200 460 340 546 580 496S1050 424 1290 482s250 38 390 4"></path>
+      <path d="M-60 726C190 674 360 760 600 710S1040 638 1280 696s260 34 400 0"></path>
+    </g>
+  </svg>
 
-  <div class="tabs">
-    <button class="tab-btn active" id="t-signin" onclick="showPanel('signin')">Sign In</button>
-    <button class="tab-btn" id="t-register" onclick="showPanel('register')">Register</button>
+  <div class="hero-photo" aria-hidden="true"></div>
+  <div class="hero-shade" aria-hidden="true"></div>
+
+  <div class="hero-layout">
+    <header class="brand-row">
+      <div class="brand">
+        <div class="brand-mark"><img src="/static/loha-drishti-logo.svg" alt="LOHA DRISHTI emblem"></div>
+        <div>
+          <div class="brand-name">LOHA DRISHTI</div>
+          <div class="brand-sub">Ministry of Steel · Steel Authority of India</div>
+        </div>
+      </div>
+      <button class="btn-ink" id="openSignIn" type="button" aria-haspopup="dialog">
+        SIGN IN
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h14"></path><path d="M13 7l5 5-5 5"></path></svg>
+      </button>
+    </header>
+
+    <section class="headline">
+      <h1>Which vessel.<br>Which port.<br>What it costs.</h1>
+      <svg class="carrier" role="img" aria-label="Bulk carrier on the recommended route" viewBox="0 0 520 108">
+        <g fill="none" stroke="#FFFFFF" stroke-linecap="round">
+          <path d="M112 54C82 42 46 34 4 30" stroke-width="7" opacity=".16"></path>
+          <path d="M112 54C82 66 46 74 4 78" stroke-width="7" opacity=".16"></path>
+          <path d="M116 54C90 46 56 40 18 37" stroke-width="2" opacity=".42"></path>
+          <path d="M116 54C90 62 56 68 18 71" stroke-width="2" opacity=".42"></path>
+        </g>
+        <path d="M120 38H300C328 38 352 44 366 54C352 64 328 70 300 70H120C112 62 112 46 120 38Z" fill="#F4F8FA"></path>
+        <g fill="#0B2A3A" opacity=".34">
+          <rect x="168" y="45" width="26" height="18"></rect>
+          <rect x="202" y="45" width="26" height="18"></rect>
+          <rect x="236" y="45" width="26" height="18"></rect>
+          <rect x="270" y="45" width="22" height="18"></rect>
+        </g>
+        <rect x="126" y="41" width="30" height="26" fill="#FFFFFF"></rect>
+        <rect x="132" y="47" width="18" height="6" fill="#0B2A3A" opacity=".45"></rect>
+        <path d="M382 54H510" stroke="#FF5436" stroke-width="3" stroke-linecap="round" stroke-dasharray="2 9" style="animation:ldDash 2.6s linear infinite"></path>
+        <circle cx="510" cy="54" r="4.5" fill="#FF5436"></circle>
+      </svg>
+    </section>
+
+    <footer class="foot-row">
+      <div>
+        <div class="foot-label">Submitted to</div>
+        <div class="foot-line">
+          <span class="foot-title">Smart India Hackathon · Problem Statement 26006</span>
+          <span class="foot-sep"></span>
+          <span class="foot-live" id="liveStatus"><i></i><span id="liveText">Live model</span></span>
+          <span class="foot-ver" id="versionText">v2.3.0</span>
+        </div>
+      </div>
+      <div class="foot-note">Secure Authentication · Role-based access control · SAIL / Ministry of Steel</div>
+    </footer>
   </div>
+</main>
 
-  <div id="alertBox" class="alert"></div>
+<div class="scrim" id="scrim" hidden>
+  <div class="scrim-hit" id="scrimHit"></div>
+  <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="dialogTitle">
+    <button class="close-btn" id="closeSignIn" type="button" aria-label="Close">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg>
+    </button>
 
-  <!-- SIGN IN PANEL -->
-  <div class="panel active" id="p-signin">
-    <div class="role-title">👥 Quick Role Select</div>
-    <div class="roles">
-      <button class="role-btn active" id="rb-admin" onclick="pickRole('admin@sail.gov.in','Chief Logistics Officer','rb-admin')">
-        <strong>👤 CLO Admin</strong>
-        <span>admin@sail.gov.in</span>
-      </button>
-      <button class="role-btn" id="rb-analyst" onclick="pickRole('analyst@sail.gov.in','Sr. Chartering Analyst','rb-analyst')">
-        <strong>📊 Analyst</strong>
-        <span>analyst@sail.gov.in</span>
-      </button>
-      <button class="role-btn" id="rb-officer" onclick="pickRole('officer@sail.gov.in','Procurement Officer','rb-officer')">
-        <strong>📦 Officer</strong>
-        <span>officer@sail.gov.in</span>
-      </button>
-    </div>
+    <!-- Sign in -->
+    <div class="view" id="viewSignIn">
+      <h2 id="dialogTitle">Sign in</h2>
+      <p class="lede">Authorised users of the Bulk Cargo Chartering Directorate. Accounts are provisioned by the administrator.</p>
 
-    <div class="field">
-      <label>Official Email</label>
-      <input type="email" id="si-email" value="admin@sail.gov.in" autocomplete="email">
-    </div>
+      <div class="alert" id="alertSignIn" role="alert" hidden></div>
 
-    <div class="field">
-      <label>Password</label>
-      <div class="pwd-row">
-        <input type="password" id="si-pwd" autocomplete="current-password">
-        <button type="button" class="eye-btn" id="eyeBtn" onclick="toggleEye()">👁</button>
+      <form id="signInForm" novalidate>
+        <label for="si-email">Username</label>
+        <input id="si-email" type="email" autocomplete="username" placeholder="name@sail.gov.in" required>
+
+        <label for="si-pwd">Password</label>
+        <div class="field">
+          <input id="si-pwd" type="password" autocomplete="current-password" required>
+          <button class="reveal" type="button" data-target="si-pwd" aria-label="Show password">Show</button>
+        </div>
+
+        <button class="btn-ink" id="loginBtn" type="submit">
+          <span id="loginLabel">SIGN IN</span>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h14"></path><path d="M13 7l5 5-5 5"></path></svg>
+        </button>
+      </form>
+
+      <div class="demo">
+        <div class="demo-label">Demo accounts</div>
+        <div class="chips">
+          <button class="chip" type="button" data-email="admin@sail.gov.in" aria-pressed="false">Chief Logistics Officer</button>
+          <button class="chip" type="button" data-email="analyst@sail.gov.in" aria-pressed="false">Analyst</button>
+          <button class="chip" type="button" data-email="officer@sail.gov.in" aria-pressed="false">Procurement Officer</button>
+        </div>
+      </div>
+
+      <div class="dialog-foot">
+        <span>Session is audit-logged.</span>
+        <button class="link-btn" type="button" data-show="register">Register an officer account</button>
       </div>
     </div>
 
-    <button class="submit-btn" id="loginBtn" onclick="doLogin()">🔒 AUTHENTICATE &amp; ENTER</button>
+    <!-- Register (the existing sign-up flow, restyled) -->
+    <div class="view" id="viewRegister" hidden>
+      <h2>Register</h2>
+      <p class="lede">Self-registration is open only to approved directorate email domains. Anyone else needs an administrator to create the account.</p>
 
-    <div class="process" id="processBox">
-      <div class="stage" id="s1">○ Initiate secure connection...</div>
-      <div class="stage" id="s2">○ Verify cryptographic credentials...</div>
-      <div class="stage" id="s3">○ Establish JWT session...</div>
-      <div class="stage" id="s4">○ Redirect to Executive Command Center...</div>
-    </div>
-  </div>
+      <div class="alert" id="alertRegister" role="alert" hidden></div>
 
-  <!-- REGISTER PANEL -->
-  <div class="panel" id="p-register">
-    <div class="field">
-      <label>Full Name</label>
-      <input type="text" id="reg-name" placeholder="e.g. Rajesh Kumar">
-    </div>
-    <div class="field">
-      <label>Official Email</label>
-      <input type="email" id="reg-email" placeholder="officer@sail.gov.in">
-    </div>
-    <div class="field">
-      <label>Password (min 5 chars)</label>
-      <div class="pwd-row">
-        <input type="password" id="reg-pwd" placeholder="Create password">
-        <button type="button" class="eye-btn" onclick="toggleEye2()">👁</button>
+      <form id="registerForm" novalidate>
+        <label for="reg-name">Full name</label>
+        <input id="reg-name" type="text" autocomplete="name" placeholder="e.g. Rajesh Kumar" required>
+
+        <label for="reg-email">Official email</label>
+        <input id="reg-email" type="email" autocomplete="email" placeholder="officer@sail.gov.in" required>
+
+        <label for="reg-pwd">Password</label>
+        <div class="field">
+          <input id="reg-pwd" type="password" autocomplete="new-password" required>
+          <button class="reveal" type="button" data-target="reg-pwd" aria-label="Show password">Show</button>
+        </div>
+
+        <button class="btn-ink" id="regBtn" type="submit">
+          <span id="regLabel">CREATE ACCOUNT</span>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h14"></path><path d="M13 7l5 5-5 5"></path></svg>
+        </button>
+      </form>
+
+      <div class="dialog-foot">
+        <span>Session is audit-logged.</span>
+        <button class="link-btn" type="button" data-show="signin">Back to sign in</button>
       </div>
     </div>
-    <button class="submit-btn" id="regBtn" onclick="doRegister()">CREATE OFFICER ACCOUNT</button>
   </div>
 </div>
-
-<p class="footer">🔒 256-Bit Encrypted Session &nbsp;·&nbsp; Role-Based Access Control &nbsp;·&nbsp; SAIL / Ministry of Steel</p>
 
 <script>
-function showPanel(p) {
-  document.getElementById('p-signin').classList.toggle('active', p === 'signin');
-  document.getElementById('p-register').classList.toggle('active', p === 'register');
-  document.getElementById('t-signin').classList.toggle('active', p === 'signin');
-  document.getElementById('t-register').classList.toggle('active', p === 'register');
-  hideAlert();
-}
+(function(){
+  var scrim = document.getElementById('scrim');
+  var opener = document.getElementById('openSignIn');
+  var lastFocus = null;
 
-function showAlert(msg, type) {
-  var box = document.getElementById('alertBox');
-  box.textContent = msg;
-  box.className = 'alert ' + (type || 'error');
-}
+  function $(id){ return document.getElementById(id); }
 
-function hideAlert() {
-  document.getElementById('alertBox').className = 'alert';
-}
+  function showAlert(id, message, ok){
+    var box = $(id);
+    box.textContent = message;
+    box.classList.toggle('ok', !!ok);
+    box.hidden = false;
+  }
+  function hideAlert(id){ $(id).hidden = true; }
 
-function toggleEye() {
-  var f = document.getElementById('si-pwd');
-  var btn = document.getElementById('eyeBtn');
-  if (f.type === 'password') { f.type = 'text'; btn.style.color = '#F59E0B'; }
-  else { f.type = 'password'; btn.style.color = '#64748B'; }
-}
-
-function toggleEye2() {
-  var f = document.getElementById('reg-pwd');
-  if (f.type === 'password') f.type = 'text';
-  else f.type = 'password';
-}
-
-function pickRole(email, roleName, btnId) {
-  document.getElementById('si-email').value = email;
-  document.getElementById('si-pwd').value = '';
-  var btns = document.querySelectorAll('.role-btn');
-  for (var i = 0; i < btns.length; i++) btns[i].classList.remove('active');
-  document.getElementById(btnId).classList.add('active');
-  hideAlert();
-  showAlert('✅ ' + roleName + ' selected. Click AUTHENTICATE & ENTER.', 'success');
-}
-
-function setStage(n, text, cls) {
-  var el = document.getElementById('s' + n);
-  el.textContent = text;
-  el.className = 'stage ' + (cls || '');
-}
-
-async function doLogin() {
-  var email = document.getElementById('si-email').value.trim();
-  var pwd = document.getElementById('si-pwd').value;
-
-  if (!email) { showAlert('Please enter your email.'); return; }
-  if (!pwd) { showAlert('Please enter your password.'); return; }
-
-  if (window.location.protocol === 'file:') {
-    /* Sessions are server-issued cookies now, so there is nothing to sign in to
-       when the page is opened straight off disk. Say so rather than minting a
-       fake session that bounces off the dashboard and back to here. */
-    showAlert('Open the platform through the server (http://localhost:8000) to sign in.');
-    return;
+  function showView(name){
+    $('viewSignIn').hidden = name !== 'signin';
+    $('viewRegister').hidden = name !== 'register';
+    hideAlert('alertSignIn');
+    hideAlert('alertRegister');
+    var first = name === 'register' ? $('reg-name') : $('si-email');
+    setTimeout(function(){ first.focus(); }, 30);
   }
 
-  var btn = document.getElementById('loginBtn');
-  var box = document.getElementById('processBox');
-  btn.disabled = true;
-  hideAlert();
-  box.className = 'process show';
+  function openDialog(view){
+    lastFocus = document.activeElement;
+    scrim.hidden = false;
+    document.body.style.overflow = 'hidden';
+    showView(view || 'signin');
+  }
+  function closeDialog(){
+    scrim.hidden = true;
+    document.body.style.overflow = '';
+    if(lastFocus && lastFocus.focus) lastFocus.focus();
+  }
 
-  setStage(1, '⏳ Initiating secure connection...', 'run');
-  await sleep(150);
-  setStage(1, '✓ Connection established', 'ok');
-  setStage(2, '⏳ Verifying credentials...', 'run');
+  opener.addEventListener('click', function(){ openDialog('signin'); });
+  $('closeSignIn').addEventListener('click', closeDialog);
+  $('scrimHit').addEventListener('click', closeDialog);
+  document.addEventListener('keydown', function(e){
+    if(e.key === 'Escape' && !scrim.hidden) closeDialog();
+  });
+  document.querySelectorAll('[data-show]').forEach(function(btn){
+    btn.addEventListener('click', function(){ showView(btn.getAttribute('data-show')); });
+  });
 
-  try {
-    var params = 'username=' + encodeURIComponent(email) + '&password=' + encodeURIComponent(pwd);
+  document.querySelectorAll('.reveal').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var input = $(btn.getAttribute('data-target'));
+      var show = input.type === 'password';
+      input.type = show ? 'text' : 'password';
+      btn.textContent = show ? 'Hide' : 'Show';
+      btn.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
+    });
+  });
+
+  /* Demo chips fill the username only. The password is never pre-filled. */
+  document.querySelectorAll('.chip').forEach(function(chip){
+    chip.addEventListener('click', function(){
+      document.querySelectorAll('.chip').forEach(function(c){ c.setAttribute('aria-pressed', 'false'); });
+      chip.setAttribute('aria-pressed', 'true');
+      $('si-email').value = chip.getAttribute('data-email');
+      $('si-pwd').value = '';
+      hideAlert('alertSignIn');
+      $('si-pwd').focus();
+    });
+  });
+
+  /* ---- sign in: the server sets an httpOnly session cookie ---- */
+  $('signInForm').addEventListener('submit', function(e){
+    e.preventDefault();
+    var email = $('si-email').value.trim();
+    var pwd = $('si-pwd').value;
+    if(!email){ showAlert('alertSignIn', 'Enter your username.'); $('si-email').focus(); return; }
+    if(!pwd){ showAlert('alertSignIn', 'Enter your password.'); $('si-pwd').focus(); return; }
+
+    if(window.location.protocol === 'file:'){
+      showAlert('alertSignIn', 'Open the platform through the server (http://localhost:8000) to sign in.');
+      return;
+    }
+
+    var btn = $('loginBtn');
+    btn.disabled = true;
+    $('loginLabel').textContent = 'VERIFYING';
+    hideAlert('alertSignIn');
+
     var xhr = new XMLHttpRequest();
     xhr.open('POST', '/api/auth/login', true);
     xhr.withCredentials = true;
     xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-
-    xhr.onload = async function() {
-      if (xhr.status === 200) {
-        var data;
-        try { data = JSON.parse(xhr.responseText); }
-        catch(e) { data = null; }
-        if (!data || !data.access_token) {
-          setStage(2, '✗ Invalid authentication response', '');
-          box.className = 'process';
-          btn.disabled = false;
-          showAlert('Unable to establish a secure session. Please try again.');
-          return;
-        }
-        setStage(2, '✓ Credentials verified', 'ok');
-        await sleep(350);
-        setStage(3, '⏳ Establishing JWT session...', 'run');
-        await sleep(350);
-        setStage(3, '✓ JWT session established', 'ok');
-        await sleep(350);
-        setStage(4, '⏳ Loading Executive Command Center...', 'run');
-        await sleep(350);
-        setStage(4, '✓ Access granted. Redirecting...', 'ok');
-        /* The session cookie is set by the response. Only display details
-           are kept here; the token itself is never exposed to script. */
-        localStorage.setItem('ld_role', data.role || 'Analyst');
-        localStorage.setItem('ld_email', email);
-        setTimeout(function() { window.location.href = '/app'; }, 700);
-      } else {
-        setStage(2, '✗ Authentication failed', '');
-        box.className = 'process';
-        btn.disabled = false;
-        showAlert('❌ Incorrect email or password.');
+    xhr.onload = function(){
+      var data = null;
+      try { data = JSON.parse(xhr.responseText); } catch(err) {}
+      if(xhr.status === 200 && data && data.access_token){
+        $('loginLabel').textContent = 'SIGNED IN';
+        /* Only display details are kept in the browser; the token stays in the cookie. */
+        try {
+          localStorage.setItem('ld_role', data.role || 'Analyst');
+          localStorage.setItem('ld_email', email);
+        } catch(err) {}
+        window.location.href = '/app';
+        return;
       }
-    };
-
-    xhr.onerror = function() {
-      setStage(2, '✗ Server connection failed', '');
-      box.className = 'process';
       btn.disabled = false;
-      showAlert('Cannot connect to the authentication server. Please start the backend and try again.');
+      $('loginLabel').textContent = 'SIGN IN';
+      if(xhr.status === 429){
+        showAlert('alertSignIn', (data && data.detail) || 'Too many attempts. Wait a moment and try again.');
+      }else{
+        showAlert('alertSignIn', 'Incorrect username or password.');
+      }
+      $('si-pwd').select();
     };
+    xhr.onerror = function(){
+      btn.disabled = false;
+      $('loginLabel').textContent = 'SIGN IN';
+      showAlert('alertSignIn', 'Cannot reach the authentication server. Check that the backend is running.');
+    };
+    xhr.send('username=' + encodeURIComponent(email) + '&password=' + encodeURIComponent(pwd));
+  });
 
-    xhr.send(params);
+  /* ---- register: unchanged endpoint and rules ---- */
+  $('registerForm').addEventListener('submit', function(e){
+    e.preventDefault();
+    var name = $('reg-name').value.trim();
+    var email = $('reg-email').value.trim();
+    var pwd = $('reg-pwd').value;
+    if(!name || !email || !pwd){ showAlert('alertRegister', 'All fields are required.'); return; }
+    if(pwd.length < 5){ showAlert('alertRegister', 'Password must be at least 5 characters.'); return; }
 
-  } catch(e) {
-    box.className = 'process';
-    btn.disabled = false;
-    showAlert('Unable to connect to the authentication server. Please try again.');
-  }
-}
+    var btn = $('regBtn');
+    btn.disabled = true;
+    $('regLabel').textContent = 'CREATING';
 
-
-function sleep(ms) {
-  return new Promise(function(r) { setTimeout(r, ms); });
-}
-
-async function doRegister() {
-  var name = document.getElementById('reg-name').value.trim();
-  var email = document.getElementById('reg-email').value.trim();
-  var pwd = document.getElementById('reg-pwd').value;
-  if (!name || !email || !pwd) { showAlert('All fields required.'); return; }
-  if (pwd.length < 5) { showAlert('Password must be at least 5 characters.'); return; }
-
-  var btn = document.getElementById('regBtn');
-  btn.disabled = true;
-  btn.textContent = 'Creating account...';
-
-  try {
     var xhr = new XMLHttpRequest();
     xhr.open('POST', '/api/auth/register', true);
     xhr.setRequestHeader('Content-Type', 'application/json');
-    xhr.onload = function() {
+    xhr.onload = function(){
       btn.disabled = false;
-      btn.textContent = 'CREATE OFFICER ACCOUNT';
-      if (xhr.status === 200) {
-        showAlert('✅ Account created! Please sign in.', 'success');
-        showPanel('signin');
-        document.getElementById('si-email').value = email;
-        document.getElementById('si-pwd').value = '';
-      } else {
-        try { var err = JSON.parse(xhr.responseText); showAlert(err.detail || 'Registration failed.'); }
-        catch(e) { showAlert('Registration failed. Try a different email.'); }
+      $('regLabel').textContent = 'CREATE ACCOUNT';
+      if(xhr.status === 200){
+        showView('signin');
+        $('si-email').value = email;
+        $('si-pwd').value = '';
+        showAlert('alertSignIn', 'Account created. Sign in to continue.', true);
+      }else{
+        var detail = null;
+        try { detail = JSON.parse(xhr.responseText).detail; } catch(err) {}
+        showAlert('alertRegister', typeof detail === 'string' ? detail : 'Registration failed. Try a different email.');
       }
     };
-    xhr.onerror = function() { btn.disabled = false; btn.textContent = 'CREATE OFFICER ACCOUNT'; showAlert('Connection error.'); };
+    xhr.onerror = function(){
+      btn.disabled = false;
+      $('regLabel').textContent = 'CREATE ACCOUNT';
+      showAlert('alertRegister', 'Connection error.');
+    };
     xhr.send(JSON.stringify({name: name, email: email, password: pwd}));
-  } catch(e) {
-    btn.disabled = false;
-    btn.textContent = 'CREATE OFFICER ACCOUNT';
-    showAlert('Error: ' + e.message);
-  }
-}
+  });
 
-// Enter key submits
-document.addEventListener('keydown', function(e) {
-  if (e.key === 'Enter') {
-    if (document.getElementById('p-signin').classList.contains('active')) doLogin();
-    else doRegister();
-  }
-});
+  /* Footer status comes from the server, not a hardcoded "live" claim. */
+  fetch('/healthz').then(function(r){ return r.ok ? r.json() : Promise.reject(); })
+    .then(function(h){
+      if(h && h.version) $('versionText').textContent = 'v' + h.version;
+    })
+    .catch(function(){
+      $('liveStatus').classList.add('down');
+      $('liveText').textContent = 'Server offline';
+    });
+
+  if(/[?&]signin\b/.test(window.location.search)) openDialog('signin');
+})();
 </script>
 </body>
 </html>

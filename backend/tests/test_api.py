@@ -1776,3 +1776,47 @@ class TestIdleVesselRepositioning:
         assert "function setDisruptionOutputVisible" in body
         assert "setDisruptionOutputVisible(false)" in body
         assert "setDisruptionOutputVisible(true)" in body
+
+
+# ---------- 19. REDESIGN ----------
+class TestRedesign:
+    """The login page and the dashboard shell were restyled from the design
+    handoff. The restyle must not change how sign-in works or what data the
+    pages show."""
+
+    def test_login_posts_to_the_real_endpoint(self, client):
+        body = client.get("/login").text
+        assert "/api/auth/login" in body
+        assert "withCredentials = true" in body
+        assert "Which vessel." in body
+
+    def test_login_never_prefills_a_password(self, client):
+        body = client.get("/login").text
+        assert 'id="si-pwd" type="password"' in body
+        assert "si-pwd').value = ''" in body
+        assert "DEMO_PASSWORD" not in body and "12345" not in body
+
+    def test_registration_flow_is_still_reachable(self, client):
+        body = client.get("/login").text
+        assert "/api/auth/register" in body
+        assert 'id="viewRegister"' in body
+
+    def test_login_hero_image_is_served(self, client):
+        response = client.get("/static/login-hero.webp")
+        assert response.status_code == 200
+        assert response.content[:4] == b"RIFF" and response.content[8:12] == b"WEBP"
+
+    def test_every_app_page_loads_the_theme(self, client):
+        assert client.get("/static/ld-theme.css").status_code == 200
+        for path in ("/app", "/ml-training", "/verification"):
+            body = client.get(path).text
+            assert "/static/ld-theme.css" in body, path
+            assert "function setLdMode" in body, path
+            assert 'data-ldset="light"' in body, path
+
+    def test_the_engine_hooks_survive_the_restyle(self, client):
+        body = client.get("/app").text
+        for hook in ("function runPipeline", "function renderDecisionCard",
+                     "function handleChallenge", "function runIdleScenario",
+                     'id="decisionCardHost"', 'id="scenarioBattleBody"'):
+            assert hook in body, hook

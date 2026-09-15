@@ -1,0 +1,327 @@
+/* =========================================================================
+   LOHA DRISHTI - REDESIGN THEME  (Nocturne dark / Industry light)
+
+   Loaded last by app.html, ml_training.html and verification.html. It re-maps
+   the platform's existing colour tokens and restyles the shell; it does not
+   rename a class, move an id or touch a line of engine code, so every number
+   on screen still comes from the same calculation as before.
+
+   Mode lives on <html data-ldmode="dark|light">, set before first paint by a
+   one-line script in each page head and remembered in localStorage("ld-mode").
+   With no attribute (script blocked) the dark theme applies.
+   ========================================================================= */
+
+/* ---------------------------------------------------------------- TOKENS -- */
+html:not([data-ldmode="light"]){
+  color-scheme:dark;
+  /* design tokens */
+  --ld-font-body:"Inter",system-ui,-apple-system,sans-serif;
+  --ld-font-head:"Inter",system-ui,-apple-system,sans-serif;
+  --ld-h-weight:700; --ld-h-track:-.028em;
+  --ld-page:radial-gradient(1200px 680px at 76% -12%,rgba(30,107,120,.42),transparent 62%),
+            radial-gradient(900px 620px at 6% 108%,rgba(7,34,48,.85),transparent 66%),
+            linear-gradient(168deg,#0A3140 0%,#0B2A3A 34%,#071C28 70%,#05131C 100%);
+  --ld-text:#EAF3F6; --ld-dim:#BCD2DA; --ld-mute:#93AEB8; --ld-faint:#6F8A95;
+  --ld-accent:#3FB8CE; --ld-accent-ink:#9BE3EF; --ld-accent-soft:rgba(63,184,206,.14);
+  --ld-ink:#CC3F22; --ld-ink-h:#B3351B; --ld-ink-soft:rgba(255,84,54,.12);
+  --ld-hair:rgba(234,243,246,.13); --ld-hair-strong:rgba(234,243,246,.22);
+  --ld-card:linear-gradient(180deg,rgba(255,255,255,.055),rgba(255,255,255,.016));
+  --ld-card-solid:#0D2835; --ld-overlay:#0B2230;
+  --ld-card-sh:0 1px 0 rgba(255,255,255,.05) inset;
+  --ld-card-sh-h:0 26px 52px -26px rgba(0,8,14,.95);
+  --ld-chrome:rgba(5,20,29,.9);
+  --ld-chip:rgba(255,255,255,.05);
+  --ld-input:rgba(255,255,255,.055); --ld-input-f:rgba(255,255,255,.09);
+  --ld-track:rgba(234,243,246,.1);
+  --ld-pri-sh:0 16px 36px -18px rgba(255,84,54,.8);
+  --ld-r:6px; --ld-r-sm:4px;
+  --ld-map-bg:#04121A;
+  --ld-num-glow:0 0 40px rgba(63,184,206,.35);
+
+  /* the platform's own tokens, re-pointed */
+  --bg-main:#071C28; --bg-surface:#0D2835; --bg-subtle:rgba(255,255,255,.04); --bg-hover:rgba(255,255,255,.08);
+  --navy-deep:#EAF3F6; --navy-surface:#2E93A8; --navy-border:rgba(234,243,246,.18);
+  --steel-dark:#BCD2DA; --steel-muted:#93AEB8; --steel-light:#6F8A95; --steel-border:rgba(234,243,246,.13);
+  --saffron:#F0B95E; --saffron-dark:#F7D399; --saffron-bg:rgba(240,185,94,.1); --saffron-border:rgba(240,185,94,.34);
+  --amber:#F0B95E; --amber-bg:rgba(240,185,94,.1);
+  --green:#5FD39B; --green-dark:#8CE9BC; --green-bg:rgba(95,211,155,.1); --green-border:rgba(95,211,155,.32);
+  --red:#FF6B7F; --red-dark:#FFC2CB; --red-bg:rgba(255,107,127,.1); --red-border:rgba(255,107,127,.34);
+  --blue:#6ED2E2; --blue-bg:rgba(63,184,206,.1); --blue-border:rgba(63,184,206,.34);
+  --shadow-sm:0 1px 0 rgba(255,255,255,.04) inset;
+  --shadow-md:0 10px 28px -16px rgba(0,8,14,.9);
+  --shadow-lg:0 18px 40px -20px rgba(0,8,14,.95);
+  --shadow-xl:0 30px 70px -28px rgba(0,8,14,.95);
+  --radius-sm:4px; --radius:6px; --radius-lg:8px;
+  --gov-strip:#04121A; --gov-navy:#0A2432; --gov-navy-2:#3FB8CE;
+  --gov-line:rgba(234,243,246,.13); --gov-rail:transparent;
+  --tri-saffron:#FF9933; --tri-green:#138808;
+}
+
+html[data-ldmode="light"]{
+  color-scheme:light;
+  --ld-font-body:"Barlow",system-ui,-apple-system,sans-serif;
+  --ld-font-head:"Barlow Condensed","Barlow",system-ui,sans-serif;
+  --ld-h-weight:600; --ld-h-track:-.01em;
+  --ld-page:#F4F6F7;
+  --ld-text:#0B1E29; --ld-dim:#33424A; --ld-mute:#69787F; --ld-faint:#93A0A7;
+  --ld-accent:#1F7C90; --ld-accent-ink:#185F70; --ld-accent-soft:#EEF7F9;
+  --ld-ink:#D64426; --ld-ink-h:#BC3A1F; --ld-ink-soft:#FFF3F0;
+  --ld-hair:rgba(11,30,41,.16); --ld-hair-strong:rgba(11,30,41,.26);
+  --ld-card:#FFFFFF; --ld-card-solid:#FFFFFF; --ld-overlay:#FFFFFF;
+  --ld-card-sh:none; --ld-card-sh-h:0 4px 12px rgba(11,30,41,.16);
+  --ld-chrome:rgba(244,246,247,.95);
+  --ld-chip:#FFFFFF;
+  --ld-input:#FFFFFF; --ld-input-f:#FFFFFF;
+  --ld-track:#DDE4E7;
+  --ld-pri-sh:none;
+  --ld-r:0px; --ld-r-sm:0px;
+  --ld-map-bg:#EAF2F5;
+  --ld-num-glow:none;
+
+  --bg-main:#F4F6F7; --bg-surface:#FFFFFF; --bg-subtle:#EEF2F4; --bg-hover:#E6EBED;
+  --navy-deep:#0B1E29; --navy-surface:#1C2B33; --navy-border:#33424A;
+  --steel-dark:#33424A; --steel-muted:#69787F; --steel-light:#93A0A7; --steel-border:rgba(11,30,41,.16);
+  --saffron:#B7791F; --saffron-dark:#8A6212; --saffron-bg:#FBF4E6; --saffron-border:#E7CE9C;
+  --amber:#B7791F; --amber-bg:#FBF4E6;
+  --green:#1F6B49; --green-dark:#1B5C3F; --green-bg:#EAF5EF; --green-border:#B9DCC8;
+  --red:#A32B33; --red-dark:#8E2229; --red-bg:#FBECEC; --red-border:#EBC0C3;
+  --blue:#1F7C90; --blue-bg:#EEF7F9; --blue-border:#A9D8E3;
+  --shadow-sm:none; --shadow-md:0 2px 6px rgba(11,30,41,.08);
+  --shadow-lg:0 4px 12px rgba(11,30,41,.12); --shadow-xl:0 12px 30px rgba(11,30,41,.16);
+  --radius-sm:0px; --radius:0px; --radius-lg:0px;
+  --gov-strip:#0B2D36; --gov-navy:#0B2D36; --gov-navy-2:#1F7C90;
+  --gov-line:rgba(11,30,41,.16); --gov-rail:transparent;
+  --tri-saffron:#FF9933; --tri-green:#138808;
+}
+
+/* ------------------------------------------------------------------ BASE -- */
+html{--header-h:58px;--rail-w:72px;}
+body{background:var(--ld-page) fixed;color:var(--ld-text);font-family:var(--ld-font-body);-webkit-font-smoothing:antialiased;}
+h1,h2,h3,h4,.brand-text,.page-title{font-family:var(--ld-font-head);letter-spacing:var(--ld-h-track);}
+[style*="Space Grotesk"]{font-family:var(--ld-font-head) !important;}
+.mono,[style*="IBM Plex Mono"]{font-variant-numeric:tabular-nums;}
+::selection{background:var(--ld-accent-soft);}
+:focus-visible{outline:2px solid var(--ld-accent);outline-offset:2px;}
+a{color:var(--ld-accent-ink);}
+html:not([data-ldmode="light"]) ::-webkit-scrollbar{width:10px;height:10px;}
+html:not([data-ldmode="light"]) ::-webkit-scrollbar-thumb{background:rgba(234,243,246,.14);border-radius:10px;border:2px solid transparent;background-clip:padding-box;}
+html:not([data-ldmode="light"]) ::-webkit-scrollbar-track{background:transparent;}
+
+/* ---------------------------------------------------------------- HEADER -- */
+.gov-strip{display:none;}
+.masthead{background:var(--ld-chrome);border-bottom:1px solid var(--ld-hair);
+  backdrop-filter:blur(14px) saturate(120%);-webkit-backdrop-filter:blur(14px) saturate(120%);}
+.masthead-inner{max-width:none;height:56px;padding:0 22px 0 18px;}
+.brand{gap:14px;}
+.brand-mark{width:34px;height:34px;flex:0 0 34px;border-radius:var(--ld-r-sm);border:0;background:#FFFFFF;padding:3px;}
+.brand-text{font-family:var(--ld-font-body);font-size:15px;font-weight:700;letter-spacing:.16em;color:var(--ld-text);}
+.brand-sub{font-size:10.5px;color:var(--ld-mute);letter-spacing:.02em;}
+.brand-rule{height:28px;background:var(--ld-hair);}
+.brand-org{font-size:10.5px;color:var(--ld-mute);}
+.brand-org b{color:var(--ld-dim);font-size:11px;font-weight:600;}
+.topbar-actions{gap:6px;}
+.tricolour{height:2px;opacity:.9;}
+.tricolour i:nth-child(2){background:rgba(234,243,246,.7);}
+html[data-ldmode="light"] .tricolour i:nth-child(2){background:#DDE4E7;}
+
+/* shared secondary button */
+.icon-btn{background:var(--ld-chip);border:1px solid var(--ld-hair);border-radius:var(--ld-r-sm);
+  color:var(--ld-dim);font-weight:600;font-size:12px;padding:6px 11px;}
+.icon-btn:hover{background:var(--bg-hover);border-color:var(--ld-hair-strong);color:var(--ld-text);}
+
+/* theme switch */
+.ld-mode{display:inline-flex;align-items:center;gap:2px;padding:2px;border:1px solid var(--ld-hair);
+  border-radius:var(--ld-r-sm);background:var(--ld-chip);}
+.ld-mode button{display:inline-flex;align-items:center;gap:5px;border:0;background:transparent;color:var(--ld-mute);
+  font:600 11.5px var(--ld-font-body);padding:4px 9px;border-radius:calc(var(--ld-r-sm) - 1px);cursor:pointer;}
+.ld-mode button svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;}
+.ld-mode button[aria-pressed="true"]{background:var(--ld-accent);color:#04121A;}
+html[data-ldmode="light"] .ld-mode button[aria-pressed="true"]{color:#FFFFFF;}
+.ld-mode button:not([aria-pressed="true"]):hover{color:var(--ld-text);}
+
+/* engine / scenario badges in the header */
+.engine-source{border-radius:var(--ld-r-sm) !important;letter-spacing:.1em !important;}
+.scenario-pill{border-radius:var(--ld-r-sm) !important;}
+.badge-num{background:var(--ld-ink) !important;color:#FFFFFF !important;}
+
+/* ------------------------------------------------------------- ICON RAIL -- */
+.app-shell{max-width:none;}
+.sidenav{top:var(--header-h);width:var(--rail-w);flex:0 0 var(--rail-w);height:calc(100vh - var(--header-h));
+  background:var(--ld-chrome);border-right:1px solid var(--ld-hair);padding:12px 0 14px;overflow:visible;
+  display:flex;flex-direction:column;}
+.sidenav-group{padding:0 14px;margin:0;display:flex;flex-direction:column;gap:6px;}
+.sidenav-group + .sidenav-group{margin-top:10px;padding-top:10px;border-top:1px solid var(--ld-hair);}
+.sidenav-label{display:none;}
+.sidenav a{position:relative;width:44px;height:40px;padding:0;margin:0;justify-content:center;gap:0;
+  font-size:0;border-left:0;border-radius:var(--ld-r-sm);color:var(--ld-mute);}
+.sidenav a svg{width:18px;height:18px;flex:0 0 18px;opacity:1;stroke-width:1.7;}
+.sidenav a .ext{display:none;}
+.sidenav a:hover{background:var(--bg-hover);color:var(--ld-text);}
+.sidenav a.active{background:var(--ld-accent);color:#04121A;border-left:0;font-weight:600;}
+html[data-ldmode="light"] .sidenav a.active{color:#FFFFFF;}
+.sidenav a::after{content:attr(data-label);position:absolute;left:calc(100% + 12px);top:50%;transform:translateY(-50%) translateX(-4px);
+  white-space:nowrap;font:600 12px var(--ld-font-body);letter-spacing:0;color:var(--ld-text);background:var(--ld-overlay);
+  border:1px solid var(--ld-hair-strong);border-radius:var(--ld-r-sm);padding:6px 10px;box-shadow:var(--shadow-lg);
+  opacity:0;pointer-events:none;transition:opacity .12s ease,transform .12s ease;z-index:300;}
+.sidenav a:hover::after,.sidenav a:focus-visible::after{opacity:1;transform:translateY(-50%) translateX(0);}
+.sidenav-foot{margin-top:auto;border-top:0;padding:10px 0 0;text-align:center;font-size:0;color:var(--ld-faint);}
+.sidenav-foot #railBuild{font-size:10px;letter-spacing:.06em;}
+
+/* ------------------------------------------------------------ CONTENT ----- */
+/* --gov-navy is both a text colour and a dark fill in the original CSS; give
+   text its own colour so headings stay readable in both modes. */
+h1,h2,h3,h4,h5,.display{color:var(--ld-text);}
+.skip-link:focus{background:var(--ld-overlay);color:var(--ld-text);}
+
+/* secondary-page sub navigation and action buttons */
+.subnav-link{color:var(--ld-mute) !important;border-color:var(--ld-hair) !important;background:transparent !important;border-radius:var(--ld-r-sm) !important;}
+.subnav-link:hover{background:var(--bg-hover) !important;color:var(--ld-text) !important;}
+.subnav-link.active{background:var(--ld-accent-soft) !important;color:var(--ld-accent-ink) !important;border-color:var(--blue-border) !important;}
+.btn-train,.btn-run{background:var(--ld-ink) !important;border-color:var(--ld-ink) !important;color:#FFFFFF !important;
+  border-radius:var(--ld-r-sm) !important;box-shadow:var(--ld-pri-sh) !important;}
+.btn-train:hover,.btn-run:hover{background:var(--ld-ink-h) !important;border-color:var(--ld-ink-h) !important;}
+.btn-train:disabled,.btn-run:disabled{opacity:.6;}
+
+.crumbbar{background:transparent;border-bottom:1px solid var(--ld-hair);}
+.crumbs{color:var(--ld-mute);}
+.crumbs a{color:var(--ld-accent-ink);}
+.crumbs span[aria-current]{color:var(--ld-text);}
+
+/* section headings get the design's big tight headline + kicker */
+.section-header h2{font-size:clamp(24px,2.3vw,34px);font-weight:var(--ld-h-weight);letter-spacing:var(--ld-h-track);
+  line-height:1.05;color:var(--ld-text);}
+.section-header p{color:var(--ld-dim);}
+.section-header h3{color:var(--ld-text);font-weight:var(--ld-h-weight);}
+.section-tag{color:var(--ld-accent-ink) !important;background:transparent !important;border:1px solid var(--blue-border) !important;
+  border-radius:var(--ld-r-sm) !important;padding:3px 8px !important;font-size:10px !important;letter-spacing:.14em !important;}
+.data-tag{border-radius:var(--ld-r-sm) !important;background:transparent !important;letter-spacing:.12em !important;}
+
+/* cards: glass on dark, flat white with hairline on light */
+.decision-card,.waterfall-card,.stepper-card,.map-card,.battle-card,.port-card,.vessel-card,.chart-card,
+.charter-strategy-section,.waterways-panel,.challenge-card,.scenario-viz,.explain-box,.about-card,.gauge-card,
+.kpi-card,.metric-card,.stat-card,.pressure-card,.card,.lifecycle-card,.summary-card{
+  background:var(--ld-card) !important;border:1px solid var(--ld-hair) !important;border-radius:var(--ld-r) !important;
+  box-shadow:var(--ld-card-sh) !important;}
+.port-card:hover,.vessel-card:hover{border-color:var(--blue-border) !important;box-shadow:var(--ld-card-sh-h) !important;}
+
+/* inputs */
+.field input,.field select,input[type="number"],input[type="text"],input[type="email"],input[type="search"],select,textarea{
+  background:var(--ld-input) !important;color:var(--ld-text) !important;border:1px solid var(--ld-hair-strong) !important;
+  border-radius:var(--ld-r-sm) !important;}
+.field input:focus,.field select:focus,input:focus,select:focus,textarea:focus{background:var(--ld-input-f) !important;
+  border-color:var(--ld-accent) !important;box-shadow:0 0 0 3px var(--ld-accent-soft) !important;outline:none;}
+select option{background:var(--ld-overlay);color:var(--ld-text);}
+.field label{color:var(--ld-mute);}
+
+/* primary action: the design's ink button */
+.btn-optimize{background:var(--ld-ink) !important;border:1px solid var(--ld-ink) !important;color:#FFFFFF !important;
+  border-radius:var(--ld-r-sm) !important;box-shadow:var(--ld-pri-sh) !important;font-weight:700 !important;}
+.btn-optimize:hover{background:var(--ld-ink-h) !important;border-color:var(--ld-ink-h) !important;}
+
+/* scenario buttons */
+.btn-challenge{background:var(--ld-chip) !important;color:var(--ld-dim) !important;border:1px solid var(--ld-hair-strong) !important;
+  border-radius:var(--ld-r-sm) !important;}
+.btn-challenge:hover{background:var(--bg-hover) !important;color:var(--ld-text) !important;border-color:var(--ld-accent) !important;}
+.btn-challenge.danger{color:var(--red) !important;border-color:var(--red-border) !important;}
+.btn-challenge.danger:hover{background:var(--red-bg) !important;}
+.btn-challenge.active-scenario{outline:2px solid var(--ld-ink) !important;outline-offset:1px;}
+.btn-reset{color:var(--ld-mute) !important;}
+
+/* cargo bar */
+.cargo-bar-wrapper{background:var(--ld-chrome) !important;border-bottom:1px solid var(--ld-hair) !important;
+  backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);}
+.cargo-pill{background:var(--ld-chip) !important;border:1px solid var(--ld-hair) !important;border-radius:var(--ld-r-sm) !important;color:var(--ld-text) !important;}
+.cargo-pill:hover{background:var(--bg-hover) !important;border-color:var(--ld-hair-strong) !important;}
+.cargo-pill .label{color:var(--ld-mute) !important;letter-spacing:.12em;}
+
+/* tabs / toggles */
+.section-tabs{background:transparent !important;border-color:var(--ld-hair) !important;}
+.tab-btn{color:var(--ld-mute) !important;}
+.tab-btn.active{color:var(--ld-text) !important;border-color:var(--ld-accent) !important;}
+.cost-toggle{background:var(--ld-chip) !important;border:1px solid var(--ld-hair) !important;border-radius:var(--ld-r-sm) !important;}
+.cost-toggle button{color:var(--ld-mute) !important;}
+.cost-toggle button.active{background:var(--ld-accent) !important;color:#04121A !important;}
+html[data-ldmode="light"] .cost-toggle button.active{color:#FFFFFF !important;}
+
+/* tables */
+.battle-table,.gov-table{color:var(--ld-dim);}
+.battle-table th,.gov-table th{background:transparent !important;color:var(--ld-mute) !important;font-size:10px !important;
+  font-weight:700 !important;letter-spacing:.12em !important;text-transform:uppercase;border-bottom:1px solid var(--ld-hair) !important;}
+.battle-table td,.gov-table td{border-bottom:1px solid var(--ld-hair) !important;color:var(--ld-dim);}
+.gov-table tbody tr:nth-child(even){background:transparent !important;}
+.battle-table tbody tr:hover td{background:var(--bg-subtle);}
+.battle-table tr.winner-row td{background:var(--ld-ink-soft) !important;color:var(--ld-text);}
+.battle-table tr.winner-row td:first-child{box-shadow:inset 3px 0 0 var(--ld-ink);}
+.winner-badge{background:var(--ld-ink) !important;color:#FFFFFF !important;border-radius:var(--ld-r-sm) !important;}
+
+/* charts and maps drawn in SVG */
+svg#routemap,#scenarioMap{background:var(--ld-map-bg) !important;border-radius:var(--ld-r-sm);}
+svg rect[fill="#F8FAFC"],svg rect[fill="#FFF"],svg rect[fill="#FFFFFF"]{fill:var(--ld-map-bg);}
+html:not([data-ldmode="light"]) svg circle[stroke="#FFF"]{stroke:#04121A;}
+
+/* overlays */
+.modal-box,.drawer-left,.drawer-right{background:var(--ld-overlay) !important;color:var(--ld-text);border:1px solid var(--ld-hair-strong);
+  border-radius:var(--ld-r) !important;box-shadow:var(--shadow-xl) !important;}
+.drawer-left,.drawer-right{border-radius:0 !important;}
+.drawer-header{background:var(--gov-navy) !important;color:#FFFFFF !important;border-bottom:1px solid var(--ld-hair);}
+html[data-ldmode="light"] .drawer-header{background:#0B2D36 !important;}
+.drawer-overlay{background:rgba(2,10,16,.55) !important;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);}
+.loading-overlay{background:rgba(4,16,24,.72) !important;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);}
+.loading-text{color:#FFFFFF !important;}
+.loading-sub{color:#BCD2DA !important;}
+.prompt-btn,.copilot-followup{background:var(--ld-chip) !important;color:var(--ld-dim) !important;border:1px solid var(--ld-hair) !important;
+  border-radius:var(--ld-r-sm) !important;}
+.prompt-btn:hover,.copilot-followup:hover{background:var(--bg-hover) !important;color:var(--ld-text) !important;}
+.copilot-topic{background:var(--ld-accent-soft) !important;color:var(--ld-accent-ink) !important;}
+.demo-stage{background:var(--ld-card-solid) !important;border-color:var(--ld-hair) !important;}
+[style*="background:#FFF;border:1px solid var(--steel-border)"]{background:var(--ld-card) !important;border-color:var(--ld-hair) !important;}
+
+/* copilot button: ink, like the design's primary action */
+.copilot-fab{background:var(--ld-ink);box-shadow:var(--ld-pri-sh),0 6px 18px rgba(0,0,0,.3);}
+.copilot-fab:hover{background:var(--ld-ink-h);}
+.copilot-fab .fab-dot{background:var(--ld-accent);border-color:var(--ld-overlay);}
+.copilot-fab-label{background:var(--ld-overlay);color:var(--ld-text);border:1px solid var(--ld-hair-strong);}
+
+/* secondary-page back button */
+.btn-back{background:var(--ld-ink);border-color:var(--ld-ink);color:#FFFFFF;border-radius:var(--ld-r-sm);}
+.btn-back:hover{background:var(--ld-ink-h);border-color:var(--ld-ink-h);}
+.page-title{color:var(--ld-text);font-size:clamp(24px,2.3vw,34px);font-weight:var(--ld-h-weight);}
+.page-lede{color:var(--ld-dim);}
+
+/* about / governance */
+.about-hero{background:var(--ld-card) !important;border:1px solid var(--ld-hair);color:var(--ld-dim);}
+html[data-ldmode="light"] .about-hero{background:#0B2D36 !important;color:#D2EAF0;}
+.about-hero h2{color:var(--ld-text);}
+html[data-ldmode="light"] .about-hero h2{color:#FFFFFF;}
+.about-card h4{color:var(--ld-text);}
+.about-card p,.about-card li{color:var(--ld-dim);}
+
+/* footer */
+.gov-footer{background:transparent;border-top:1px solid var(--ld-hair);color:var(--ld-mute);}
+.gov-footer h5{color:var(--ld-text);font-family:var(--ld-font-body);}
+.gov-footer a{color:var(--ld-mute);}
+.gov-footer a:hover{color:var(--ld-text);}
+.gov-footer-cols{border-bottom-color:var(--ld-hair);}
+.gov-footer-note{color:var(--ld-faint);}
+
+/* progress tracks */
+[class*="track"],[class*="bar-bg"]{background-color:var(--ld-track);}
+
+/* map (Leaflet) chrome */
+.leaflet-popup-content-wrapper,.leaflet-popup-tip{background:var(--ld-overlay) !important;color:var(--ld-text) !important;}
+
+/* -------------------------------------------------------- RESPONSIVE ----- */
+@media(max-width:1024px){
+  html{--rail-w:100%;}
+  .sidenav{position:static;width:100%;height:auto;flex-direction:row;padding:6px 10px;overflow-x:auto;border-right:0;border-bottom:1px solid var(--ld-hair);}
+  .sidenav-group{flex-direction:row;padding:0;}
+  .sidenav-group + .sidenav-group{margin:0 0 0 6px;padding:0 0 0 6px;border-top:0;border-left:1px solid var(--ld-hair);}
+  .sidenav a{width:auto;padding:0 12px;font-size:12.5px;gap:8px;white-space:nowrap;}
+  .sidenav a::after{display:none;}
+  .sidenav-foot{display:none;}
+  .masthead-inner{height:auto;padding:8px 14px;}
+}
+@media(prefers-reduced-motion:reduce){*{transition:none !important;}}
+
+/* secondary pages: the training console stays a terminal in both modes */
+.console-box{background:#04121A !important;border:1px solid var(--ld-hair) !important;border-radius:var(--ld-r-sm) !important;}

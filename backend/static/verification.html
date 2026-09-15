@@ -3,6 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script>
+/* Set the theme before first paint so the page never flashes the wrong mode. */
+(function(){try{var m=localStorage.getItem('ld-mode');document.documentElement.setAttribute('data-ldmode',m==='light'?'light':'dark');}catch(e){document.documentElement.setAttribute('data-ldmode','dark');}})();
+</script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@500;600;700&display=swap" rel="stylesheet">
+
 <title>System Verification & Tester — LOHA DRISHTI</title>
 
 <link rel="icon" type="image/svg+xml" href="/static/loha-drishti-logo.svg">
@@ -283,6 +289,7 @@ body {
 .subnav-link:hover{background:#F4F7FB;color:var(--gov-navy);}
 .subnav-link.active{background:#E8EEF7;color:var(--gov-navy-2);font-weight:600;border-color:#CBD9EC;}
 </style>
+<link rel="stylesheet" href="/static/ld-theme.css">
 </head>
 
 <body>
@@ -322,6 +329,10 @@ body {
         </div>
       </div>
       <div class="topbar-actions">
+        <div class="ld-mode" role="group" aria-label="Colour theme">
+          <button type="button" data-ldset="dark" aria-pressed="true" onclick="setLdMode('dark')"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 019.5 4a8 8 0 1010.5 10.5z"/></svg>Dark</button>
+          <button type="button" data-ldset="light" aria-pressed="false" onclick="setLdMode('light')"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>Light</button>
+        </div>
         <a class="subnav-link" href="/ml-training">ML Model &amp; Training</a>
         <a class="subnav-link active" href="/verification" aria-current="page">System Verification</a>
         <button class="icon-btn" onclick="performLogout()" title="Sign out and return to the login gateway">Sign Out</button>
@@ -828,5 +839,24 @@ function performLogout(){
   </div>
 </footer>
 
+<script>
+/* Theme switch, shared by every page that loads ld-theme.css. */
+function setLdMode(mode){
+  mode = mode === 'light' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-ldmode', mode);
+  try { localStorage.setItem('ld-mode', mode); } catch(e) {}
+  document.querySelectorAll('.ld-mode [data-ldset]').forEach(function(b){
+    b.setAttribute('aria-pressed', b.getAttribute('data-ldset') === mode ? 'true' : 'false');
+  });
+}
+setLdMode(document.documentElement.getAttribute('data-ldmode'));
+/* The section rail shows icons only; its hover label comes from the link text. */
+document.querySelectorAll('.sidenav a').forEach(function(a){
+  var clone = a.cloneNode(true);
+  clone.querySelectorAll('svg,.ext').forEach(function(n){ n.remove(); });
+  var label = clone.textContent.replace(/\s+/g, ' ').trim();
+  if(label){ a.setAttribute('data-label', label); a.setAttribute('aria-label', label); }
+});
+</script>
 </body>
 </html>
