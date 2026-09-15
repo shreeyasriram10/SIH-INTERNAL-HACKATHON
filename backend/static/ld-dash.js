@@ -110,7 +110,6 @@
           <text x="470" y="90" fill="var(--ld-map-faint)" font-size="14" letter-spacing="3">BAY OF BENGAL</text>
           <g id="ldcRoute"></g>
           <g id="ldcPins"></g>
-          <g id="ldcTip" pointer-events="none"></g>
         </svg>
         <div class="ldc-intro">
           <div class="ld-kicker">Live decision surface</div>
@@ -252,69 +251,42 @@
     renderCommand();
   }
 
-  /* Pins are rebuilt only when the selection changes. Hover used to rebuild
-     them too: the hit target under the cursor was replaced on mouseenter, the
-     replacement fired mouseenter again, and the press and release of a click
-     never landed on the same element - so clicking a berth did nothing and
-     the route never moved. Hover now only restyles the existing pins. */
   function renderPins(){
     const g = $('ldcPins');
     if(!g) return;
     g.innerHTML = portKeys().map(k => {
       const p = PORTS[k], [x, y, lx, ly] = PIN[p.code];
-      return `<g class="pin" data-port="${k}">
-        <circle class="ring" cx="${x}" cy="${y}" r="0" fill="none" stroke-width="1" opacity=".6"/>
-        <circle class="dot" cx="${x}" cy="${y}" r="3.5"/>
-        <text class="label" x="${lx}" y="${ly}" font-size="11">${esc(p.name)}</text>
+      const sel = k === C.port, hov = k === C.hover;
+      const offered = C.result && C.cls ? !!optionFor(k, C.cls) : true;
+      const color = sel ? 'var(--ld-ink)' : offered ? 'var(--ld-accent)' : 'var(--ld-map-faint)';
+      const ring = sel ? 16 : hov ? 12 : 0;
+      return `<g>
+        <circle cx="${x}" cy="${y}" r="${ring}" fill="none" stroke="${sel ? 'var(--ld-ink)' : 'var(--ld-accent)'}" stroke-width="1" opacity=".6"/>
+        <circle cx="${x}" cy="${y}" r="${sel ? 6 : hov ? 5 : 3.5}" fill="${color}"/>
+        <text x="${lx}" y="${ly}" fill="${sel ? 'var(--ld-text)' : offered ? 'var(--ld-map-label)' : 'var(--ld-map-faint)'}" font-size="11" font-weight="${sel ? 700 : 400}">${esc(p.name)}</text>
         <circle class="pin-hit" data-port="${k}" cx="${x}" cy="${y}" r="17" fill="transparent" tabindex="0" role="button" aria-label="Select ${esc(p.name)}"/>
       </g>`;
     }).join('');
+    if(C.hover && C.result && C.cls){
+      const hp = PORTS[C.hover], [hx, hy] = PIN[hp.code];
+      const ho = optionFor(C.hover, C.cls);
+      const line = ho
+        ? `${VESSEL_CLASSES[C.cls].name}: ${money(ho.base.total)}/MT \u00b7 risk ${Math.round(ho.api.risk_index)}`
+        : `${VESSEL_CLASSES[C.cls].name}: not offered`;
+      const tx = Math.min(hx + 16, 520), ty = Math.max(hy - 44, 24);
+      g.insertAdjacentHTML('beforeend', `<g pointer-events="none">
+        <rect x="${tx}" y="${ty}" width="190" height="38" rx="4" fill="var(--ld-map-card)" stroke="var(--ld-hair-strong)"/>
+        <text x="${tx + 10}" y="${ty + 16}" fill="var(--ld-text)" font-size="12" font-weight="700">${esc(hp.name)}</text>
+        <text x="${tx + 10}" y="${ty + 30}" fill="${ho ? 'var(--ld-map-label)' : 'var(--ld-crit-ink)'}" font-size="10.5">${esc(line)}</text>
+      </g>`);
+    }
     g.querySelectorAll('.pin-hit').forEach(el => {
       const k = el.getAttribute('data-port');
       el.addEventListener('click', () => { if(C.result) select(k, null); });
       el.addEventListener('keydown', e => { if((e.key === 'Enter' || e.key === ' ') && C.result){ e.preventDefault(); select(k, null); } });
-      el.addEventListener('mouseenter', () => setHover(k));
-      el.addEventListener('focus', () => setHover(k));
-      el.addEventListener('mouseleave', () => setHover(null));
-      el.addEventListener('blur', () => setHover(null));
+      el.addEventListener('mouseenter', () => { C.hover = k; renderPins(); });
+      el.addEventListener('mouseleave', () => { C.hover = null; renderPins(); });
     });
-    stylePins();
-  }
-
-  function stylePins(){
-    const g = $('ldcPins');
-    if(!g) return;
-    g.querySelectorAll('.pin').forEach(pin => {
-      const k = pin.getAttribute('data-port');
-      const sel = k === C.port, hov = k === C.hover;
-      const offered = C.result && C.cls ? !!optionFor(k, C.cls) : true;
-      const ring = pin.querySelector('.ring'), dot = pin.querySelector('.dot'), label = pin.querySelector('.label');
-      ring.setAttribute('r', sel ? 16 : hov ? 12 : 0);
-      ring.setAttribute('stroke', sel ? 'var(--ld-ink)' : 'var(--ld-accent)');
-      dot.setAttribute('r', sel ? 6 : hov ? 5 : 3.5);
-      dot.setAttribute('fill', sel ? 'var(--ld-ink)' : offered ? 'var(--ld-accent)' : 'var(--ld-map-faint)');
-      label.setAttribute('fill', sel || hov ? 'var(--ld-text)' : offered ? 'var(--ld-map-label)' : 'var(--ld-map-faint)');
-      label.setAttribute('font-weight', sel ? 700 : 400);
-      pin.querySelector('.pin-hit').setAttribute('aria-pressed', String(sel));
-    });
-  }
-
-  function setHover(k){
-    C.hover = k;
-    stylePins();
-    const tip = $('ldcTip');
-    if(!tip) return;
-    if(!k || !C.result || !C.cls){ tip.innerHTML = ''; return; }
-    const hp = PORTS[k], [hx, hy] = PIN[hp.code];
-    const ho = optionFor(k, C.cls);
-    const line = ho
-      ? `${VESSEL_CLASSES[C.cls].name}: ${money(ho.base.total)}/MT \u00b7 risk ${Math.round(ho.api.risk_index)}`
-      : `${VESSEL_CLASSES[C.cls].name}: not offered`;
-    const tx = Math.min(hx + 18, 520), ty = Math.max(hy - 46, 24);
-    tip.innerHTML = `
-      <rect x="${tx}" y="${ty}" width="196" height="40" rx="4" fill="var(--ld-map-card)" stroke="var(--ld-hair-strong)"/>
-      <text x="${tx + 10}" y="${ty + 16}" fill="var(--ld-text)" font-size="12" font-weight="700">${esc(hp.name)}${k === C.port ? ' \u00b7 selected' : ' \u00b7 click to select'}</text>
-      <text x="${tx + 10}" y="${ty + 31}" fill="${ho ? 'var(--ld-map-label)' : 'var(--ld-crit-ink)'}" font-size="10.5">${esc(line)}</text>`;
   }
 
   function renderRoute(){
@@ -329,8 +301,7 @@
     const bx = ox - 196, by = oy - 104;
     g.innerHTML = `
       <path d="M${ox} ${oy} C${ox - 140} ${oy + 24} ${Math.round((best[0] + 520) / 2)} ${best[1] + 55} ${best[0]} ${best[1]}" fill="none" stroke="var(--ld-map-faint)" stroke-width="1.5" stroke-dasharray="2 7" opacity=".5"/>
-      <path class="route" pathLength="100" d="M${ox} ${oy} C${ox - 140} ${oy + 24} ${Math.round((px + 520) / 2)} ${py + 55} ${px} ${py}" fill="none" stroke="var(--ld-ink)" stroke-width="2.5" stroke-linecap="round"/>
-      <path class="route-flow" pathLength="100" d="M${ox} ${oy} C${ox - 140} ${oy + 24} ${Math.round((px + 520) / 2)} ${py + 55} ${px} ${py}" fill="none" stroke="#FFD2C7" stroke-width="1.4" stroke-linecap="round"/>
+      <path class="route" d="M${ox} ${oy} C${ox - 140} ${oy + 24} ${Math.round((px + 520) / 2)} ${py + 55} ${px} ${py}" fill="none" stroke="var(--ld-ink)" stroke-width="2.5" stroke-linecap="round"/>
       <line x1="${ox}" y1="${oy - 6}" x2="${ox}" y2="${by + 40}" stroke="var(--ld-hair-strong)" stroke-width="1"/>
       <circle cx="${ox}" cy="${oy}" r="6" fill="var(--ld-map-faint)"/>
       <rect x="${bx}" y="${by}" width="196" height="40" fill="var(--ld-map-card)" stroke="var(--ld-hair)"/>
@@ -449,9 +420,8 @@
 
     renderBuild();
     renderRanked();
-    stylePins();
+    renderPins();
     renderRoute();
-    if(C.hover) setHover(C.hover);
   }
 
   function renderBuild(){
