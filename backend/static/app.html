@@ -584,7 +584,8 @@ footer .data-disclaimer{font-size:10.5px;color:var(--steel-light);margin-top:6px
 <!-- COMPACT CARGO BAR -->
 <div class="cargo-bar-wrapper">
   <div class="cargo-bar">
-    <div class="cargo-summary-pills" id="cargoBarPills" title="Click EDIT CARGO to change parameters">
+    <span class="cargo-bar-label">Cargo on file</span>
+    <div class="cargo-summary-pills" id="cargoBarPills" title="Click a value to change the cargo">
       <div class="cargo-pill" onclick="openCargoDrawer()"><span class="label">Parcel:</span> <span id="barQty">80,000 MT</span></div>
       <div class="cargo-pill" onclick="openCargoDrawer()"><span class="label">Cargo:</span> <span id="barCargo">Coking Coal</span></div>
       <div class="cargo-pill" onclick="openCargoDrawer()"><span class="label">Origin:</span> <span id="barOrigin">Any Origin</span></div>
@@ -592,8 +593,8 @@ footer .data-disclaimer{font-size:10.5px;color:var(--steel-light);margin-top:6px
       <div class="cargo-pill" onclick="openCargoDrawer()"><span class="label">Window:</span> <span id="barDays">30 Days</span></div>
     </div>
     <div class="cargo-actions">
-      <button class="icon-btn" id="openEditCargoBtn">Edit Cargo</button>
-      <button class="btn-optimize" id="barOptimizeBtn">Find Best Strategy</button>
+      <button class="icon-btn cargo-edit" id="openEditCargoBtn" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></svg>Edit cargo</button>
+      <button class="btn-optimize ld-bar-cta" id="barOptimizeBtn" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5l12 7-12 7z"/></svg>Find Best Strategy</button>
     </div>
   </div>
 </div>
@@ -1302,19 +1303,23 @@ footer .data-disclaimer{font-size:10.5px;color:var(--steel-light);margin-top:6px
   <svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 00-9 9c0 1.6.4 3.1 1.2 4.4L3 21l4.8-1.2A9 9 0 1012 3z"/><path d="M9 11h.01M12 11h.01M15 11h.01"/></svg>
   <span class="fab-dot" aria-hidden="true"></span>
 </button>
-<span class="copilot-fab-label" aria-hidden="true">Ask the AI Copilot</span>
+<span class="copilot-fab-label" aria-hidden="true">Ask the Decision Copilot</span>
 
 
 <!-- EDIT CARGO DRAWER (LEFT) -->
-<div class="drawer-left" id="editCargoDrawer">
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
-    <h3 style="margin:0;font-size:17px;color:var(--navy-deep);">Edit Cargo Requirements</h3>
-    <button class="close-btn" onclick="closeDrawerById('editCargoDrawer')">✕</button>
+<div class="drawer-left ld-modal" id="editCargoDrawer" role="dialog" aria-modal="true" aria-labelledby="editCargoTitle">
+  <div class="ldm-head">
+    <div>
+      <div class="ld-kicker accent">Cargo on file</div>
+      <h3 id="editCargoTitle">Edit cargo requirements</h3>
+      <p>The decision engine re-ranks every origin, berth and vessel class for these parameters.</p>
+    </div>
+    <button class="close-btn ldm-close" type="button" onclick="closeDrawerById('editCargoDrawer')" aria-label="Close"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
   </div>
 
-  <div id="validationAlert" style="display:none;background:var(--red-bg);border:1px solid var(--red-border);color:var(--red);padding:8px 12px;border-radius:6px;font-size:12px;margin-bottom:12px;"></div>
+  <div id="validationAlert" class="ldm-alert" style="display:none;"></div>
 
-  <div style="display:flex;flex-direction:column;gap:14px;flex:1;">
+  <div class="ldm-grid">
     <div class="field">
       <label for="drawerCargoType">Cargo Type</label>
       <select id="drawerCargoType">
@@ -1354,7 +1359,7 @@ footer .data-disclaimer{font-size:10.5px;color:var(--steel-light);margin-top:6px
       </select>
     </div>
 
-    <div class="field">
+    <div class="field ldm-wide">
       <label for="drawerDays">Delivery Window</label>
       <input type="range" id="drawerDays" min="10" max="60" value="30">
       <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--steel-muted);">
@@ -1363,11 +1368,11 @@ footer .data-disclaimer{font-size:10.5px;color:var(--steel-light);margin-top:6px
         <span>60 days</span>
       </div>
     </div>
+  </div>
 
-    <div style="display:flex;flex-direction:column;gap:8px;margin-top:6px;">
-      <button class="btn-optimize" style="padding:12px;justify-content:center;" id="drawerSaveBtn">Apply &amp; Re-optimise</button>
-      <button class="icon-btn" style="justify-content:center;" onclick="closeDrawerById('editCargoDrawer')">Cancel</button>
-    </div>
+  <div class="ldm-foot">
+    <button class="icon-btn" type="button" onclick="closeDrawerById('editCargoDrawer')">Cancel</button>
+    <button class="btn-optimize" type="button" id="drawerSaveBtn"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5l12 7-12 7z"/></svg>Apply &amp; find best strategy</button>
   </div>
 </div>
 
@@ -1381,47 +1386,46 @@ footer .data-disclaimer{font-size:10.5px;color:var(--steel-light);margin-top:6px
 </div>
 
 <!-- AI COPILOT & QUESTIONS DRAWER (RIGHT) -->
-<div class="drawer-right" id="copilotDrawer">
-  <div class="drawer-header">
-    <div>
-      <div style="font-weight:700;font-family:'Space Grotesk';font-size:15px;">Questions &amp; AI Copilot</div>
-      <div style="font-size:11px;color:rgba(255,255,255,0.8);">Ask Any Maritime, Cost, Port, Vessel, or Strategy Question</div>
+<div class="drawer-right ldq" id="copilotDrawer" role="dialog" aria-label="Decision copilot">
+  <div class="drawer-header ldq-head">
+    <div class="ldq-id">
+      <span class="ldq-avatar" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/></svg></span>
+      <div>
+        <div class="ldq-title">Decision Copilot</div>
+        <div class="ldq-sub"><i></i>Answers from the engine's live figures</div>
+      </div>
     </div>
-    <button class="close-btn" style="color:#FFF;" onclick="closeDrawerById('copilotDrawer')">✕</button>
-  </div>
-  <div class="drawer-body" id="copilotBody" style="flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px;">
-    <div class="copilot-msg bot">
-      <b>Namaste! I am the LOHA-DRISHTI Decision &amp; Strategy AI Assistant.</b><br>
-      You can type any question below or click the quick prompt pills to understand:
-      <ul style="margin:6px 0 0 16px;padding:0;font-size:11.5px;">
-        <li>Why a specific route or vessel class was selected</li>
-        <li>How demurrage, port queues, and monsoon factors are calculated</li>
-        <li>What happens during disruptions (Cyclone, Freight Spike)</li>
-        <li>How options are ranked, and how risk exposure is scored</li>
-      </ul>
+    <div class="ldq-tools">
+      <button class="ldq-tool" type="button" onclick="clearCopilot()" title="Clear conversation" aria-label="Clear conversation"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg></button>
+      <button class="close-btn ldq-tool" type="button" onclick="closeDrawerById('copilotDrawer')" aria-label="Close"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
     </div>
-  </div>
-  <div id="copilotTyping" class="copilot-typing" style="display:none;padding:4px 14px;font-size:11px;color:var(--saffron-dark);">AI Copilot is analyzing logistics parameters...</div>
-  
-  <!-- INTERACTIVE INPUT AREA -->
-  <div style="padding:10px 14px;border-top:1px solid var(--steel-border);background:var(--bg-main);display:flex;gap:8px;">
-    <input type="text" id="copilotCustomInput" placeholder="Type your question here (e.g. Why Dhamra over Haldia?)..." style="flex:1;padding:9px 12px;border:1px solid var(--steel-border);border-radius:6px;font-size:12px;box-sizing:border-box;" onkeydown="if(event.key==='Enter') submitCustomCopilotQuery()">
-    <button class="btn-optimize" style="padding:9px 14px;font-size:12px;justify-content:center;" onclick="submitCustomCopilotQuery()">Ask →</button>
   </div>
 
-  <!-- QUICK QUESTION PILLS -->
-  <div class="copilot-prompts" style="padding:10px 14px;border-top:1px solid var(--steel-border);max-height:160px;overflow-y:auto;">
-    <div style="font-size:10.5px;font-weight:700;color:var(--steel-muted);text-transform:uppercase;margin-bottom:6px;">Suggested Questions:</div>
-    <button class="prompt-btn" onclick="askCopilot('Why this vessel class?')">Why was this vessel class selected?</button>
-    <button class="prompt-btn" onclick="askCopilot('Why not Paradip port?')">Why not Paradip port?</button>
-    <button class="prompt-btn" onclick="askCopilot('Why not Haldia port?')">Why is Haldia draft restricted?</button>
-    <button class="prompt-btn" onclick="askCopilot('What if freight spikes by 20%?')">What if freight spikes by 20%?</button>
-    <button class="prompt-btn" onclick="askCopilot('How does Minimax-Regret work?')">How are competing strategies ranked?</button>
-    <button class="prompt-btn" onclick="askCopilot('How is the Risk Index calculated?')">How is the Risk Index calculated?</button>
-    <button class="prompt-btn" onclick="askCopilot('What is Supply Continuity score?')">What is Supply Continuity confidence?</button>
-    <button class="prompt-btn" onclick="askCopilot('How is Demurrage computed?')">How is Demurrage cost calculated?</button>
-    <button class="prompt-btn" onclick="askCopilot('What is the best route for Rourkela?')">What is the optimal route for Rourkela?</button>
+  <div class="drawer-body ldq-body" id="copilotBody" aria-live="polite">
+    <div class="ldq-welcome" id="copilotWelcome">
+      <div class="ldq-welcome-title">Ask about the strategy on screen</div>
+      <p>Why a route, berth or vessel class won, what the costs are made of, how risk is scored, and what a disruption would change.</p>
+    </div>
   </div>
+
+  <div id="copilotTyping" class="copilot-typing ldq-typing" style="display:none;"><span></span><span></span><span></span><em>Checking the engine's figures</em></div>
+
+  <div class="copilot-prompts ldq-prompts" aria-label="Suggested questions">
+      <button class="prompt-btn" onclick="askCopilot('Why this vessel class?')">Why was this vessel class selected?</button>
+      <button class="prompt-btn" onclick="askCopilot('Why not Paradip port?')">Why not Paradip port?</button>
+      <button class="prompt-btn" onclick="askCopilot('Why not Haldia port?')">Why is Haldia draft restricted?</button>
+      <button class="prompt-btn" onclick="askCopilot('What if freight spikes by 20%?')">What if freight spikes by 20%?</button>
+      <button class="prompt-btn" onclick="askCopilot('How does Minimax-Regret work?')">How are competing strategies ranked?</button>
+      <button class="prompt-btn" onclick="askCopilot('How is the Risk Index calculated?')">How is the Risk Index calculated?</button>
+      <button class="prompt-btn" onclick="askCopilot('What is Supply Continuity score?')">What is Supply Continuity confidence?</button>
+      <button class="prompt-btn" onclick="askCopilot('How is Demurrage computed?')">How is Demurrage cost calculated?</button>
+      <button class="prompt-btn" onclick="askCopilot('What is the best route for Rourkela?')">What is the optimal route for Rourkela?</button>
+  </div>
+
+  <form class="ldq-composer" onsubmit="submitCustomCopilotQuery(); return false;">
+    <input type="text" id="copilotCustomInput" autocomplete="off" maxlength="300" placeholder="Ask about this route, costs, ports or risk" aria-label="Your question">
+    <button type="submit" class="ldq-send" aria-label="Send question"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13"/><path d="M13 6l6 6-6 6"/></svg></button>
+  </form>
 </div>
 
 <!-- SEARCH MODAL -->

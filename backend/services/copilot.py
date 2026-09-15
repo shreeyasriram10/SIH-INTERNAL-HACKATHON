@@ -331,7 +331,7 @@ def _compare_ports(a, b, context):
     money = lambda key: (lambda o: _fmt_usd(o.get(key, 0)) + "/MT")
     lines = (
         row("Vessel", lambda o: html.escape(str(o.get("vessel_class", "-"))), lambda o: html.escape(str(o.get("vessel_class", "-"))))
-        + row("Landed cost", money("landed_cost_usd_mt"), money("landed_cost_usd_mt"))
+        + row("Logistics cost (sea to plant)", money("landed_cost_usd_mt"), money("landed_cost_usd_mt"))
         + row("Risk index", lambda o: f"{o.get('risk_index', 0):.0f}", lambda o: f"{o.get('risk_index', 0):.0f}")
         + row("Berth wait", lambda o: f"{o.get('wait_days', 0):.1f} d", lambda o: f"{o.get('wait_days', 0):.1f} d")
         + row("Rail to plant", lambda o: f"{o.get('rail_km', 0):.0f} km", lambda o: f"{o.get('rail_km', 0):.0f} km")

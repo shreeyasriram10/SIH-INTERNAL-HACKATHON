@@ -2032,3 +2032,64 @@ class TestBerthSelect:
         js = client.get("/static/ld-dash.js").text
         assert "if(C.hover !== k){ C.hover = k; renderPins(); }" in js
         assert "el.addEventListener('mouseenter', () => { C.hover = k; renderPins(); });" not in js
+
+
+# ---------- 23. CARGO DIALOG, PRIMARY ACTION, COPILOT ----------
+class TestCargoDialogAndCopilot:
+
+    # --- Edit cargo is a dialog, with every field it had before -------------
+    def test_edit_cargo_is_a_modal_dialog(self, client):
+        body = client.get("/app").text
+        assert 'class="drawer-left ld-modal" id="editCargoDrawer" role="dialog" aria-modal="true"' in body
+        css = client.get("/static/ld-dash.css").text
+        assert "#editCargoDrawer.ld-modal.open{transform:translate(-50%,-50%)" in css
+
+    def test_cargo_fields_and_handlers_survive(self, client):
+        body = client.get("/app").text
+        for element in ("drawerCargoType", "drawerQty", "qtyError", "drawerOrigin", "drawerPlant",
+                        "drawerDays", "drawerDaysVal", "validationAlert", "drawerSaveBtn"):
+            assert body.count(f'id="{element}"') == 1, element
+        assert "addEventListener('click', runPipeline)" in body
+
+    def test_escape_closes_the_dialog(self, client):
+        js = client.get("/static/ld-dash.js").text
+        assert "if(dialog.classList.contains('open')) closeDrawerById('editCargoDrawer');" in js
+
+    # --- Find Best Strategy is where the decision is shown -------------------
+    def test_primary_action_leads_the_command_centre(self, client):
+        js = client.get("/static/ld-dash.js").text
+        assert 'id="ldcRun"' in js and "$('ldcRun').addEventListener('click', () => runPipeline());" in js
+
+    def test_bar_copy_only_hides_on_the_command_centre(self, client):
+        css = client.get("/static/ld-dash.css").text
+        assert "body.ld-on-command.ld-cta-in-view .ld-bar-cta{opacity:0;" in css
+        js = client.get("/static/ld-dash.js").text
+        assert "document.body.classList.toggle('ld-on-command', isShown('command'));" in js
+
+    def test_chart_starts_below_the_intro(self, client):
+        js = client.get("/static/ld-dash.js").text
+        assert "host.style.setProperty('--ldc-top'" in js
+
+    # --- Copilot ---------------------------------------------------------------
+    def test_copilot_keeps_its_contract(self, client):
+        body = client.get("/app").text
+        for element in ("copilotDrawer", "copilotBody", "copilotTyping", "copilotCustomInput"):
+            assert body.count(f'id="{element}"') == 1, element
+        assert 'onsubmit="submitCustomCopilotQuery(); return false;"' in body
+        assert "onclick=\"clearCopilot()\"" in body
+
+    def test_copilot_starters_follow_the_result(self, client):
+        js = client.get("/static/ld-dash.js").text
+        assert "starterButton(`Why ${port}?`" in js
+        assert "function syncCopilotWelcome()" in js
+
+    def test_comparison_labels_logistics_cost_honestly(self, auth_client):
+        d = auth_client.post("/api/decision/optimize", json={
+            "parcel_size": 80000, "cargo_type": "Thermal Coal", "origin": "Indonesia",
+            "plant": "Bhilai Steel Plant (BSP)", "window_days": 30, "month": 9,
+            "top_n": 25, "persist": False}).json()
+        answer = auth_client.post("/api/copilot/ask", json={
+            "question": "Why Gangavaram over Visakhapatnam?",
+            "context": {"recommended": d["recommended"], "options": d["options"]}}).json()["answer"]
+        assert "Logistics cost (sea to plant)" in answer
+        assert "Landed cost:" not in answer

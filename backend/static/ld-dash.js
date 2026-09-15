@@ -115,6 +115,11 @@
           <div class="ld-kicker">Live decision surface</div>
           <div class="ld-h1">Executive Command Centre</div>
           <p class="ld-lede">Select any berth on the chart, any vessel class or any ranked option below. Every figure is the decision engine's own result for that pairing.</p>
+          <div class="ldc-cta">
+            <button class="ld-btn pri ldc-run" id="ldcRun" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5l12 7-12 7z"/></svg>Find Best Strategy</button>
+            <button class="ld-btn" id="ldcEditCargo" type="button">Edit cargo</button>
+            <span class="ldc-run-note" id="ldcRunNote">Scores every origin, berth and vessel class for the cargo on file.</span>
+          </div>
         </div>
         <div class="ldc-legend">
           <span><i style="width:16px;height:2px;background:var(--ld-ink)"></i>Selected route</span>
@@ -213,6 +218,20 @@
       if(C.result) select(C.result.winner.portKey, C.result.winner.vesselClassKey);
     });
     $('ldcExpand').addEventListener('click', () => { C.expanded = !C.expanded; renderBuild(); });
+    $('ldcRun').addEventListener('click', () => runPipeline());
+    // The chart starts below the intro, whatever height the intro wraps to.
+    const intro = host.querySelector('.ldc-intro');
+    const placeChart = () => host.style.setProperty('--ldc-top', (intro.offsetTop + intro.offsetHeight + 14) + 'px');
+    placeChart();
+    if(window.ResizeObserver) new ResizeObserver(placeChart).observe(intro);
+    $('ldcEditCargo').addEventListener('click', () => openCargoDrawer());
+    // The bar's copy of the action hides while this one is on screen.
+    if(window.IntersectionObserver){
+      new IntersectionObserver(entries => {
+        const seen = entries.some(e => e.isIntersecting);
+        document.body.classList.toggle('ld-cta-in-view', seen);
+      }, {threshold: 0.1}).observe($('ldcRun'));
+    }
     $('ldcMin').addEventListener('click', () => {
       const hero = host.querySelector('.ldc-hero');
       const min = !hero.classList.contains('panel-min');
@@ -504,6 +523,12 @@
     }
     renderCommand();
     syncCopilotPrompts(C.inputs);
+    syncCopilotWelcome();
+    if(fresh){
+      const lane = ORIGINS[laneOf(result)];
+      const t = C.runAt.toLocaleTimeString('en-IN', {hour:'2-digit', minute:'2-digit'});
+      $('ldcRunNote').textContent = `Last run ${t} \u00b7 ${laneOptions(result).length} offered pairings on the ${lane ? lane.short : ''} lane. Change the cargo and run again.`;
+    }
     if(isShown('intelligence')) renderIntel();
     if(isShown('approved')) renderBrief();
     landByRole();
@@ -837,6 +862,7 @@
   const _switchPanel = switchPanel;
   switchPanel = function(name){
     const out = _switchPanel.apply(this, arguments);
+    document.body.classList.toggle('ld-on-command', isShown('command'));
     if(name === 'intelligence') renderIntel();
     if(name === 'approved') renderBrief();
     return out;
@@ -884,6 +910,89 @@
     }
   }
 
+  /* ---------------------------------------------------- cargo dialog */
+  function mountCargoDialog(){
+    const dialog = $('editCargoDrawer');
+    if(!dialog) return;
+    const _open = openCargoDrawer;
+    openCargoDrawer = function(){
+      const out = _open.apply(this, arguments);
+      setTimeout(() => { const first = $('drawerCargoType'); if(first) first.focus(); }, 60);
+      return out;
+    };
+    document.addEventListener('keydown', e => {
+      if(e.key !== 'Escape') return;
+      if(dialog.classList.contains('open')) closeDrawerById('editCargoDrawer');
+      else if($('copilotDrawer')?.classList.contains('open')) closeDrawerById('copilotDrawer');
+    });
+  }
+
+  /* --------------------------------------------------------- copilot */
+  function starterButton(title, hint, question){
+    const q = JSON.stringify(question).replace(/"/g, '&quot;');
+    return `<button type="button" class="ldq-starter" onclick="askCopilot(${q})">${esc(title)}<small>${esc(hint)}</small></button>`;
+  }
+
+  function welcomeHTML(){
+    const r = activeResult;
+    let starters;
+    if(r && r.winner){
+      const w = r.winner, port = PORTS[w.portKey].name, cls = VESSEL_CLASSES[w.vesselClassKey].name;
+      const rival = r.candidates.find(c => c.portKey !== w.portKey);
+      const rivalPort = rival ? PORTS[rival.portKey].name : 'Paradip';
+      starters = [
+        starterButton(`Why ${port}?`, 'The berth that won', `Why was ${port} chosen?`),
+        starterButton(`${port} vs ${rivalPort}`, 'Side by side', `Why ${port} over ${rivalPort}?`),
+        starterButton(`Why a ${cls}?`, 'Vessel class', 'Why this vessel class?'),
+        starterButton('Break down the cost', `${money(w.base.total)}/MT landed`, 'Break down the landed cost'),
+      ];
+    }else{
+      starters = [
+        starterButton('How is a route chosen?', 'Ranking method', 'How are competing strategies ranked?'),
+        starterButton('How is risk scored?', 'Four components', 'How is the Risk Index calculated?'),
+        starterButton('What is demurrage?', 'Port delay cost', 'How is Demurrage computed?'),
+        starterButton('Is this data real?', 'Data governance', 'Is this data real?'),
+      ];
+    }
+    return `<div class="ldq-welcome" id="copilotWelcome">
+      <div class="ldq-welcome-title">Ask about the strategy on screen</div>
+      <p>Why a route, berth or vessel class won, what the costs are made of, how risk is scored, and what a disruption would change.</p>
+      <div class="ldq-starters">${starters.join('')}</div>
+    </div>`;
+  }
+
+  function syncCopilotWelcome(){
+    const w = $('copilotWelcome');
+    if(w) w.outerHTML = welcomeHTML();
+  }
+
+  window.clearCopilot = function(){
+    const body = $('copilotBody');
+    if(body) body.innerHTML = welcomeHTML();
+    const input = $('copilotCustomInput');
+    if(input){ input.value = ''; input.focus(); }
+  };
+
+  function mountCopilot(){
+    syncCopilotWelcome();
+    const _openCopilot = openCopilot;
+    openCopilot = function(){
+      const out = _openCopilot.apply(this, arguments);
+      setTimeout(() => { const input = $('copilotCustomInput'); if(input) input.focus(); }, 320);
+      return out;
+    };
+    // Land on the start of a long answer rather than its last line.
+    const _ask = askCopilot;
+    askCopilot = async function(){
+      const out = await _ask.apply(this, arguments);
+      const body = $('copilotBody');
+      const replies = body ? body.querySelectorAll('.copilot-msg.bot') : [];
+      const last = replies[replies.length - 1];
+      if(last) body.scrollTop = Math.max(0, last.offsetTop - body.offsetTop - 12);
+      return out;
+    };
+  }
+
   function trackHeaderHeight(){
     const header = document.querySelector('.gov-header');
     if(!header) return;
@@ -897,6 +1006,9 @@
   mountIntel();
   mountLoader();
   trackHeaderHeight();
+  mountCargoDialog();
+  mountCopilot();
+  document.body.classList.toggle('ld-on-command', isShown('command'));
 
   window.LDDash = {select, renderIntel, renderBrief, state:{command:C, intel:I}};
 })();
