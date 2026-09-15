@@ -172,7 +172,7 @@ def _evaluate_lanes(*, vessels, ports, request, month, bunker_price,
 def simulate_scenario(
     request: schemas.ScenarioRequest,
     db: Session = Depends(get_db),
-    user: models.User = Depends(auth.get_current_user),
+    user: models.User = Depends(auth.require_roles(*auth.ANALYSIS_ROLES)),
 ):
     """Score the current cargo on baseline conditions and under a disruption.
 
@@ -378,7 +378,7 @@ def recommendation_history(
 def idle_reposition(
     request: schemas.IdleVesselRequest,
     db: Session = Depends(get_db),
-    user: models.User = Depends(auth.get_current_user),
+    user: models.User = Depends(auth.require_roles(*auth.ANALYSIS_ROLES)),
 ):
     """Wait or ballast, for a vessel sitting idle with no cargo fixed.
 

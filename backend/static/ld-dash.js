@@ -764,7 +764,7 @@
     const monsoonNow = monsoon.includes(month);
     const range = monsoon.length ? `${monthName(monsoon[0] - month)}–${monthName(monsoon[monsoon.length - 1] - month)}` : 'none listed';
     const needDraft = v.draft + UKC_M;
-    const readOnly = role().includes('officer');
+    const readOnly = !!(ACCESS && !ACCESS.can.edit_cargo);
     const icon = {risk:'<path d="M12 3l9 16H3z"/><path d="M12 10v4M12 17h.01"/>',
                   warn:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
                   info:'<circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/>'};
@@ -829,12 +829,78 @@
   /* ============================================================ ROLES */
   let landed = false;
   function landByRole(){
-    if(landed) return;
+    if(landed || !ACCESS) return;
     landed = true;
-    if(!isShown('command')) return;
-    const r = role();
-    if(r.includes('analyst')) switchPanel('intelligence');
-    else if(r.includes('officer')) switchPanel('approved');
+    if(isShown('command') && !ACCESS.sections.includes('command')) switchPanel(ACCESS.home);
+  }
+
+  /* ============================================================ ROLES */
+  /* The policy comes from the server (/api/auth/access), which enforces the
+     same table on every endpoint. Until it arrives, role-specific controls are
+     hidden rather than guessed from localStorage. */
+  let ACCESS = null;
+
+  function sectionOf(el){
+    const m = (el.getAttribute('onclick') || '').match(/switchPanel\('([^']+)'\)/);
+    return m ? m[1] : null;
+  }
+
+  function hideDisallowedLinks(root){
+    if(!ACCESS || !root) return;
+    const allowed = new Set(ACCESS.sections);
+    root.querySelectorAll('[onclick*="switchPanel("]').forEach(el => {
+      if(el.closest('.sidenav')) return;
+      const name = sectionOf(el);
+      if(name && SECTIONS[name] && !allowed.has(name)) (el.closest('li') || el).hidden = true;
+    });
+    root.querySelectorAll('a[href="/ml-training"], a[href="/verification"]').forEach(a => {
+      if(a.closest('.sidenav')) return;
+      if(!ACCESS.pages.includes(a.getAttribute('href').slice(1))) (a.closest('li') || a).hidden = true;
+    });
+  }
+
+  function applyAccess(access){
+    ACCESS = access;
+    const allowed = new Set(access.sections);
+
+    Object.keys(SECTIONS).forEach(name => {
+      const link = $('nav-' + name);
+      if(link) link.hidden = !allowed.has(name);
+    });
+    document.querySelectorAll('.sidenav a[href]').forEach(a => {
+      a.hidden = !access.pages.includes(a.getAttribute('href').replace(/^\//, ''));
+    });
+    document.querySelectorAll('.sidenav-group').forEach(g => {
+      g.hidden = ![...g.querySelectorAll('a')].some(a => !a.hidden);
+    });
+    hideDisallowedLinks(document);
+
+    const canEdit = !!access.can.edit_cargo, canRun = !!access.can.run_engine;
+    ['openEditCargoBtn', 'ldcEditCargo'].forEach(id => { const el = $(id); if(el) el.hidden = !canEdit; });
+    ['barOptimizeBtn', 'ldcRun'].forEach(id => { const el = $(id); if(el) el.hidden = !canRun; });
+    const ro = $('cargoReadOnly'); if(ro) ro.hidden = canEdit;
+    document.querySelectorAll('.cargo-pill').forEach(p => {
+      p.style.cursor = canEdit ? '' : 'default';
+      p.title = canEdit ? 'Click to change the cargo' : 'Cargo parameters are set by the chartering desk';
+    });
+    document.body.dataset.role = access.role;
+    document.body.classList.remove('ld-access-pending');
+
+    const current = Object.keys(SECTIONS).find(isShown);
+    if(!current || !allowed.has(current)) switchPanel(access.home);
+  }
+
+  async function loadAccess(){
+    try{
+      const res = await fetch('/api/auth/access', {credentials:'same-origin'});
+      if(res.status === 401){ window.location.href = '/login'; return; }
+      if(!res.ok) throw new Error('HTTP ' + res.status);
+      applyAccess(await res.json());
+    }catch(err){
+      // Fail closed: without a policy, offer only the read-only views.
+      applyAccess({role:'unknown', home:'approved', sections:['approved', 'ports', 'about'], pages:[],
+                   can:{edit_cargo:false, run_engine:false, simulate:false, retrain_model:false, run_tests:false}});
+    }
   }
 
   /* ============================================================ HOOKS */
@@ -856,12 +922,23 @@
     return out;
   };
 
+  // The old freight chart sits in the replaced (hidden) section. It still called
+  // /api/ml/rate-horizon after every run, and a role without model access got a
+  // 403 that the chart reported as "OFFLINE ESTIMATE" in the header.
+  const _drawFreightChart = drawFreightChart;
+  drawFreightChart = function(){
+    const chart = $('forecastChart');
+    if(chart && chart.closest('.ld-legacy')) return Promise.resolve();
+    return _drawFreightChart.apply(this, arguments);
+  };
+
   // The new lane table replaces the old one; keep a single set of model calls.
   renderFreightOriginTable = function(){ if(isShown('intelligence')) return renderIntel(); };
 
   const _switchPanel = switchPanel;
   switchPanel = function(name){
-    const out = _switchPanel.apply(this, arguments);
+    if(ACCESS && !ACCESS.sections.includes(name)) name = ACCESS.home;
+    const out = _switchPanel.call(this, name);
     document.body.classList.toggle('ld-on-command', isShown('command'));
     if(name === 'intelligence') renderIntel();
     if(name === 'approved') renderBrief();
@@ -916,6 +993,7 @@
     if(!dialog) return;
     const _open = openCargoDrawer;
     openCargoDrawer = function(){
+      if(ACCESS && !ACCESS.can.edit_cargo) return;
       const out = _open.apply(this, arguments);
       setTimeout(() => { const first = $('drawerCargoType'); if(first) first.focus(); }, 60);
       return out;
@@ -1008,6 +1086,11 @@
   trackHeaderHeight();
   mountCargoDialog();
   mountCopilot();
+  loadAccess();
+  const search = $('searchModal');
+  if(search && window.MutationObserver){
+    new MutationObserver(() => hideDisallowedLinks(search)).observe(search, {childList:true, subtree:true});
+  }
   document.body.classList.toggle('ld-on-command', isShown('command'));
 
   window.LDDash = {select, renderIntel, renderBrief, state:{command:C, intel:I}};

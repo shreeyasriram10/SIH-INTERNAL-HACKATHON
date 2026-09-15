@@ -15,7 +15,7 @@ router = APIRouter()
 def create_cargo_request(
     request: schemas.CargoRequestCreate,
     db: Session = Depends(get_db),
-    user: models.User = Depends(auth.get_current_user),
+    user: models.User = Depends(auth.require_roles(*auth.ANALYSIS_ROLES)),
 ):
     db_request = models.CargoRequest(**request.model_dump(), user_id=user.id)
     db.add(db_request)

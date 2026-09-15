@@ -2093,3 +2093,105 @@ class TestCargoDialogAndCopilot:
             "context": {"recommended": d["recommended"], "options": d["options"]}}).json()["answer"]
         assert "Logistics cost (sea to plant)" in answer
         assert "Landed cost:" not in answer
+
+
+# ---------- 24. ROLE SEPARATION ----------
+class TestRoleSeparation:
+    """Admin (Chief Logistics Officer) sees and does everything; the Analyst works
+    the market, fleet, scenarios and model; the Procurement Officer sees the plan
+    and the berths, read-only. The dashboard shapes itself from /api/auth/access,
+    and every endpoint below enforces the same table on its own."""
+
+    CARGO = {"parcel_size": 80000, "cargo_type": "Coking Coal", "origin": "Australia",
+             "plant": "Rourkela", "window_days": 30, "persist": False}
+
+    def _calls(self):
+        return {
+            "optimize": ("post", "/api/decision/optimize", self.CARGO),
+            "simulate": ("post", "/api/decision/simulate", {**self.CARGO, "scenario": "cyclone"}),
+            "idle": ("post", "/api/decision/idle-reposition", {"vessel_class": "Supramax", "port_code": "INHAL"}),
+            "forecast": ("post", "/api/ml/forecast-curve", {"origin": "Australia", "distance_nm": 4500,
+                                                            "month": 9, "bunker_price": 697,
+                                                            "pressure_index": 50, "horizons": [1, 31]}),
+            "model_info": ("get", "/api/ml/info", None),
+            "save_cargo": ("post", "/api/cargo/", {k: v for k, v in self.CARGO.items() if k != "persist"}),
+            "run_tests": ("get", "/api/system/run-tests", None),
+            "ports": ("get", "/api/ports/", None),
+            "copilot": ("post", "/api/copilot/ask", {"question": "How is the Risk Index calculated?"}),
+        }
+
+    def _status(self, client, name):
+        method, path, body = self._calls()[name]
+        response = getattr(client, method)(path, json=body) if body is not None else getattr(client, method)(path)
+        return response.status_code
+
+    # --- the policy itself -----------------------------------------------------
+    def test_policy_covers_every_role(self):
+        assert set(auth.ROLE_ACCESS) == {"Admin", "Analyst", "Procurement Officer"}
+        for entry in auth.ROLE_ACCESS.values():
+            assert entry["home"] in entry["sections"]
+            assert "about" in entry["sections"]
+
+    def test_access_endpoint_describes_the_signed_in_role(self, auth_client, db_user_factory):
+        admin = auth_client.get("/api/auth/access").json()
+        assert admin["role"] == "Admin" and admin["home"] == "command"
+        assert "verification" in admin["pages"] and admin["can"]["run_tests"] is True
+
+        officer = db_user_factory("roles.officer@sail.gov.in", "Procurement Officer")["client"]
+        data = officer.get("/api/auth/access").json()
+        assert data["home"] == "approved"
+        assert set(data["sections"]) == {"approved", "ports", "about"}
+        assert data["can"]["edit_cargo"] is False and data["can"]["run_engine"] is False
+
+    def test_access_needs_a_session(self, client):
+        assert client.get("/api/auth/access").status_code == 401
+
+    def test_unknown_role_gets_the_narrowest_access(self):
+        assert auth.access_for("Intern") == auth.ROLE_ACCESS[auth.ROLE_OFFICER]
+
+    # --- enforcement ---------------------------------------------------------------
+    def test_admin_can_do_everything(self, auth_client):
+        for name in self._calls():
+            assert self._status(auth_client, name) in (200, 201), name
+
+    def test_analyst_matrix(self, db_user_factory):
+        analyst = db_user_factory("roles.analyst@sail.gov.in", "Analyst")["client"]
+        allowed = {"optimize", "simulate", "idle", "forecast", "model_info", "save_cargo", "ports", "copilot"}
+        for name in self._calls():
+            status = self._status(analyst, name)
+            if name in allowed:
+                assert status in (200, 201), (name, status)
+            else:
+                assert status == 403, (name, status)
+
+    def test_officer_matrix(self, db_user_factory):
+        officer = db_user_factory("roles.officer2@sail.gov.in", "Procurement Officer")["client"]
+        allowed = {"optimize", "ports", "copilot"}
+        for name in self._calls():
+            status = self._status(officer, name)
+            if name in allowed:
+                assert status == 200, (name, status)
+            else:
+                assert status == 403, (name, status)
+
+    # --- the dashboard follows the policy -----------------------------------------
+    def test_dashboard_reads_the_policy_from_the_server(self, client):
+        js = client.get("/static/ld-dash.js").text
+        assert "fetch('/api/auth/access'" in js
+        assert "if(ACCESS && !ACCESS.sections.includes(name)) name = ACCESS.home;" in js
+        assert "if(ACCESS && !ACCESS.can.edit_cargo) return;" in js
+
+    def test_dashboard_fails_closed_without_a_policy(self, client):
+        js = client.get("/static/ld-dash.js").text
+        assert "sections:['approved', 'ports', 'about'], pages:[]" in js
+        assert '<body class="ld-access-pending">' in client.get("/app").text
+
+    def test_secondary_pages_guard_themselves(self, client):
+        for path in ("/ml-training", "/verification"):
+            body = client.get(path).text
+            assert "Role guard for this page" in body, path
+            assert "Not available for your role" in body, path
+
+    def test_hidden_legacy_chart_does_not_call_the_model(self, client):
+        js = client.get("/static/ld-dash.js").text
+        assert "if(chart && chart.closest('.ld-legacy')) return Promise.resolve();" in js

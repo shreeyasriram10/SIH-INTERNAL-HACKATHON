@@ -77,7 +77,7 @@ def get_system_status(
 @router.get("/run-tests")
 def run_live_system_tests(
     db: Session = Depends(get_db),
-    user: models.User = Depends(auth.require_roles("Admin", "Analyst")),
+    user: models.User = Depends(auth.require_roles(auth.ROLE_ADMIN)),
 ):
     """
     Executes a real programmatic battery of automated system tests

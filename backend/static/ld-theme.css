@@ -364,3 +364,18 @@ html[data-ldmode="light"] .about-hero h2{color:#FFFFFF;}
    in SVG panes and keep their colours. */
 html:not([data-ldmode="light"]) .leaflet-tile-pane{filter:invert(1) hue-rotate(180deg) brightness(.92) contrast(.88) saturate(.7);}
 html:not([data-ldmode="light"]) .leaflet-container{background:#0B2230;}
+
+/* ---- role-based access ----------------------------------------------------
+   Sections a role cannot use are removed from view. The endpoints enforce the
+   same policy; this only keeps the interface from offering what would 403. */
+[hidden]{display:none !important;}
+body.ld-access-pending .sidenav a,
+body.ld-access-pending .cargo-actions,
+body.ld-access-pending .ldc-cta button{visibility:hidden;}
+.ld-readonly{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:600;color:var(--ld-mute);
+  border:1px solid var(--ld-hair-strong);padding:6px 10px;border-radius:var(--ld-r-sm);white-space:nowrap;}
+.ld-readonly svg{width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:2;}
+.ld-role-block{max-width:560px;margin:60px auto;padding:28px;text-align:center;border:1px solid var(--ld-hair);
+  border-radius:var(--ld-r);background:var(--ld-card);}
+.ld-role-block h2{margin:0 0 8px;color:var(--ld-text);}
+.ld-role-block p{margin:0 0 18px;color:var(--ld-dim);font-size:13px;line-height:1.6;}

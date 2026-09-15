@@ -452,7 +452,7 @@ footer .data-disclaimer{font-size:10.5px;color:var(--steel-light);margin-top:6px
 <link rel="stylesheet" href="/static/ld-theme.css">
 <link rel="stylesheet" href="/static/ld-dash.css">
 </head>
-<body>
+<body class="ld-access-pending">
 
 
 
@@ -593,6 +593,7 @@ footer .data-disclaimer{font-size:10.5px;color:var(--steel-light);margin-top:6px
       <div class="cargo-pill" onclick="openCargoDrawer()"><span class="label">Window:</span> <span id="barDays">30 Days</span></div>
     </div>
     <div class="cargo-actions">
+      <span class="ld-readonly" id="cargoReadOnly" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="1"/><path d="M8 11V7a4 4 0 018 0v4"/></svg>Read-only &middot; set by the chartering desk</span>
       <button class="icon-btn cargo-edit" id="openEditCargoBtn" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></svg>Edit cargo</button>
       <button class="btn-optimize ld-bar-cta" id="barOptimizeBtn" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5l12 7-12 7z"/></svg>Find Best Strategy</button>
     </div>

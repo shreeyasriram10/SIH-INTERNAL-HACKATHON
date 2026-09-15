@@ -58,7 +58,7 @@ def _confidence_interval(rate: float) -> tuple[float, float]:
 # ---------------------------------------------------------------------------
 
 @router.get("/info")
-def get_model_info(user: models.User = Depends(auth.get_current_user)):
+def get_model_info(user: models.User = Depends(auth.require_roles(*auth.ANALYSIS_ROLES))):
     """Model metrics and the feature registry describe how the platform prices
     freight, so they sit behind a session like the predictions themselves."""
     payload = model_registry.get_payload()
@@ -175,7 +175,7 @@ def trigger_training(
 def predict_freight(
     request: ForecastRequest,
     db: Session = Depends(get_db),
-    user: models.User = Depends(auth.get_current_user),
+    user: models.User = Depends(auth.require_roles(*auth.ANALYSIS_ROLES)),
 ):
     try:
         rate = max(0.0, model_registry.predict_rate(request.model_dump()))
@@ -222,7 +222,7 @@ def predict_freight(
 @router.post("/forecast-curve")
 def forecast_curve(
     request: CurveRequest,
-    user: models.User = Depends(auth.get_current_user),
+    user: models.User = Depends(auth.require_roles(*auth.ANALYSIS_ROLES)),
 ):
     """Rate curve across several horizons in one round trip.
 
@@ -272,7 +272,7 @@ def forecast_curve(
 @router.post("/rate-horizon")
 def rate_horizon_series(
     request: RateHorizonRequest,
-    user: models.User = Depends(auth.get_current_user),
+    user: models.User = Depends(auth.require_roles(*auth.ANALYSIS_ROLES)),
 ):
     """Daily rate series for the dashboard's freight-rate chart.
 

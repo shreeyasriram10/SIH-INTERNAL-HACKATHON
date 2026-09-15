@@ -168,6 +168,14 @@ def logout(
     return {"status": "SUCCESS"}
 
 
+@router.get("/access")
+def read_access(current_user: models.User = Depends(auth.get_current_user)):
+    """What the signed-in role may see and do. The dashboard shapes itself from
+    this; the endpoints enforce the same policy on their own."""
+    entry = auth.access_for(current_user.role)
+    return {"role": current_user.role, **entry}
+
+
 @router.get("/me", response_model=schemas.User)
 def read_current_user(current_user: models.User = Depends(auth.get_current_user)):
     """Lets the front end confirm it still has a session without reading the

@@ -599,5 +599,34 @@ document.querySelectorAll('.sidenav a').forEach(function(a){
   if(label){ a.setAttribute('data-label', label); a.setAttribute('aria-label', label); }
 });
 </script>
+<script>
+/* Role guard for this page. The API behind it enforces the same policy; this
+   keeps a role from landing on a page whose every call would be refused. */
+(async function(){
+  var page = window.location.pathname.replace(/^\//, '');
+  try{
+    var res = await fetch('/api/auth/access', {credentials:'same-origin'});
+    if(res.status === 401){ window.location.href = '/login'; return; }
+    if(!res.ok) return;
+    var access = await res.json();
+    document.querySelectorAll('a[href="/ml-training"], a[href="/verification"]').forEach(function(a){
+      if(access.pages.indexOf(a.getAttribute('href').slice(1)) === -1){ (a.closest('li') || a).hidden = true; }
+    });
+    if(access.pages.indexOf(page) === -1){
+      var main = document.getElementById('mainContent');
+      if(main){
+        main.innerHTML = '<div class="ld-role-block"><h2>Not available for your role</h2>'
+          + '<p>This page is part of the ' + (page === 'verification' ? 'Chief Logistics Officer' : 'analysis')
+          + ' workspace. You are signed in as <b>' + String(access.label).replace(/[<>&]/g, '') + '</b>.</p>'
+          + '<a class="btn-back" href="/app">Back to your dashboard</a></div>';
+      }
+    }
+    if(!access.can.retrain_model){
+      var train = document.getElementById('btnTrain');
+      if(train){ train.hidden = true; }
+    }
+  }catch(e){}
+})();
+</script>
 </body>
 </html>

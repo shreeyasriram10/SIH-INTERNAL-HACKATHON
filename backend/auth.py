@@ -215,3 +215,57 @@ def require_roles(*roles: str):
         return user
 
     return _guard
+
+
+# ---------------------------------------------------------------------------
+# Role policy
+#
+# One table decides what each role may see and do. The dashboard reads it from
+# /api/auth/access to decide what to show; the endpoints enforce the same table
+# with require_roles, so hiding a button is never the only thing standing
+# between a role and an action.
+#
+#   Admin (Chief Logistics Officer)  every section and action
+#   Analyst                          market analysis, fleet fit, scenarios, model
+#   Procurement Officer              the approved plan and the berths, read-only
+# ---------------------------------------------------------------------------
+ROLE_ADMIN = "Admin"
+ROLE_ANALYST = "Analyst"
+ROLE_OFFICER = "Procurement Officer"
+
+# Running the engine on new parameters, simulating disruptions and working with
+# the freight model are analysis work.
+ANALYSIS_ROLES = (ROLE_ADMIN, ROLE_ANALYST)
+
+ROLE_ACCESS = {
+    ROLE_ADMIN: {
+        "label": "Chief Logistics Officer",
+        "home": "command",
+        "sections": ["command", "intelligence", "approved", "scenarios", "ports", "vessels",
+                     "international-waterways", "about"],
+        "pages": ["ml-training", "verification"],
+        "can": {"edit_cargo": True, "run_engine": True, "simulate": True,
+                "retrain_model": True, "run_tests": True},
+    },
+    ROLE_ANALYST: {
+        "label": "Analyst",
+        "home": "intelligence",
+        "sections": ["intelligence", "scenarios", "vessels", "about"],
+        "pages": ["ml-training"],
+        "can": {"edit_cargo": True, "run_engine": True, "simulate": True,
+                "retrain_model": True, "run_tests": False},
+    },
+    ROLE_OFFICER: {
+        "label": "Procurement Officer",
+        "home": "approved",
+        "sections": ["approved", "ports", "about"],
+        "pages": [],
+        "can": {"edit_cargo": False, "run_engine": False, "simulate": False,
+                "retrain_model": False, "run_tests": False},
+    },
+}
+
+
+def access_for(role: str) -> dict:
+    """The access entry for a role; an unknown role gets the narrowest one."""
+    return ROLE_ACCESS.get(role) or ROLE_ACCESS[ROLE_OFFICER]
