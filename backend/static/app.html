@@ -450,6 +450,7 @@ footer .data-disclaimer{font-size:10.5px;color:var(--steel-light);margin-top:6px
 .copilot-followup:hover{background:#F4F7FB;border-color:var(--gov-navy-2);}
 </style>
 <link rel="stylesheet" href="/static/ld-theme.css">
+<link rel="stylesheet" href="/static/ld-dash.css">
 </head>
 <body>
 
@@ -532,6 +533,8 @@ footer .data-disclaimer{font-size:10.5px;color:var(--steel-light);margin-top:6px
       <svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/></svg>Command Centre</a>
     <a id="nav-intelligence" onclick="switchPanel('intelligence')">
       <svg viewBox="0 0 24 24"><path d="M3 17l5-6 4 3 4-7 5 5"/><path d="M3 21h18"/></svg>Freight Intelligence</a>
+    <a id="nav-approved" onclick="switchPanel('approved')">
+      <svg viewBox="0 0 24 24"><path d="M12 3l7 3v6c0 4.2-2.8 7.9-7 9-4.2-1.1-7-4.8-7-9V6z"/><path d="M9 12l2 2 4-4"/></svg>Execution Brief</a>
     <a id="nav-scenarios" onclick="switchPanel('scenarios')">
       <svg viewBox="0 0 24 24"><path d="M12 3v4"/><path d="M5.6 5.6l2.9 2.9"/><path d="M3 12h4"/><path d="M12 21a6 6 0 100-12 6 6 0 000 12z"/></svg>What-If Simulator</a>
   </div>
@@ -717,6 +720,9 @@ footer .data-disclaimer{font-size:10.5px;color:var(--steel-light);margin-top:6px
     </div>
   </div>
 </div>
+
+<!-- ===== EXECUTION BRIEF (rendered by ld-dash.js from the engine result) ===== -->
+<div class="panel" id="panel-approved"><div class="ld-wrap" id="ldBrief"></div></div>
 
 <!-- ===== PANEL 2: FREIGHT INTELLIGENCE ===== -->
 <div class="panel" id="panel-intelligence">
@@ -1975,7 +1981,7 @@ async function runDecisionEngine(inputs, blockedPorts=[], blockedVesselClass=nul
           window_days: inputs.days,
           month: currentMonth(),
           pressure_index: lanePressure(originKey),
-          top_n: 8,
+          top_n: 25,
           persist: false
         })
       }).then(data => ({originKey, data}))
@@ -2561,11 +2567,7 @@ function toggleCostMode(totalMode){
 /* Built from the current data. The drawer used to hold three permanent
    messages - one quoting a "Baltic Capesize Index up 8.2%" that no data backed
    - under a badge that always read 2. */
-function refreshAlerts(result){
-  const body = document.getElementById('notifyBody');
-  const badge = document.getElementById('alertCount');
-  if(!body || !badge) return;
-
+function buildAlerts(result){
   const month = currentMonth();
   const monthName = new Date(2000, month - 1, 1).toLocaleString('en-IN', {month:'long'});
   const alerts = [];
@@ -2594,6 +2596,14 @@ function refreshAlerts(result){
     alerts.push({tone:'risk', title:'Scenario active',
       text:'The What-If panel shows a simulated disruption, not baseline conditions.', src:'What-If Simulator'});
   }
+  return alerts;
+}
+
+function refreshAlerts(result){
+  const body = document.getElementById('notifyBody');
+  const badge = document.getElementById('alertCount');
+  if(!body || !badge) return;
+  const alerts = buildAlerts(result);
 
   const tones = {warn:['--saffron-bg','--saffron-border','--saffron-dark'],
                  risk:['--red-bg','--red-border','--red'],
@@ -3222,6 +3232,7 @@ async function runPipeline(){
 const SECTIONS = {
   'command':                 {label:'Command Centre',          group:'Decision Support'},
   'intelligence':            {label:'Freight Intelligence',    group:'Decision Support'},
+  'approved':                {label:'Execution Brief',         group:'Decision Support'},
   'scenarios':               {label:'What-If Simulator',       group:'Decision Support'},
   'ports':                   {label:'Port Profiles',           group:'Infrastructure'},
   'vessels':                 {label:'Vessel Fit',              group:'Infrastructure'},
@@ -4164,5 +4175,6 @@ document.querySelectorAll('.sidenav a').forEach(function(a){
   if(label){ a.setAttribute('data-label', label); a.setAttribute('aria-label', label); }
 });
 </script>
+<script src="/static/ld-dash.js"></script>
 </body>
 </html>

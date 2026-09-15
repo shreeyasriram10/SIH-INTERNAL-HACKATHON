@@ -1820,3 +1820,64 @@ class TestRedesign:
                      "function handleChallenge", "function runIdleScenario",
                      'id="decisionCardHost"', 'id="scenarioBattleBody"'):
             assert hook in body, hook
+
+
+# ---------- 20. DASHBOARDS ----------
+class TestDashboards:
+    """Command Centre, Freight Intelligence and Execution Brief follow the design
+    handoff's elements and interactions. The prototype behind that design priced
+    everything with its own fixed figures; none of that may reach the product."""
+
+    def _js(self, client):
+        response = client.get("/static/ld-dash.js")
+        assert response.status_code == 200
+        return response.text
+
+    def test_dashboard_assets_are_loaded(self, client):
+        body = client.get("/app").text
+        assert '/static/ld-dash.js' in body
+        assert '/static/ld-dash.css' in body
+        assert client.get("/static/ld-dash.css").status_code == 200
+
+    def test_no_prototype_figures(self, client):
+        js = self._js(client)
+        for fixed in ("FOB = 185", "FREIGHT = 16.50", "0.9902", "219.42", "LD-26006", "Cleared by CLO"):
+            assert fixed not in js, fixed
+
+    def test_figures_come_from_the_engine_and_model(self, client):
+        js = self._js(client)
+        for field in ("a.risk_index", "a.supply_continuity", "a.confidence", "a.total_cycle_days",
+                      "opt.base.total", "/api/ml/forecast-curve", "/api/ml/info"):
+            assert field in js, field
+
+    def test_every_offered_pairing_is_requested(self, client):
+        body = client.get("/app").text
+        # the optimize call behind the Command Centre; the What-If call keeps its own limit
+        assert "top_n: 25,\n          persist: false" in body
+
+    def test_execution_brief_is_a_section(self, client):
+        body = client.get("/app").text
+        assert 'id="nav-approved"' in body
+        assert 'id="panel-approved"' in body
+        assert "'approved':" in body
+
+    def test_alerts_are_shared_between_drawer_and_brief(self, client):
+        body = client.get("/app").text
+        assert "function buildAlerts(result)" in body
+        assert "const alerts = buildAlerts(result);" in body
+        assert "buildAlerts(r)" in self._js(client)
+
+    def test_the_brief_does_not_claim_an_approval_it_never_saw(self, client):
+        js = self._js(client)
+        assert "Approval is recorded outside this system" in js
+        assert "Engine recommendation" in js
+
+    def test_engine_code_is_wrapped_not_rewritten(self, client):
+        js = self._js(client)
+        assert "const _renderDecisionCard = renderDecisionCard;" in js
+        assert "const _switchPanel = switchPanel;" in js
+
+    def test_the_recommended_option_offers_the_engine_limit_for_rank(self):
+        """The ranked list needs every offered pairing; the endpoint allows 25."""
+        import schemas
+        assert schemas.OptimizeRequest.model_fields["top_n"].metadata[-1].le >= 25
