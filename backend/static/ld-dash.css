@@ -14,10 +14,13 @@ html:not([data-ldmode="light"]){
   --ld-accent-big:#9BE3EF; --ld-sec-bg:rgba(255,255,255,.055); --ld-sec-bg-h:rgba(255,255,255,.11);
 }
 html[data-ldmode="light"]{
-  --ld-map-grid:#D2D9DC; --ld-map-land:#D2EAF0; --ld-map-land-bd:#1F7C90; --ld-map-label:#185F70; --ld-map-faint:#93A0A7;
-  --ld-map-card:#FFFFFF; --ld-map-sea:#EAF2F5;
-  --ld-pos:#1F6B49; --ld-pos-ink:#1B5C3F; --ld-warn:#8A6212; --ld-warn-ink:#75530F; --ld-crit:#A32B33; --ld-crit-ink:#8E2229;
-  --ld-glow:none; --ld-accent-big:#114552; --ld-sec-bg:#FFFFFF; --ld-sec-bg-h:#EEF7F9;
+  --ld-map-grid:rgba(10,111,181,.08); --ld-map-land:#FFFFFF; --ld-map-land-bd:#0A6FB5; --ld-map-label:#06325A; --ld-map-faint:#7F9AB0;
+  --ld-map-card:rgba(255,255,255,.86);
+  --ld-map-sea:radial-gradient(700px 360px at 72% 16%,rgba(255,255,255,.85),transparent 70%),
+               radial-gradient(900px 420px at 10% 110%,rgba(8,145,178,.22),transparent 70%),
+               linear-gradient(180deg,#E8F6FC 0%,#CFEAF6 100%);
+  --ld-pos:#0F7A5A; --ld-pos-ink:#0B6149; --ld-warn:#8A6212; --ld-warn-ink:#75530F; --ld-crit:#C0364A; --ld-crit-ink:#9E2638;
+  --ld-glow:drop-shadow(0 0 4px rgba(10,111,181,.45)); --ld-accent-big:#0A5C96; --ld-sec-bg:rgba(255,255,255,.9); --ld-sec-bg-h:#E3F5FA;
 }
 
 /* ---- shared atoms ------------------------------------------------------ */
@@ -58,7 +61,7 @@ html[data-ldmode="light"]{
 .ldc-legend{position:absolute;bottom:14px;left:32px;display:flex;gap:18px;flex-wrap:wrap;font-size:11px;color:var(--ld-mute);pointer-events:none;}
 .ldc-legend span{display:inline-flex;align-items:center;gap:6px;}
 .ldc-legend i{display:inline-block;}
-.ldc-panel{position:absolute;top:22px;right:32px;width:min(350px,42vw);background:var(--ld-map-card);border:1px solid var(--ld-hair);
+.ldc-panel{position:absolute;top:22px;right:32px;width:min(350px,42vw);background:var(--ld-map-card);backdrop-filter:blur(14px) saturate(150%);-webkit-backdrop-filter:blur(14px) saturate(150%);border:1px solid var(--ld-hair);
   box-shadow:var(--ld-card-sh-h);border-radius:var(--ld-r);overflow:hidden;animation:ldRiseIn .3s ease both;}
 .ldc-panel.best{border-color:rgba(255,84,54,.55);}
 .ldc-panel.blocked{border-color:rgba(255,107,127,.5);}
@@ -262,7 +265,6 @@ body.ld-on-command.ld-cta-in-view .ld-bar-cta{opacity:0;transform:scale(.94);poi
   transform:translate(-50%,-47%) scale(.97);opacity:0;visibility:hidden;pointer-events:none;
   transition:opacity .18s ease,transform .24s cubic-bezier(.2,.8,.25,1),visibility 0s linear .24s !important;}
 #editCargoDrawer.ld-modal.open{transform:translate(-50%,-50%);opacity:1;visibility:visible;pointer-events:auto;transition-delay:0s !important;}
-html[data-ldmode="light"] #editCargoDrawer.ld-modal{border-radius:0 !important;}
 .ldm-head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;padding:22px 24px 16px;border-bottom:1px solid var(--ld-hair);}
 .ldm-head h3{margin:6px 0 0;font-size:22px;font-family:var(--ld-font-head);font-weight:var(--ld-h-weight);letter-spacing:var(--ld-h-track);color:var(--ld-text);}
 .ldm-head p{margin:6px 0 0;font-size:12.5px;color:var(--ld-dim);line-height:1.5;}
@@ -287,7 +289,7 @@ html[data-ldmode="light"] #editCargoDrawer.ld-modal{border-radius:0 !important;}
 .ldq{width:min(440px,100vw) !important;right:-480px;}
 .ldq.open{right:0 !important;}
 .ldq-head{padding:14px 16px !important;background:var(--ld-chrome) !important;color:var(--ld-text) !important;border-bottom:1px solid var(--ld-hair) !important;}
-html[data-ldmode="light"] .ldq-head{background:#FFFFFF !important;color:var(--ld-text) !important;}
+html[data-ldmode="light"] .ldq-head{background:rgba(255,255,255,.8) !important;color:var(--ld-text) !important;backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);}
 .ldq-id{display:flex;align-items:center;gap:11px;min-width:0;}
 .ldq-avatar{width:36px;height:36px;flex:0 0 36px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;
   background:var(--ld-accent-soft);border:1px solid var(--blue-border);color:var(--ld-accent-ink);}
@@ -326,13 +328,10 @@ html[data-ldmode="light"] .ldq .copilot-msg.user{color:#FFFFFF !important;}
 .ldq-prompts{flex-direction:row !important;flex-wrap:nowrap !important;gap:6px !important;overflow-x:auto;overflow-y:hidden;max-height:none !important;
   padding:10px 16px !important;background:transparent !important;border-top:1px solid var(--ld-hair) !important;scrollbar-width:thin;}
 .ldq-prompts .prompt-btn{flex:0 0 auto;white-space:nowrap;border-radius:999px !important;padding:6px 11px !important;font-size:11.5px !important;}
-html[data-ldmode="light"] .ldq-prompts .prompt-btn{border-radius:0 !important;}
 .ldq-composer{display:flex;gap:8px;align-items:center;padding:12px 16px 16px;border-top:1px solid var(--ld-hair);background:var(--ld-chrome);}
 .ldq-composer input{flex:1;min-height:44px;padding:0 14px !important;font-size:13.5px;border-radius:999px !important;}
-html[data-ldmode="light"] .ldq-composer input{border-radius:0 !important;}
 .ldq-send{width:44px;height:44px;flex:0 0 44px;border-radius:50%;border:0;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;
   background:var(--ld-ink);color:#FFFFFF;box-shadow:var(--ld-pri-sh);transition:background .15s ease,transform .15s ease;}
-html[data-ldmode="light"] .ldq-send{border-radius:0;}
 .ldq-send:hover{background:var(--ld-ink-h);transform:translateX(1px);}
 .ldq-send svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;}
 @media(max-width:600px){.ldq{width:100vw !important;}.ldq-starters{grid-template-columns:1fr;}}
@@ -350,3 +349,10 @@ html[data-ldmode="light"] .ldq-send{border-radius:0;}
   .ldc-row{grid-template-columns:110px minmax(0,1fr) 70px 44px;}
   .ldb-specs{grid-template-columns:repeat(2,minmax(0,1fr));}
 }
+
+/* ---- light mode: "best option" highlights follow the ocean-blue ink ---- */
+html[data-ldmode="light"] .ld-tag.ink{border-color:rgba(10,111,181,.45);}
+html[data-ldmode="light"] .ldc-panel.best{border-color:rgba(10,111,181,.45);}
+html[data-ldmode="light"] .ldc-panel.best .ldc-panel-head{background:linear-gradient(180deg,rgba(63,178,234,.18),rgba(10,111,181,.08));}
+html[data-ldmode="light"] .ldc-opt.on{background:linear-gradient(180deg,#EEF7FD,#E0F0FA);border-color:rgba(10,111,181,.45);}
+html[data-ldmode="light"] .ldc-hero{border-bottom-color:rgba(10,111,181,.16);}

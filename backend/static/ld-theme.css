@@ -57,40 +57,50 @@ html:not([data-ldmode="light"]){
   --tri-saffron:#FF9933; --tri-green:#138808;
 }
 
+/* Light mode: "Sea Glass" - white paper, ocean-blue actions, lagoon-cyan
+   accents, frosted chrome and glossy surfaces. Sora sets headings and
+   figures; Manrope sets running text. */
 html[data-ldmode="light"]{
   color-scheme:light;
-  --ld-font-body:"Barlow",system-ui,-apple-system,sans-serif;
-  --ld-font-head:"Barlow Condensed","Barlow",system-ui,sans-serif;
-  --ld-h-weight:600; --ld-h-track:-.01em;
-  --ld-page:#F4F6F7;
-  --ld-text:#0B1E29; --ld-dim:#33424A; --ld-mute:#69787F; --ld-faint:#93A0A7;
-  --ld-accent:#1F7C90; --ld-accent-ink:#185F70; --ld-accent-soft:#EEF7F9;
-  --ld-ink:#D64426; --ld-ink-h:#BC3A1F; --ld-ink-soft:#FFF3F0;
-  --ld-hair:rgba(11,30,41,.16); --ld-hair-strong:rgba(11,30,41,.26);
-  --ld-card:#FFFFFF; --ld-card-solid:#FFFFFF; --ld-overlay:#FFFFFF;
-  --ld-card-sh:none; --ld-card-sh-h:0 4px 12px rgba(11,30,41,.16);
-  --ld-chrome:rgba(244,246,247,.95);
-  --ld-chip:#FFFFFF;
+  --ld-font-body:"Manrope",system-ui,-apple-system,sans-serif;
+  --ld-font-head:"Sora","Manrope",system-ui,sans-serif;
+  --ld-h-weight:600; --ld-h-track:-.022em;
+  --ld-page:radial-gradient(1100px 620px at 88% -8%,rgba(56,189,248,.16),transparent 62%),
+            radial-gradient(900px 560px at -4% 104%,rgba(8,145,178,.12),transparent 64%),
+            linear-gradient(180deg,#FFFFFF 0%,#F4FAFD 48%,#EAF5FB 100%);
+  --ld-text:#0A2540; --ld-dim:#34506A; --ld-mute:#5F7A92; --ld-faint:#93A9BC;
+  --ld-accent:#0891B2; --ld-accent-ink:#0B6E8A; --ld-accent-soft:#E3F5FA;
+  --ld-ink:#0A6FB5; --ld-ink-h:#085A94; --ld-ink-soft:#E6F2FB;
+  --ld-hair:rgba(10,111,181,.14); --ld-hair-strong:rgba(10,111,181,.26);
+  --ld-card:linear-gradient(180deg,rgba(255,255,255,.96) 0%,rgba(244,250,253,.92) 100%);
+  --ld-card-solid:#FFFFFF; --ld-overlay:#FFFFFF;
+  --ld-card-sh:0 1px 0 rgba(255,255,255,.9) inset,0 10px 30px -18px rgba(10,80,140,.28);
+  --ld-card-sh-h:0 1px 0 rgba(255,255,255,.9) inset,0 22px 44px -20px rgba(10,80,140,.38);
+  --ld-chrome:rgba(255,255,255,.72);
+  --ld-chip:rgba(255,255,255,.85);
   --ld-input:#FFFFFF; --ld-input-f:#FFFFFF;
-  --ld-track:#DDE4E7;
-  --ld-pri-sh:none;
-  --ld-r:0px; --ld-r-sm:0px;
-  --ld-map-bg:#EAF2F5;
+  --ld-track:#DCEBF4;
+  --ld-pri-sh:0 1px 0 rgba(255,255,255,.35) inset,0 12px 26px -12px rgba(10,111,181,.65);
+  --ld-r:14px; --ld-r-sm:10px;
+  --ld-map-bg:#E6F4FB;
   --ld-num-glow:none;
+  --ld-gloss:linear-gradient(180deg,#3FB2EA 0%,#0A6FB5 52%,#07599A 100%);
+  --ld-gloss-h:linear-gradient(180deg,#4DBDF2 0%,#0B78C4 52%,#0762A8 100%);
+  --ld-deep:linear-gradient(135deg,#06325A 0%,#0A5C96 58%,#0A7FB8 100%);
 
-  --bg-main:#F4F6F7; --bg-surface:#FFFFFF; --bg-subtle:#EEF2F4; --bg-hover:#E6EBED;
-  --navy-deep:#0B1E29; --navy-surface:#1C2B33; --navy-border:#33424A;
-  --steel-dark:#33424A; --steel-muted:#69787F; --steel-light:#93A0A7; --steel-border:rgba(11,30,41,.16);
-  --saffron:#B7791F; --saffron-dark:#8A6212; --saffron-bg:#FBF4E6; --saffron-border:#E7CE9C;
-  --amber:#B7791F; --amber-bg:#FBF4E6;
-  --green:#1F6B49; --green-dark:#1B5C3F; --green-bg:#EAF5EF; --green-border:#B9DCC8;
-  --red:#A32B33; --red-dark:#8E2229; --red-bg:#FBECEC; --red-border:#EBC0C3;
-  --blue:#1F7C90; --blue-bg:#EEF7F9; --blue-border:#A9D8E3;
-  --shadow-sm:none; --shadow-md:0 2px 6px rgba(11,30,41,.08);
-  --shadow-lg:0 4px 12px rgba(11,30,41,.12); --shadow-xl:0 12px 30px rgba(11,30,41,.16);
-  --radius-sm:0px; --radius:0px; --radius-lg:0px;
-  --gov-strip:#0B2D36; --gov-navy:#0B2D36; --gov-navy-2:#1F7C90;
-  --gov-line:rgba(11,30,41,.16); --gov-rail:transparent;
+  --bg-main:#F4FAFD; --bg-surface:#FFFFFF; --bg-subtle:#F0F7FB; --bg-hover:#E3F1F9;
+  --navy-deep:#0A2540; --navy-surface:#0A5C96; --navy-border:#34506A;
+  --steel-dark:#34506A; --steel-muted:#5F7A92; --steel-light:#93A9BC; --steel-border:rgba(10,111,181,.14);
+  --saffron:#B7791F; --saffron-dark:#8A6212; --saffron-bg:#FDF6E7; --saffron-border:#EBD3A2;
+  --amber:#B7791F; --amber-bg:#FDF6E7;
+  --green:#0F7A5A; --green-dark:#0B6149; --green-bg:#E7F7F1; --green-border:#AEDFCB;
+  --red:#C0364A; --red-dark:#9E2638; --red-bg:#FDEEF0; --red-border:#F1C1C9;
+  --blue:#0A6FB5; --blue-bg:#E6F2FB; --blue-border:#A8D3EE;
+  --shadow-sm:0 1px 2px rgba(10,80,140,.06); --shadow-md:0 6px 18px -8px rgba(10,80,140,.22);
+  --shadow-lg:0 14px 32px -14px rgba(10,80,140,.3); --shadow-xl:0 28px 60px -24px rgba(10,60,110,.38);
+  --radius-sm:8px; --radius:12px; --radius-lg:16px;
+  --gov-strip:#06325A; --gov-navy:#06325A; --gov-navy-2:#0A6FB5;
+  --gov-line:rgba(10,111,181,.14); --gov-rail:transparent;
   --tri-saffron:#FF9933; --tri-green:#138808;
 }
 
@@ -156,20 +166,19 @@ html{--rail-float-w:58px;--rail-gutter:88px;}
   background:var(--ld-chrome);border:1px solid var(--ld-hair-strong);border-radius:16px;
   box-shadow:0 22px 48px -24px rgba(0,8,14,.9),0 1px 0 rgba(255,255,255,.05) inset;
   backdrop-filter:blur(14px) saturate(120%);-webkit-backdrop-filter:blur(14px) saturate(120%);}
-html[data-ldmode="light"] .sidenav{border-radius:0;box-shadow:0 8px 24px rgba(11,30,41,.14);background:#FFFFFF;}
+html[data-ldmode="light"] .sidenav{box-shadow:0 1px 0 rgba(255,255,255,.9) inset,0 18px 40px -18px rgba(10,80,140,.35);}
 .sidenav-group{padding:0 7px;margin:0;display:flex;flex-direction:column;align-items:center;gap:4px;}
 .sidenav-group + .sidenav-group{margin-top:8px;padding-top:8px;border-top:1px solid var(--ld-hair);}
 .sidenav-label,.sidenav-foot{display:none;}
 .sidenav a{position:relative;width:42px;height:40px;padding:0;margin:0;justify-content:center;gap:0;
   font-size:0;border-left:0;border-radius:10px;color:var(--ld-mute);}
-html[data-ldmode="light"] .sidenav a{border-radius:0;}
 .sidenav a svg{width:18px;height:18px;flex:0 0 18px;opacity:1;stroke-width:1.7;}
 .sidenav a .ext{display:none;}
 .sidenav a,.sidenav a.active{border-bottom:0;white-space:nowrap;}
 .sidenav a:hover{background:var(--bg-hover);color:var(--ld-text);}
 .sidenav a.active{background:var(--ld-accent);color:#04121A;border-left:0;font-weight:600;
   box-shadow:0 8px 20px -10px rgba(63,184,206,.9);}
-html[data-ldmode="light"] .sidenav a.active{color:#FFFFFF;box-shadow:none;}
+html[data-ldmode="light"] .sidenav a.active{color:#FFFFFF;background:var(--ld-gloss);box-shadow:var(--ld-pri-sh);}
 .sidenav a::before{content:"";position:absolute;left:calc(100% + 8px);top:50%;width:8px;height:8px;
   background:var(--ld-overlay);border-left:1px solid var(--ld-hair-strong);border-bottom:1px solid var(--ld-hair-strong);
   transform:translateY(-50%) rotate(45deg);opacity:0;pointer-events:none;transition:opacity .12s ease;z-index:301;}
@@ -278,7 +287,7 @@ html:not([data-ldmode="light"]) svg circle[stroke="#FFF"]{stroke:#04121A;}
   border-radius:var(--ld-r) !important;box-shadow:var(--shadow-xl) !important;}
 .drawer-left,.drawer-right{border-radius:0 !important;}
 .drawer-header{background:var(--gov-navy) !important;color:#FFFFFF !important;border-bottom:1px solid var(--ld-hair);}
-html[data-ldmode="light"] .drawer-header{background:#0B2D36 !important;}
+html[data-ldmode="light"] .drawer-header{background:var(--ld-deep) !important;}
 .drawer-overlay{background:rgba(2,10,16,.55) !important;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);}
 .loading-overlay{background:rgba(4,16,24,.72) !important;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);}
 .loading-text{color:#FFFFFF !important;}
@@ -304,7 +313,7 @@ html[data-ldmode="light"] .drawer-header{background:#0B2D36 !important;}
 
 /* about / governance */
 .about-hero{background:var(--ld-card) !important;border:1px solid var(--ld-hair);color:var(--ld-dim);}
-html[data-ldmode="light"] .about-hero{background:#0B2D36 !important;color:#D2EAF0;}
+html[data-ldmode="light"] .about-hero{background:var(--ld-deep) !important;color:#D6EEFA;border:0;}
 .about-hero h2{color:var(--ld-text);}
 html[data-ldmode="light"] .about-hero h2{color:#FFFFFF;}
 .about-card h4{color:var(--ld-text);}
@@ -379,3 +388,67 @@ body.ld-access-pending .ldc-cta button{visibility:hidden;}
   border-radius:var(--ld-r);background:var(--ld-card);}
 .ld-role-block h2{margin:0 0 8px;color:var(--ld-text);}
 .ld-role-block p{margin:0 0 18px;color:var(--ld-dim);font-size:13px;line-height:1.6;}
+
+/* ============================================================ SEA GLASS ===
+   Light-mode finish: frosted chrome, glossy ocean-blue actions and a faint
+   swell along the foot of the viewport. Colour and type come from the
+   tokens above; this block only adds surface treatment. */
+html[data-ldmode="light"] body::before{content:"";position:fixed;left:0;right:0;bottom:0;height:220px;z-index:-1;pointer-events:none;
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 220' preserveAspectRatio='none'%3E%3Cpath d='M0 120 C 240 70 420 170 720 118 S 1200 60 1440 112 V220 H0Z' fill='%230891B2' fill-opacity='.07'/%3E%3Cpath d='M0 160 C 300 116 520 200 820 156 S 1240 118 1440 150 V220 H0Z' fill='%230A6FB5' fill-opacity='.08'/%3E%3Cpath d='M0 118 C 240 68 420 168 720 116 S 1200 58 1440 110' fill='none' stroke='%23FFFFFF' stroke-opacity='.9' stroke-width='2'/%3E%3C/svg%3E") bottom/100% 100% no-repeat;}
+html[data-ldmode="light"] ::selection{background:#BFE6F5;color:#0A2540;}
+html[data-ldmode="light"] ::-webkit-scrollbar{width:10px;height:10px;}
+html[data-ldmode="light"] ::-webkit-scrollbar-thumb{background:linear-gradient(180deg,#9FD3EC,#6BB6DE);border-radius:10px;border:2px solid transparent;background-clip:padding-box;}
+html[data-ldmode="light"] ::-webkit-scrollbar-track{background:transparent;}
+
+/* chrome: frosted glass with a bright top edge */
+html[data-ldmode="light"] .masthead{background:rgba(255,255,255,.7);border-bottom:1px solid rgba(10,111,181,.12);
+  box-shadow:0 1px 0 rgba(255,255,255,.95) inset,0 8px 24px -18px rgba(10,80,140,.35);
+  backdrop-filter:blur(18px) saturate(160%);-webkit-backdrop-filter:blur(18px) saturate(160%);}
+html[data-ldmode="light"] .brand-text{font-family:var(--ld-font-head);letter-spacing:.12em;color:#06325A;}
+html[data-ldmode="light"] .brand-mark{box-shadow:0 0 0 1px rgba(10,111,181,.18),0 6px 14px -8px rgba(10,80,140,.5);}
+html[data-ldmode="light"] .sidenav,html[data-ldmode="light"] .cargo-bar-wrapper{
+  backdrop-filter:blur(18px) saturate(160%);-webkit-backdrop-filter:blur(18px) saturate(160%);}
+html[data-ldmode="light"] .sidenav a:hover{background:var(--ld-accent-soft);color:var(--ld-ink);}
+
+/* glossy primary actions */
+html[data-ldmode="light"] .btn-optimize,html[data-ldmode="light"] .btn-train,html[data-ldmode="light"] .btn-run,
+html[data-ldmode="light"] .btn-back,html[data-ldmode="light"] .ld-btn.pri,html[data-ldmode="light"] .ldq-send,
+html[data-ldmode="light"] .copilot-fab{background:var(--ld-gloss) !important;border-color:#0862A3 !important;
+  box-shadow:var(--ld-pri-sh) !important;text-shadow:0 1px 0 rgba(4,40,80,.25);}
+html[data-ldmode="light"] .btn-optimize:hover,html[data-ldmode="light"] .btn-train:hover,html[data-ldmode="light"] .btn-run:hover,
+html[data-ldmode="light"] .btn-back:hover,html[data-ldmode="light"] .ld-btn.pri:hover,html[data-ldmode="light"] .ldq-send:hover,
+html[data-ldmode="light"] .copilot-fab:hover{background:var(--ld-gloss-h) !important;}
+html[data-ldmode="light"] .ld-mode button[aria-pressed="true"],html[data-ldmode="light"] .cost-toggle button.active,
+html[data-ldmode="light"] .ldc-class.on{background:var(--ld-gloss) !important;border-color:#0862A3 !important;color:#FFFFFF !important;
+  box-shadow:0 1px 0 rgba(255,255,255,.35) inset,0 6px 14px -8px rgba(10,111,181,.7);}
+html[data-ldmode="light"] .badge-num,html[data-ldmode="light"] .winner-badge{background:var(--ld-gloss) !important;}
+html[data-ldmode="light"] .icon-btn,html[data-ldmode="light"] .ld-btn:not(.pri),html[data-ldmode="light"] .btn-challenge{
+  box-shadow:0 1px 0 rgba(255,255,255,.95) inset,0 2px 6px -3px rgba(10,80,140,.25);}
+html[data-ldmode="light"] .btn-challenge:hover{background:var(--ld-accent-soft) !important;}
+
+/* surfaces */
+html[data-ldmode="light"] .section-tag,html[data-ldmode="light"] .data-tag,html[data-ldmode="light"] .ld-tag{border-radius:999px !important;
+  background:linear-gradient(180deg,#FFFFFF,#EAF6FB) !important;}
+html[data-ldmode="light"] .ld-kicker{color:var(--ld-ink);}
+html[data-ldmode="light"] .ldc-cost,html[data-ldmode="light"] .ldi-tile .ld-num.accent{
+  background:linear-gradient(180deg,#0A6FB5 10%,#0891B2 90%);-webkit-background-clip:text;background-clip:text;color:transparent;}
+html[data-ldmode="light"] .battle-table tr.winner-row td{background:#E6F2FB !important;}
+html[data-ldmode="light"] .ldb-tile,html[data-ldmode="light"] .ldb-spec,html[data-ldmode="light"] .ldb-alert{
+  background:linear-gradient(180deg,#FFFFFF,#F2F9FD);box-shadow:0 1px 0 #FFFFFF inset;}
+html[data-ldmode="light"] .modal-box,html[data-ldmode="light"] .drawer-left,html[data-ldmode="light"] .drawer-right{
+  background:rgba(255,255,255,.9) !important;backdrop-filter:blur(22px) saturate(160%);-webkit-backdrop-filter:blur(22px) saturate(160%);}
+html[data-ldmode="light"] .drawer-overlay{background:rgba(6,50,90,.28) !important;}
+html[data-ldmode="light"] .loading-overlay{background:rgba(6,50,90,.62) !important;}
+html[data-ldmode="light"] .leaflet-popup-content-wrapper{border-radius:12px;box-shadow:var(--shadow-lg);}
+/* ---- light-mode type: the legacy page styles name Space Grotesk and IBM
+   Plex on individual classes; map them onto the Sea Glass pair. Two-class
+   component rules (ld-dash) already use the tokens and outrank this. ---- */
+html[data-ldmode="light"] body *{font-family:var(--ld-font-body);}
+html[data-ldmode="light"] [style*="IBM Plex"]{font-family:var(--ld-font-body) !important;}
+html[data-ldmode="light"] body :is(h1,h2,h3,h4,h5,.display,.page-title,.brand-text,.metric-value,.kpi-value,.pressure-label,
+  .vessel-fit-score,.loading-text,.scenario-phase-route,.waterfall-val,.risk-factor-val,.port-specs dd,.confidence-badge){
+  font-family:var(--ld-font-head);}
+html[data-ldmode="light"] .lifecycle-card .step-detail{font-family:var(--ld-font-body);}
+html[data-ldmode="light"] body{font-variant-numeric:tabular-nums;}
+html[data-ldmode="light"] :is(.console-box,.console-box *,code,pre,kbd){font-family:"IBM Plex Mono",ui-monospace,monospace !important;}
