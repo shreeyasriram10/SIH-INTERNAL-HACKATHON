@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="ld-esri-key" content="__LOHA_ESRI_KEY__">
 <script>
 /* Set the theme before first paint so the page never flashes the wrong mode. */
 (function(){try{var m=localStorage.getItem('ld-mode');document.documentElement.setAttribute('data-ldmode',m==='light'?'light':'dark');}catch(e){document.documentElement.setAttribute('data-ldmode','dark');}})();
@@ -4005,7 +4006,30 @@ function initWaterwaysMap(){
   if(waterwaysMap) { setTimeout(()=>waterwaysMap.invalidateSize(),100); return; }
   if(typeof L === 'undefined') return;
   waterwaysMap = L.map('internationalMap', {worldCopyJump:true, minZoom:2, zoomControl:true}).setView([18, 35], 2.4);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom:6, attribution:'&copy; OpenStreetMap contributors'}).addTo(waterwaysMap);
+  /* Base map: Esri Ocean (bathymetry, sea-floor relief, marine names) when the
+     server supplied a key, else OpenStreetMap. The key is referrer-restricted
+     to this site and injected by the server, never committed. If Esri rejects
+     it (expired, wrong referrer), the map swaps to OpenStreetMap rather than
+     going blank. OpenSeaMap seamarks sit on top either way. */
+  const osm = () => L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom:18, attribution:'&copy; OpenStreetMap contributors'});
+  const esriKey = (document.querySelector('meta[name="ld-esri-key"]') || {}).content || '';
+  const esriTiles = style => `https://static-map-tiles-api.arcgis.com/arcgis/rest/services/static-basemap-tiles-service/v1/${style}/static/tile/{z}/{y}/{x}?token=${encodeURIComponent(esriKey)}`;
+  let base;
+  if(esriKey){
+    base = L.tileLayer(esriTiles('arcgis/oceans'), {maxZoom:16, attribution:'Powered by <a href="https://www.esri.com">Esri</a> | Esri, GEBCO, NOAA, Garmin, HERE and other contributors'}).addTo(waterwaysMap);
+    const labels = L.tileLayer(esriTiles('arcgis/oceans/labels'), {maxZoom:16, pane:'overlayPane'}).addTo(waterwaysMap);
+    let failures = 0;
+    base.on('tileerror', () => {
+      if(++failures < 4 || !base) return;
+      waterwaysMap.removeLayer(base); waterwaysMap.removeLayer(labels);
+      base = null;
+      osm().addTo(waterwaysMap).bringToBack();
+      console.warn('Esri basemap unavailable (key expired or referrer not allowed); using OpenStreetMap.');
+    });
+  } else {
+    base = osm().addTo(waterwaysMap);
+  }
+  L.tileLayer('https://t2.openseamap.org/seamark/{z}/{x}/{y}.png', {maxZoom:18, opacity:.9, attribution:'Seamarks &copy; <a href="https://www.openseamap.org">OpenSeaMap</a>'}).addTo(waterwaysMap);
   waterwaysLayers.waterways = L.layerGroup().addTo(waterwaysMap);
   waterwaysLayers.routes = L.layerGroup().addTo(waterwaysMap);
   waterwaysLayers.ports = L.layerGroup().addTo(waterwaysMap);

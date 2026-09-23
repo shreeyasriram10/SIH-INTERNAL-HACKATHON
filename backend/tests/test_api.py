@@ -2363,3 +2363,15 @@ class TestAlignment:
         meta = model_registry.get_payload()["metadata"]
         engine = auth_client.get("/api/system/status").json()["ml_engine"]
         assert engine["r2_score"] == meta["r2_score"]
+
+class TestMapKeyInjection:
+    def test_placeholder_never_reaches_the_browser(self, client, monkeypatch):
+        monkeypatch.delenv("LOHA_ESRI_KEY", raising=False)
+        body = client.get("/app").text
+        assert "__LOHA_ESRI_KEY__" not in body
+        assert '<meta name="ld-esri-key" content="">' in body
+
+    def test_key_comes_from_the_environment_and_is_escaped(self, client, monkeypatch):
+        monkeypatch.setenv("LOHA_ESRI_KEY", 'AAPK"<test>')
+        body = client.get("/app").text
+        assert 'content="AAPK&quot;&lt;test&gt;"' in body

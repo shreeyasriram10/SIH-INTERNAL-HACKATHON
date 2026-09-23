@@ -1,4 +1,5 @@
 import hashlib
+import html
 import logging
 import os
 import re
@@ -157,6 +158,12 @@ def _page(filename: str) -> HTMLResponse:
         with open(path, "r", encoding="utf-8") as handle:
             body = handle.read()
         _PAGE_CACHE[filename] = (signature, body)
+
+    # Browser-side map key (referrer-restricted by Esri to this site). Read
+    # from the environment on every request so it is never in the repository
+    # and a rotated key takes effect without a code change.
+    esri_key = html.escape(os.environ.get("LOHA_ESRI_KEY", "").strip(), quote=True)
+    body = body.replace("__LOHA_ESRI_KEY__", esri_key)
 
     return HTMLResponse(
         content=_fingerprint(body),
