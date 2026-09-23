@@ -63,11 +63,13 @@ def get_system_status(
                 "audit_logs": audit_logs_count
             }
         },
+        # Read from the loaded model, not typed in: these figures used to be
+        # constants that disagreed with the ML page.
         "ml_engine": {
             "status": "ONLINE (Prediction Ready)",
-            "algorithm": "GradientBoostingRegressor (Best Validated)",
-            "r2_score": 0.9891,
-            "mae_usd": 0.67
+            "algorithm": model_registry.get_payload().get("algorithm"),
+            "r2_score": model_registry.get_payload().get("metadata", {}).get("r2_score"),
+            "mae_usd": model_registry.get_payload().get("metadata", {}).get("mae_usd"),
         },
         "api_services_count": 18,
         "uptime_seconds": uptime_sec,
@@ -188,6 +190,17 @@ def run_live_system_tests(
         "health_score": round((passed_count / len(tests)) * 100, 1),
         "results": tests
     }
+
+@router.get("/alignment")
+def problem_statement_alignment(
+    db: Session = Depends(get_db),
+    user: models.User = Depends(auth.get_current_user),
+):
+    """Every requirement mapped to its feature, with a live probe of that
+    feature run now. Open to every signed-in role."""
+    from services import alignment
+    return alignment.run(db)
+
 
 @router.post("/reports/save")
 def save_report(

@@ -49,16 +49,41 @@ backend/
   models.py             14 ORM tables
   schemas.py            Pydantic v2 request/response models
   seed_data.py          Idempotent reference-data + demo-account seeding
-  routers/              auth, ports, vessels, cargo, ml, decision, system, waterways
+  routers/              auth, ports, vessels, cargo, ml, decision, planning, market,
+                        ops, system, waterways, copilot
   services/
     model_registry.py   Single cached owner of the freight model
-    decision_engine.py  Vessel x port optimisation and risk scoring
+    decision_engine.py  Vessel x port optimisation, feasibility checks and risk scoring
+    network.py          Cargo stowage, rail distances, load ports, vessel dimensions,
+                        monthly congestion factors
+    planning.py         Multi-voyage optimiser, spot vs contract, short-term cost,
+                        market timing, final charter recommendation
+    market.py           Congestion forecast, demand/supply balance, seasonal calendar
+    explain.py          Shapley attributions and permutation importance (XAI)
+    alerts.py           Alert feed for the header notification centre
+    alignment.py        Live problem-statement alignment check
+    idle.py             Idle-vessel wait-or-reposition
     rate_horizon.py     Rolling, day-1-anchored forecast window
-    network.py          Cargo stowage and berth-to-plant rail distances
   ml/train.py           Offline trainer -> model.pkl + model_metadata.json
-  static/               The four served HTML pages
-  tests/test_api.py     57 tests
+  static/               The four served HTML pages, ld-*.js/css, sw.js (offline mode)
+  tests/test_api.py     276 tests
 ```
+
+## Features at a glance
+
+| Area | Where | API |
+|---|---|---|
+| Vessel x berth recommendation, cost stack, risk index | Command Centre | `POST /api/decision/optimize` |
+| Freight forecast with P10-P90 bands, market timing | Freight Intelligence | `POST /api/ml/rate-horizon` |
+| **Charter Planner**: multi-voyage schedule, spot vs 3/6-month contract, 3-month cost, final recommendation | Charter Planner | `POST /api/planning/charter-plan` |
+| Draft / LOA / beam / handling checks at load port and every berth | Charter Planner | `POST /api/planning/constraints` |
+| Disruption scenarios; idle-vessel wait or reposition | What-If Simulator | `POST /api/decision/simulate`, `/idle-reposition` |
+| Congestion forecast, demand/supply, seasonal calendar | Market & Congestion | `GET /api/market/*` |
+| Explainable AI (Shapley + permutation importance) | ML Model & Training | `POST /api/ml/explain`, `GET /api/ml/importance` |
+| Alert centre with opt-in desktop notifications | Header "Alerts" | `GET /api/ops/alerts` |
+| Emergency contacts (Admin-editable) | Header "Emergency" | `/api/ops/emergency` |
+| Offline mode (service worker, cached reference data, last plan) | Everywhere | `/sw.js` |
+| Live requirement-by-requirement alignment check | PS Alignment Check | `GET /api/system/alignment` |
 
 The dashboard is a view over the API. Port and vessel figures are pulled from
 `/api/ports` and `/api/vessels` at page load, and every recommendation comes
@@ -86,10 +111,33 @@ Cost stack, per candidate, in USD:
 | Lightering | only where the berth cannot take the laden draft |
 | Inland evacuation | rail km to plant × tariff × tonnage |
 
-Feasibility is a real filter: a candidate is dropped when the laden draft
-exceeds the berth's usable draft by more than 4 m, or when the LOA limit cannot
-take the class. Part-loaded ships float higher, so laden draft is scaled by
-utilisation.
+Feasibility is a real filter, checked against each vessel's own dimensions:
+
+- **Load port.** Every origin loads at a named terminal (Hay Point, Newcastle,
+  Port Hedland, Taboneo, Richards Bay, Saldanha, Hampton Roads, Baltimore) with
+  its own draft, LOA, beam, loading rate and queue. A shallow terminal
+  part-loads a deep ship, which means more shipments. A terminal that cannot
+  berth the class rules it out. Loading time is part of the cycle and the hire bill.
+- **Discharge berth.** A candidate is dropped when the laden draft exceeds the
+  berth's usable draft by more than 4 m (up to that, it is lightered), or when
+  the vessel's LOA or beam exceeds the berth's limit.
+- **Congestion by month.** Berth queues use a monthly forecast (monsoon
+  downtime x1.35, post-monsoon backlog x1.15, Jan-Mar import rush x1.10), not a
+  year-round average.
+
+Every excluded pairing is returned in `context.excluded` with its reason, and
+every candidate carries its `constraint_checks`. Part-loaded ships float
+higher, so laden draft is scaled by utilisation.
+
+### Charter planning
+
+`services/planning.py` turns one parcel into a programme. Each month of the
+horizon is a full engine run. An exact dynamic programme then schedules the
+voyages: every month's arrivals must cover the plant's consumption to date, and
+cargo held ahead of need costs 1% of FOB a month. Spot, 3-month and 6-month
+structures are compared on expected cost plus half their cost-at-risk (P90
+minus expected). Contract rates are the mean forward rate plus a term premium
+(2.5% / 4%). Every assumption is returned in the response.
 
 The risk index (0–100) is a weighted blend of berth congestion (30%), seasonal
 exposure (25%), freight volatility (25%) and under-keel margin (20%). Ranking
@@ -192,18 +240,14 @@ failing the request.
 | `LOHA_TOKEN_TTL_MIN` | `720` | Access-token lifetime in minutes. |
 | `LOHA_CORS_ORIGINS` | localhost dev origins | Comma-separated allow-list. |
 | `LOHA_DEMO_PASSWORD` | `12345` | Password given to the seeded demo accounts. |
-| `LOHA_REPAIR_DEMO_ACCOUNTS` | `1` | Reset the three demo accounts' hash/role on boot. Set `0` in production. |
 | `LOHA_LOG_LEVEL` | `INFO` | Root log level. |
-
-Copy `.env.example` and adjust.
-
-| Variable | Default | Purpose |
-|---|---|---|
 | `LOHA_SIGNUP_DOMAINS` | *(empty - closed)* | Domains permitted to self-register. Empty means administrators create all accounts. |
 | `LOHA_SEED_DEMO_ACCOUNTS` | `1` | Seeds three documented logins sharing a weak password. **Set `0` before real data.** |
 | `LOHA_REPAIR_DEMO_ACCOUNTS` | `0` | Rewrites those passwords every boot. Leave off. |
 | `LOHA_COOKIE_SECURE` | *(from request scheme)* | Force the session cookie's Secure flag. |
 | `LOHA_LOGIN_MAX_ATTEMPTS` / `LOHA_LOGIN_WINDOW_SEC` | `8` / `300` | Login throttle, per container. |
+
+Copy `.env.example` and adjust.
 
 ---
 
@@ -240,11 +284,17 @@ auditing.
 python -m pytest backend/tests -q
 ```
 
-57 tests covering page routing, authentication and authorization (including
-that the demo password is *not* a bypass), reference data, the ML pipeline and
-caching, the decision engine's ranking, cost identity and vessel selection, the
-disruption scenarios, the rolling forecast window and its day-1 anchoring, and
-the live system battery.
+276 tests covering:
+
+- page routing, authentication and the role policy (including that the demo
+  password is *not* a bypass)
+- reference data, the ML pipeline and caching
+- the decision engine's ranking, cost identity, vessel selection and
+  LOA/beam/load-port feasibility
+- disruption scenarios and the rolling forecast window
+- the charter planner: no stock-out, contracts reduce risk, the timing rule
+- market views, Shapley additivity, alerts and emergency contacts
+- the alignment check and the live system battery
 
 `/api/system/run-tests` runs a subset in-process and is what the verification
 page displays.

@@ -131,3 +131,117 @@ def fob_usd_mt(cargo_type: str, origin: str) -> float:
         if name.lower() == (origin or "").strip().lower():
             return price
     return max(prices.values())
+
+
+# ---------------------------------------------------------------------------
+# Vessel principal dimensions
+# ---------------------------------------------------------------------------
+# Typical LOA and beam per class, used when a vessel row predates the loa_m /
+# beam_m columns. Checked against every berth's LOA and beam limit.
+CLASS_DIMENSIONS = {
+    "handysize": {"loa_m": 180.0, "beam_m": 28.0},
+    "supramax":  {"loa_m": 199.9, "beam_m": 32.3},
+    "panamax":   {"loa_m": 225.0, "beam_m": 32.3},
+    "capesize":  {"loa_m": 292.0, "beam_m": 45.0},
+}
+
+
+def vessel_dimensions(vessel) -> tuple:
+    """(LOA, beam) in metres for a vessel row, falling back to its class."""
+    fallback = CLASS_DIMENSIONS.get(str(getattr(vessel, "class_type", "")).strip().lower(), {})
+    loa = getattr(vessel, "loa_m", None) or fallback.get("loa_m") or 0.0
+    beam = getattr(vessel, "beam_m", None) or fallback.get("beam_m") or 0.0
+    return float(loa), float(beam)
+
+
+# ---------------------------------------------------------------------------
+# Origin load ports
+# ---------------------------------------------------------------------------
+# The engine used to treat an origin as a country, so nothing stopped it
+# sending a ship to a load port that could not take her. Each origin now loads
+# at a named terminal with its own draft, length and beam limits, loading rate
+# and typical queue (drafts are tidal-window sailing drafts). Representative planning values, in keeping with the rest
+# of the dataset - replace with terminal handbooks in production.
+LOAD_PORTS = {
+    "Australia": {
+        "coal":    {"name": "Hay Point / Dalrymple Bay (QLD)", "code": "AUHPT", "draft_m": 18.5,
+                    "max_loa": 300.0, "max_beam_m": 50.0, "load_rate_mt_d": 55000.0, "avg_wait_days": 5.5},
+        "thermal": {"name": "Newcastle (NSW)", "code": "AUNTL", "draft_m": 16.0,
+                    "max_loa": 300.0, "max_beam_m": 50.0, "load_rate_mt_d": 70000.0, "avg_wait_days": 3.5},
+        "ore":     {"name": "Port Hedland (WA)", "code": "AUPHE", "draft_m": 18.9,
+                    "max_loa": 330.0, "max_beam_m": 58.0, "load_rate_mt_d": 120000.0, "avg_wait_days": 1.5},
+    },
+    "Indonesia": {
+        "coal":    {"name": "Taboneo anchorage (South Kalimantan)", "code": "IDTBO", "draft_m": 22.0,
+                    "max_loa": 330.0, "max_beam_m": 60.0, "load_rate_mt_d": 15000.0, "avg_wait_days": 2.5},
+        "ore":     {"name": "Taboneo anchorage (South Kalimantan)", "code": "IDTBO", "draft_m": 22.0,
+                    "max_loa": 330.0, "max_beam_m": 60.0, "load_rate_mt_d": 15000.0, "avg_wait_days": 2.5},
+    },
+    "South Africa": {
+        "coal":    {"name": "Richards Bay Coal Terminal", "code": "ZARCB", "draft_m": 19.0,
+                    "max_loa": 300.0, "max_beam_m": 50.0, "load_rate_mt_d": 65000.0, "avg_wait_days": 3.0},
+        "ore":     {"name": "Saldanha Bay", "code": "ZASDB", "draft_m": 21.5,
+                    "max_loa": 360.0, "max_beam_m": 65.0, "load_rate_mt_d": 100000.0, "avg_wait_days": 2.0},
+    },
+    "USA": {
+        "coal":    {"name": "Hampton Roads (Norfolk, VA)", "code": "USORF", "draft_m": 15.2,
+                    "max_loa": 300.0, "max_beam_m": 50.0, "load_rate_mt_d": 45000.0, "avg_wait_days": 4.0},
+        "ore":     {"name": "Baltimore (MD)", "code": "USBAL", "draft_m": 15.2,
+                    "max_loa": 300.0, "max_beam_m": 50.0, "load_rate_mt_d": 40000.0, "avg_wait_days": 3.0},
+    },
+}
+LOAD_PORT_BASIS = ("Representative terminal limits and loading rates; synthetic planning "
+                   "values, not terminal handbook figures.")
+
+
+def load_port(origin: str, cargo_type: str) -> dict | None:
+    """The terminal this cargo loads at from this origin, or None for an
+    origin the table does not know (no constraint is invented for it)."""
+    terminals = None
+    for name, table in LOAD_PORTS.items():
+        if name.lower() == (origin or "").strip().lower():
+            terminals = table
+            break
+    if not terminals:
+        return None
+    key = cargo_key(cargo_type)
+    family = "ore" if key.startswith("iron_ore") else ("thermal" if key == "thermal_coal" else "coal")
+    return terminals.get(family) or terminals.get("coal")
+
+
+# ---------------------------------------------------------------------------
+# Berth congestion by month
+# ---------------------------------------------------------------------------
+# The engine used a single average queue per berth all year round. Queues on
+# the east coast are seasonal: monsoon weather stops cargo work, the month
+# after it clears the backlog, and Jan-Mar carries the financial-year-end
+# import push. Each factor is a planning assumption, stated here so it can be
+# challenged and replaced with berth-occupancy data.
+CONGESTION_FACTORS = {
+    "monsoon": 1.35,          # berth lists this month as weather-affected
+    "post_monsoon": 1.15,     # first month after the berth's monsoon season
+    "fy_end_rush": 1.10,      # January-March import push
+}
+
+
+def _monsoon_months(port) -> list:
+    return [int(m) for m in str(getattr(port, "monsoon_months", "") or "").split(",")
+            if m.strip().isdigit()]
+
+
+def congestion_factor(port, month: int) -> tuple:
+    """(multiplier, reason) for this berth's queue in this month."""
+    months = _monsoon_months(port)
+    if month in months:
+        return CONGESTION_FACTORS["monsoon"], "monsoon weather downtime"
+    if months and month == (max(months) % 12) + 1:
+        return CONGESTION_FACTORS["post_monsoon"], "post-monsoon backlog"
+    if month in (1, 2, 3):
+        return CONGESTION_FACTORS["fy_end_rush"], "financial-year-end import rush"
+    return 1.0, "normal"
+
+
+def forecast_wait_days(port, month: int) -> float:
+    """Expected berth queue, in days, for one arrival in the given month."""
+    factor, _ = congestion_factor(port, month)
+    return float(getattr(port, "avg_wait_days", 0.0) or 0.0) * factor

@@ -12,7 +12,7 @@ from sqlalchemy.orm import Session
 import auth
 import models
 from database import get_db
-from services import model_registry, rate_horizon
+from services import explain, model_registry, rate_horizon
 from services.model_registry import FEATURES, META_PATH, MODEL_PATH, TARGET
 
 logger = logging.getLogger(__name__)
@@ -267,6 +267,29 @@ def forecast_curve(
         "generated_at": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC"),
         "points": points,
     }
+
+
+@router.post("/explain")
+def explain_prediction(
+    request: ForecastRequest,
+    user: models.User = Depends(auth.require_roles(*auth.ANALYSIS_ROLES)),
+):
+    """Exact Shapley attribution of one freight prediction to its drivers:
+    lane, month, bunker price and market pressure. The contributions add up
+    to the prediction minus the model's average."""
+    try:
+        result = explain.shapley(request.model_dump())
+    except Exception as error:
+        logger.exception("Explanation failed")
+        raise HTTPException(status_code=500, detail=f"Explanation failed: {error}")
+    result["data_source"] = "SYNTHETIC (BDI-Calibrated)"
+    return result
+
+
+@router.get("/importance")
+def feature_importance(user: models.User = Depends(auth.require_roles(*auth.ANALYSIS_ROLES))):
+    """Global permutation importance of each driver on the hold-out split."""
+    return explain.permutation_importance()
 
 
 @router.post("/rate-horizon")

@@ -513,6 +513,7 @@ footer .data-disclaimer{font-size:10.5px;color:var(--steel-light);margin-top:6px
         </div>
         <span class="engine-source" id="engineSourceBadge" title="Checking the decision service...">CONNECTING</span>
         <span class="scenario-pill" id="scenarioPill">Scenario Active</span>
+        <button class="icon-btn ld-sos" id="openEmergencyBtn" type="button" title="Emergency contacts">Emergency</button>
         <button class="icon-btn" id="openNotifyBtn">Alerts <span class="badge-num" id="alertCount" hidden>0</span></button>
         <button class="icon-btn" id="openSearchBtn">Search</button>
         <button class="icon-btn" id="openExportBtn">Report</button>
@@ -535,6 +536,8 @@ footer .data-disclaimer{font-size:10.5px;color:var(--steel-light);margin-top:6px
       <svg viewBox="0 0 24 24"><path d="M3 17l5-6 4 3 4-7 5 5"/><path d="M3 21h18"/></svg>Freight Intelligence</a>
     <a id="nav-approved" onclick="switchPanel('approved')">
       <svg viewBox="0 0 24 24"><path d="M12 3l7 3v6c0 4.2-2.8 7.9-7 9-4.2-1.1-7-4.8-7-9V6z"/><path d="M9 12l2 2 4-4"/></svg>Execution Brief</a>
+    <a id="nav-planner" onclick="switchPanel('planner')">
+      <svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/><path d="M7 14h3M7 17h6"/></svg>Charter Planner</a>
     <a id="nav-scenarios" onclick="switchPanel('scenarios')">
       <svg viewBox="0 0 24 24"><path d="M12 3v4"/><path d="M5.6 5.6l2.9 2.9"/><path d="M3 12h4"/><path d="M12 21a6 6 0 100-12 6 6 0 000 12z"/></svg>What-If Simulator</a>
   </div>
@@ -545,6 +548,8 @@ footer .data-disclaimer{font-size:10.5px;color:var(--steel-light);margin-top:6px
       <svg viewBox="0 0 24 24"><path d="M12 3v13"/><circle cx="12" cy="5" r="2"/><path d="M4 12a8 8 0 0016 0"/><path d="M3 12h3M18 12h3"/></svg>Port Profiles</a>
     <a id="nav-vessels" onclick="switchPanel('vessels')">
       <svg viewBox="0 0 24 24"><path d="M3 17l1.8-6h14.4L21 17"/><path d="M3 17c2 2 4 2 6 0s4-2 6 0 4 2 6 0"/><path d="M12 11V5H8"/></svg>Vessel Fit</a>
+    <a id="nav-market" onclick="switchPanel('market')">
+      <svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-8M22 20H2"/></svg>Market &amp; Congestion</a>
     <a id="nav-international-waterways" onclick="switchPanel('international-waterways')">
       <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a14 14 0 000 18a14 14 0 000-18"/></svg>International Waterways</a>
   </div>
@@ -555,6 +560,8 @@ footer .data-disclaimer{font-size:10.5px;color:var(--steel-light);margin-top:6px
       <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M9 9h6v6H9z"/><path d="M9 2v2M15 2v2M9 20v2M15 20v2M2 9h2M2 15h2M20 9h2M20 15h2"/></svg>ML Model &amp; Training<span class="ext">PAGE</span></a>
     <a href="/verification">
       <svg viewBox="0 0 24 24"><path d="M9 11l2 2 4-4"/><path d="M12 3l7 3v6c0 4.2-2.8 7.9-7 9-4.2-1.1-7-4.8-7-9V6z"/></svg>System Verification<span class="ext">PAGE</span></a>
+    <a id="nav-alignment" onclick="switchPanel('alignment')">
+      <svg viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11"/><path d="M4 6l1 1 2-2M4 12l1 1 2-2M4 18l1 1 2-2"/></svg>PS Alignment Check</a>
     <a id="nav-about" onclick="switchPanel('about')">
       <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 16v-5"/><path d="M12 8h.01"/></svg>About &amp; Data Governance</a>
   </div>
@@ -1053,6 +1060,11 @@ footer .data-disclaimer{font-size:10.5px;color:var(--steel-light);margin-top:6px
 <!-- FOOTER (always visible) -->
 
 <!-- ===== PANEL: ABOUT, DATA & GOVERNANCE ===== -->
+<!-- ===== PANELS: CHARTER PLANNER / MARKET / ALIGNMENT (drawn by ld-plan.js) ===== -->
+<div class="panel" id="panel-planner"><div class="ld-wrap" id="ldPlanner"></div></div>
+<div class="panel" id="panel-market"><div class="ld-wrap" id="ldMarket"></div></div>
+<div class="panel" id="panel-alignment"><div class="ld-wrap" id="ldAlignment"></div></div>
+
 <div class="panel" id="panel-about">
   <div class="section">
 
@@ -1646,8 +1658,8 @@ const PORTS = {
 
 const VESSEL_CLASSES = {
   handysize: {name:"Handysize", dwtMin:25000, dwtMax:40000,  draft:10.0, loa:180, beam:28},
-  supramax:  {name:"Supramax",  dwtMin:50000, dwtMax:60000,  draft:12.6, loa:200, beam:32},
-  panamax:   {name:"Panamax",   dwtMin:65000, dwtMax:80000,  draft:14.2, loa:229, beam:32.3},
+  supramax:  {name:"Supramax",  dwtMin:50000, dwtMax:60000,  draft:12.6, loa:199.9, beam:32.3},
+  panamax:   {name:"Panamax",   dwtMin:65000, dwtMax:80000,  draft:14.2, loa:225, beam:32.3},
   capesize:  {name:"Capesize",  dwtMin:150000,dwtMax:180000, draft:18.0, loa:292, beam:45},
 };
 
@@ -1725,7 +1737,9 @@ async function syncReferenceData(){
         dwtMax: v.capacity_mt,
         draft: v.draft_m,
         speedKnots: v.speed_knots,
-        dailyCostUsd: v.daily_cost_usd
+        dailyCostUsd: v.daily_cost_usd,
+        loa: v.loa_m || VESSEL_CLASSES[key].loa,
+        beam: v.beam_m || VESSEL_CLASSES[key].beam
       });
     });
 
@@ -3238,9 +3252,12 @@ const SECTIONS = {
   'command':                 {label:'Command Centre',          group:'Decision Support'},
   'intelligence':            {label:'Freight Intelligence',    group:'Decision Support'},
   'approved':                {label:'Execution Brief',         group:'Decision Support'},
+  'planner':                 {label:'Charter Planner',         group:'Decision Support'},
   'scenarios':               {label:'What-If Simulator',       group:'Decision Support'},
   'ports':                   {label:'Port Profiles',           group:'Infrastructure'},
   'vessels':                 {label:'Vessel Fit',              group:'Infrastructure'},
+  'market':                  {label:'Market & Congestion',     group:'Infrastructure'},
+  'alignment':               {label:'PS Alignment Check',      group:'Model & Assurance'},
   'international-waterways': {label:'International Waterways', group:'Infrastructure'},
   'about':                   {label:'About & Data Governance', group:'Transparency'}
 };
@@ -3890,7 +3907,9 @@ function performLogout(){
   fetch('/api/auth/logout', {method:'POST', credentials:'same-origin'})
     .catch(()=>{})
     .finally(()=>{
-      try{ localStorage.removeItem('ld_role'); localStorage.removeItem('ld_email'); }catch(e){}
+      try{ ['ld_role','ld_email','ld-last-plan','ld-emergency'].forEach(k => localStorage.removeItem(k)); }catch(e){}
+      // Offline copies of reference data and contacts go with the session.
+      try{ navigator.serviceWorker?.controller?.postMessage('ld-clear'); }catch(e){}
       window.location.href = '/login';
     });
 }
@@ -4181,5 +4200,6 @@ document.querySelectorAll('.sidenav a').forEach(function(a){
 });
 </script>
 <script src="/static/ld-dash.js"></script>
+<script src="/static/ld-plan.js"></script>
 </body>
 </html>

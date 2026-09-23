@@ -9,7 +9,7 @@ Cost stack per candidate, all in USD:
 
     ocean freight      predicted USD/MT  x  parcel tonnage
     deadfreight        booked-but-unused space beyond a 10% tolerance
-    vessel hire        (sea days + port days) x daily hire, per shipment
+    vessel hire        (load-port + sea + discharge-port days) x daily hire
     port dues          flat rate per tonne discharged
     demurrage          waiting beyond free laytime, at the berth's own rate
     lightering         only when the berth cannot take the laden draft
@@ -105,6 +105,13 @@ class Candidate:
     stowage_limit: str = "weight"
     fob_usd_mt: float = 0.0
     delivered_cost_usd_mt: float = 0.0
+    load_port: str = ""
+    load_port_code: str = ""
+    load_port_days: float = 0.0
+    laden_draft_m: float = 0.0
+    handling_rate_mt_d: float = 0.0
+    congestion_basis: str = "normal"
+    constraint_checks: list = field(default_factory=list)
 
     def as_dict(self) -> dict:
         return asdict(self)
@@ -192,6 +199,81 @@ def _laden_draft(vessel, utilisation: float) -> float:
     return vessel.draft_m * (0.55 + 0.45 * utilisation)
 
 
+# A load port that only lets a ship take a sliver of her deadweight is not a
+# realistic fixture; below this share the class is ruled out at that terminal.
+MIN_LOAD_PORT_WEIGHT_FRACTION = 0.35
+
+
+def load_port_fit(vessel, profile: dict, terminal: dict | None) -> dict:
+    """What the origin terminal lets this class lift.
+
+    The loading berth's draft caps the weight aboard (a deeper-drafted ship is
+    part-loaded to float out), and its LOA and beam limits decide whether the
+    ship can berth at all. Returns the usable lift plus the checks behind it.
+    """
+    loa, beam = network.vessel_dimensions(vessel)
+    lift = network.effective_capacity(vessel.capacity_mt, profile)
+    result = {"terminal": terminal, "lift_mt": lift, "feasible": True,
+              "part_loaded": False, "checks": [], "reason": ""}
+    if not terminal:
+        return result
+
+    checks = result["checks"]
+    usable = terminal["draft_m"] - UNDER_KEEL_CLEARANCE_M
+    # Weight fraction at which the laden draft just clears the terminal.
+    max_fraction = (usable / max(vessel.draft_m, 1.0) - 0.55) / 0.45
+    weight_cap = max(0.0, min(1.0, max_fraction)) * vessel.capacity_mt
+    checks.append({"check": "Draft at load port", "limit": f"{usable:.1f} m usable",
+                   "value": f"{vessel.draft_m:.1f} m laden",
+                   "status": "pass" if max_fraction >= 1 else (
+                       "part-load" if max_fraction >= MIN_LOAD_PORT_WEIGHT_FRACTION else "fail")})
+    checks.append({"check": "LOA at load port", "limit": f"{terminal['max_loa']:.0f} m",
+                   "value": f"{loa:.1f} m", "status": "pass" if loa <= terminal["max_loa"] else "fail"})
+    checks.append({"check": "Beam at load port", "limit": f"{terminal['max_beam_m']:.1f} m",
+                   "value": f"{beam:.1f} m", "status": "pass" if beam <= terminal["max_beam_m"] else "fail"})
+    checks.append({"check": "Loading rate", "limit": f"{terminal['load_rate_mt_d']:,.0f} MT/day",
+                   "value": f"{lift / terminal['load_rate_mt_d']:.1f} days per lift", "status": "pass"})
+
+    if loa > terminal["max_loa"] or beam > terminal["max_beam_m"]:
+        result.update(feasible=False, reason=(
+            f"{terminal['name']} limits ships to {terminal['max_loa']:.0f} m LOA and "
+            f"{terminal['max_beam_m']:.1f} m beam; a {vessel.class_type} is {loa:.0f} x {beam:.1f} m."))
+    elif max_fraction < MIN_LOAD_PORT_WEIGHT_FRACTION:
+        result.update(feasible=False, reason=(
+            f"{terminal['name']} has {usable:.1f} m usable draft; a {vessel.class_type} "
+            f"could load only {max(0.0, max_fraction) * 100:.0f}% of her deadweight."))
+    elif weight_cap < lift:
+        result.update(lift_mt=weight_cap, part_loaded=True)
+    return result
+
+
+def berth_checks(vessel, port, laden_draft: float, handling_rate: float) -> tuple:
+    """(feasible, requires_lightering, checks, reason) for one discharge berth."""
+    loa, beam = network.vessel_dimensions(vessel)
+    usable = (port.draft_m or 0.0) - UNDER_KEEL_CLEARANCE_M
+    gap = laden_draft - usable
+    max_loa = float(port.max_loa or 0.0)
+    max_beam = float(getattr(port, "max_beam_m", 0.0) or 0.0)
+    checks = [
+        {"check": "Draft at berth", "limit": f"{usable:.1f} m usable", "value": f"{laden_draft:.1f} m laden",
+         "status": "pass" if gap <= 0 else ("lightering" if gap <= MAX_LIGHTERABLE_GAP_M else "fail")},
+        {"check": "LOA at berth", "limit": f"{max_loa:.0f} m" if max_loa else "no limit",
+         "value": f"{loa:.1f} m", "status": "pass" if not max_loa or loa <= max_loa else "fail"},
+        {"check": "Beam at berth", "limit": f"{max_beam:.1f} m" if max_beam else "no limit",
+         "value": f"{beam:.1f} m", "status": "pass" if not max_beam or beam <= max_beam else "fail"},
+        {"check": "Discharge rate", "limit": f"{handling_rate:,.0f} MT/day", "value": "", "status": "pass"},
+    ]
+    reason = ""
+    if gap > MAX_LIGHTERABLE_GAP_M:
+        reason = (f"{port.name} has {usable:.1f} m usable draft; a laden {vessel.class_type} draws "
+                  f"{laden_draft:.1f} m - beyond what lightering can bridge.")
+    elif max_loa and loa > max_loa:
+        reason = f"{port.name} LOA limit {max_loa:.0f} m cannot accept a {vessel.class_type} ({loa:.0f} m)."
+    elif max_beam and beam > max_beam:
+        reason = f"{port.name} beam limit {max_beam:.1f} m cannot accept a {vessel.class_type} ({beam:.1f} m)."
+    return (not reason), gap > 0, checks, reason
+
+
 def nearest_by_rail(candidates, ports, plant):
     """The berth closest to the plant by rail, and how its best option fared.
 
@@ -264,6 +346,14 @@ def evaluate(
     # Cargo density decides whether a ship fills by weight or by volume.
     profile = network.cargo_profile(cargo_type)
     fob = network.fob_usd_mt(cargo_type, origin)
+    terminal = network.load_port(origin, cargo_type)
+
+    # What each class can lift here: the cargo's stowage and the load port's
+    # draft both cap it, and a class the terminal cannot berth is dropped.
+    fits = {vessel.id: load_port_fit(vessel, profile, terminal) for vessel in vessels}
+    excluded = [{"vessel_class": v.class_type, "where": terminal["name"], "reason": fits[v.id]["reason"]}
+                for v in vessels if not fits[v.id]["feasible"]]
+    vessels = [v for v in vessels if fits[v.id]["feasible"]]
 
     # One model call covers the whole grid. The rate depends on the lane and
     # market inputs rather than the berth, so it is predicted once per vessel
@@ -285,7 +375,7 @@ def evaluate(
             # Bigger *lifts* move a tonne more cheaply. Scale on the tonnage
             # actually carried per shipment, not on nominal capacity, so a
             # part-loaded ship does not collect a discount it has not earned.
-            lift_cap = network.effective_capacity(vessel.capacity_mt, profile)
+            lift_cap = fits[vessel.id]["lift_mt"]
             shipments = max(1, math.ceil(parcel_size / lift_cap))
             lift_mt = max(parcel_size / shipments, 1.0)
             scale = (REFERENCE_DWT / lift_mt) ** SCALE_EXPONENT
@@ -295,13 +385,21 @@ def evaluate(
     for vessel in vessels:
         # Space is booked by what the ship can actually lift of this cargo;
         # draft follows the weight aboard, not the space used.
-        eff_cap = network.effective_capacity(vessel.capacity_mt, profile)
+        fit = fits[vessel.id]
+        eff_cap = fit["lift_mt"]
         shipments = max(1, math.ceil(parcel_size / eff_cap))
         booked_mt = shipments * eff_cap
         utilisation = parcel_size / booked_mt
         weight_fraction = parcel_size / (shipments * max(vessel.capacity_mt, 1.0))
         laden_draft = _laden_draft(vessel, weight_fraction)
         rate = rate_by_class.get(vessel.id, 25.0)
+
+        # Time at the load port: each shipment queues, then loads at the
+        # terminal's rate.
+        load_days = 0.0
+        if terminal:
+            load_days = (terminal["avg_wait_days"] * shipments
+                         + parcel_size / max(terminal["load_rate_mt_d"], 1.0))
 
         # Space booked but not filled, beyond the customary tolerance.
         deadfreight_mt = max(
@@ -311,31 +409,37 @@ def evaluate(
 
         for port in ports:
             warnings = []
+            if fit["part_loaded"]:
+                warnings.append(
+                    f"{terminal['name']} draft limits a {vessel.class_type} to "
+                    f"{eff_cap:,.0f} MT per lift."
+                )
 
             usable_draft = (port.draft_m or 0.0) - UNDER_KEEL_CLEARANCE_M
             draft_gap = laden_draft - usable_draft
-            requires_lightering = draft_gap > 0
-            feasible = draft_gap <= MAX_LIGHTERABLE_GAP_M
-
-            if (port.max_loa or 0) and vessel.capacity_mt > 150000 and port.max_loa < 300:
-                feasible = False
-                warnings.append(
-                    f"{port.name} LOA limit {port.max_loa:.0f} m cannot accept a {vessel.class_type}."
-                )
-
+            handling_rate = port.mech_rate_mt_d * profile["handling"]
+            feasible, requires_lightering, checks, reason = berth_checks(
+                vessel, port, laden_draft, handling_rate)
             if not feasible:
+                excluded.append({"vessel_class": vessel.class_type, "where": port.name,
+                                 "reason": reason})
                 continue
 
             # --- schedule -------------------------------------------------
             sea_days = distance_nm / (max(vessel.speed_knots, 1.0) * 24.0)
-            discharge_days = parcel_size / max(port.mech_rate_mt_d * profile["handling"], 1.0)
-            wait_days = (port.avg_wait_days or 0.0) * shipments
+            discharge_days = parcel_size / max(handling_rate, 1.0)
+            checks[-1]["value"] = f"{discharge_days:.1f} days to discharge"
+            # The queue for the month the ship arrives in, not a year-round
+            # average: monsoon and post-monsoon months run longer.
+            arrival_wait = network.forecast_wait_days(port, month)
+            _, congestion_reason = network.congestion_factor(port, month)
+            wait_days = arrival_wait * shipments
             port_days = wait_days + discharge_days
-            total_cycle_days = sea_days + port_days
+            total_cycle_days = sea_days + port_days + load_days
 
             # --- cost stack -----------------------------------------------
             ocean_freight = rate * parcel_size
-            vessel_hire = (sea_days + port_days) * (vessel.daily_cost_usd or 0.0)
+            vessel_hire = total_cycle_days * (vessel.daily_cost_usd or 0.0)
             port_dues = PORT_DUES_USD_PER_MT * parcel_size
 
             # Demurrage is owed to the owner once agreed laytime is exceeded, at
@@ -379,7 +483,7 @@ def evaluate(
             # one occupied berth means the queue has nowhere to go.
             berths = int(getattr(port, "berths", 2) or 2)
             congestion = _clamp(
-                (port.avg_wait_days or 0.0) / 6.0 * 100.0 + (12.0 if berths <= 1 else 0.0)
+                arrival_wait / 6.0 * 100.0 + (12.0 if berths <= 1 else 0.0)
             )
 
             # Seasonal baseline, raised when this specific berth lists the month
@@ -474,6 +578,13 @@ def evaluate(
                     stowage_limit=network.binding_limit(vessel.capacity_mt, profile),
                     fob_usd_mt=fob,
                     delivered_cost_usd_mt=round(fob + landed_per_mt, 2),
+                    load_port=terminal["name"] if terminal else "",
+                    load_port_code=terminal["code"] if terminal else "",
+                    load_port_days=round(load_days, 1),
+                    laden_draft_m=round(laden_draft, 2),
+                    handling_rate_mt_d=round(handling_rate, 0),
+                    congestion_basis=congestion_reason,
+                    constraint_checks=fit["checks"] + checks,
                 )
             )
 
@@ -500,6 +611,9 @@ def evaluate(
         "plant": plant,
         "nearest_by_rail": nearest_by_rail(candidates, ports, plant),
         "window_days": window_days,
+        "load_port": terminal,
+        "load_port_basis": network.LOAD_PORT_BASIS if terminal else "",
+        "excluded": excluded,
         "candidates_evaluated": len(candidates),
         "model_version": model_registry.get_payload()["metadata"].get("version", "runtime"),
     }

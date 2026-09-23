@@ -368,7 +368,33 @@
         </div>
       </div>
     </div>
+
+    <!-- EXPLAINABLE AI -->
+    <div class="card" id="xaiCard">
+      <h2>Explainable AI &mdash; why the model prices a lane the way it does</h2>
+      <p>Global: how much the hold-out error grows when each driver is scrambled (permutation importance).
+         Local: exact Shapley values for the prediction above &mdash; each driver's push from the model's average rate, adding up exactly to the prediction.</p>
+      <div class="xai-grid">
+        <div><h3 class="xai-h">Global driver importance</h3><div id="xaiGlobal" class="xai-bars">Loading&hellip;</div></div>
+        <div><h3 class="xai-h">This prediction, explained</h3><div id="xaiLocal" class="xai-bars">Run inference to see its drivers.</div></div>
+      </div>
+      <p class="xai-note" id="xaiMethod"></p>
+    </div>
   </div>
+  <style>
+    .xai-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:22px;margin-top:10px;}
+    .xai-h{font-size:13px;margin:0 0 10px;}
+    .xai-bars{display:flex;flex-direction:column;gap:9px;font-size:12.5px;color:var(--steel-muted);}
+    .xai-row{display:grid;grid-template-columns:minmax(120px,170px) 1fr 74px;gap:10px;align-items:center;}
+    .xai-row b{color:var(--navy-deep);font-weight:600;}
+    .xai-row small{display:block;font-size:10.5px;color:var(--steel-muted);font-weight:500;}
+    .xai-track{position:relative;height:12px;background:var(--bg-subtle);border-radius:3px;}
+    .xai-track i{position:absolute;top:0;bottom:0;border-radius:3px;}
+    .xai-track.zero::before{content:"";position:absolute;left:50%;top:-3px;bottom:-3px;width:1px;background:var(--steel-border);}
+    .xai-val{text-align:right;font-variant-numeric:tabular-nums;font-weight:700;color:var(--navy-deep);}
+    .xai-sum{font-size:12px;margin-top:6px;color:var(--steel-muted);}
+    .xai-note{font-size:11px;color:var(--steel-muted);margin-top:12px;}
+  </style>
 
 <script>
   const delay = ms => new Promise(r => setTimeout(r, ms));
@@ -506,7 +532,8 @@
       if(res.ok) {
         const d = await res.json();
         const features = d.features_evaluated || {};
-        out.innerHTML = `Predicted Rate: <strong>$${d.predicted_rate_usd.toFixed(2)}/MT</strong> (90% CI: $${d.confidence_interval[0].toFixed(2)} – $${d.confidence_interval[1].toFixed(2)}/MT) · Model: ${d.algorithm}<br><span style="font-size:11px;color:var(--steel-muted);font-weight:500;">Inputs: ${features.origin || origin} · Month ${features.month || month} · Bunker $${features.bunker_price_usd || bunker}/MT · Pressure ${features.market_pressure_index ?? pressure}/100<br>Predicted at: ${d.predicted_at || new Date().toISOString()}</span>`;
+        explainPrediction({origin, distance_nm: dist, month, bunker_price: bunker, pressure_index: pressure});
+        out.innerHTML = `Predicted Rate: <strong>$${d.predicted_rate_usd.toFixed(2)}/MT</strong> (95% band: $${d.confidence_interval[0].toFixed(2)} – $${d.confidence_interval[1].toFixed(2)}/MT) · Model: ${d.algorithm}<br><span style="font-size:11px;color:var(--steel-muted);font-weight:500;">Inputs: ${features.origin || origin} · Month ${features.month || month} · Bunker $${features.bunker_price_usd || bunker}/MT · Pressure ${features.market_pressure_index ?? pressure}/100<br>Predicted at: ${d.predicted_at || new Date().toISOString()}</span>`;
       } else {
         let detail = 'Inference failed. No prediction was returned.';
         try { detail = (await res.json()).detail || detail; } catch(e) {}
@@ -517,7 +544,49 @@
     }
   }
 
+  /* ---- Explainable AI ---------------------------------------------------- */
+  const xaiEsc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+  async function loadImportance() {
+    const host = document.getElementById('xaiGlobal');
+    try {
+      const res = await fetch('/api/ml/importance', {credentials:'same-origin'});
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const d = await res.json();
+      const max = Math.max(...d.drivers.map(r => r.mae_increase_usd_mt), 0.001);
+      host.innerHTML = d.drivers.map(r => `<div class="xai-row"><b>${xaiEsc(r.driver)}<small>${r.share_pct}% of importance</small></b>
+          <div class="xai-track"><i style="left:0;width:${Math.max(0, r.mae_increase_usd_mt) / max * 100}%;background:var(--gov-navy-2);"></i></div>
+          <span class="xai-val">+$${r.mae_increase_usd_mt.toFixed(2)}</span></div>`).join('')
+        + `<div class="xai-sum">Baseline hold-out MAE $${d.baseline_mae_usd_mt}/MT; bar = MAE increase when the driver is shuffled.</div>`;
+      document.getElementById('xaiMethod').textContent = d.method;
+    } catch (e) {
+      host.textContent = 'Could not load importance: ' + e.message;
+    }
+  }
+
+  async function explainPrediction(body) {
+    const host = document.getElementById('xaiLocal');
+    host.textContent = 'Computing Shapley values…';
+    try {
+      const res = await fetch('/api/ml/explain', {method:'POST', credentials:'same-origin',
+        headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)});
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const d = await res.json();
+      const max = Math.max(...d.drivers.map(r => Math.abs(r.contribution_usd_mt)), 0.001);
+      host.innerHTML = d.drivers.map(r => {
+          const w = Math.abs(r.contribution_usd_mt) / max * 50, up = r.contribution_usd_mt >= 0;
+          return `<div class="xai-row"><b>${xaiEsc(r.driver)}<small>${xaiEsc(r.value)}</small></b>
+            <div class="xai-track zero"><i style="${up ? 'left:50%' : 'right:50%'};width:${w}%;background:${up ? 'var(--red)' : 'var(--green)'};"></i></div>
+            <span class="xai-val">${up ? '+' : '−'}$${Math.abs(r.contribution_usd_mt).toFixed(2)}</span></div>`; }).join('')
+        + `<div class="xai-sum">Model average $${d.baseline_usd_mt.toFixed(2)} + drivers = <b>$${d.prediction_usd_mt.toFixed(2)}/MT</b>. Red pushes the rate up, green pulls it down.</div>`;
+      document.getElementById('xaiMethod').textContent = d.method;
+    } catch (e) {
+      host.textContent = 'Could not explain this prediction: ' + e.message;
+    }
+  }
+
   fetchModelInfo();
+  loadImportance();
 
 function performLogout(){
   if(!confirm('Sign out and return to the Sign In gateway?')) return;

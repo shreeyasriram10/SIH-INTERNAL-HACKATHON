@@ -43,6 +43,25 @@ class Vessel(Base):
     draft_m = Column(Float)
     speed_knots = Column(Float)
     daily_cost_usd = Column(Float)
+    # Principal dimensions, checked against each berth's LOA and beam limits.
+    loa_m = Column(Float)
+    beam_m = Column(Float)
+
+
+class EmergencyContact(Base):
+    """Who to call when a voyage or a berth goes wrong. National numbers are
+    seeded as verified; organisation-specific lines are placeholders an Admin
+    fills in, and say so until they do."""
+    __tablename__ = "emergency_contacts"
+    id = Column(Integer, primary_key=True, index=True)
+    category = Column(String)       # National, Maritime, Port, SAIL
+    name = Column(String)
+    phone = Column(String)
+    email = Column(String, default="")
+    available = Column(String, default="24x7")
+    notes = Column(String, default="")
+    verified = Column(Boolean, default=False)
+    sort_order = Column(Integer, default=100)
 
 class FreightHistory(Base):
     __tablename__ = "freight_history"

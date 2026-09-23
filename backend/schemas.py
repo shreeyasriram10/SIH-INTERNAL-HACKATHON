@@ -80,6 +80,8 @@ class VesselBase(BaseModel):
     draft_m: float
     speed_knots: float
     daily_cost_usd: float
+    loa_m: Optional[float] = None
+    beam_m: Optional[float] = None
 
 
 class Vessel(VesselBase):
@@ -162,6 +164,46 @@ class IdleVesselRequest(BaseModel):
     month: int = Field(default=0, ge=0, le=12, description="0 = current month")
     bunker_price: float = Field(default=697.0, gt=0, le=5000)
     pressure_index: float = Field(default=52.5, ge=0, le=100)
+
+
+class PlanRequest(BaseModel):
+    """A procurement programme rather than a single parcel: how much the plant
+    needs over the horizon, and the parcel each voyage carries."""
+
+    cargo_type: str = Field(min_length=1, max_length=80)
+    origin: str = Field(min_length=1, max_length=80)
+    plant: str = Field(min_length=1, max_length=80)
+    parcel_size: float = Field(gt=0, le=400_000, description="Tonnes per voyage")
+    total_requirement_mt: float = Field(default=0, ge=0, le=5_000_000,
+                                        description="0 = parcel x horizon months")
+    horizon_months: int = Field(default=6, ge=1, le=12)
+    window_days: int = Field(default=30, ge=1, le=365)
+    bunker_price: float = Field(default=697.0, gt=0, le=5000)
+    pressure_index: float = Field(default=52.5, ge=0, le=100)
+    max_voyages_per_month: int = Field(default=3, ge=1, le=8)
+
+
+class ConstraintRequest(BaseModel):
+    cargo_type: str = Field(min_length=1, max_length=80)
+    origin: str = Field(min_length=1, max_length=80)
+    parcel_size: float = Field(gt=0, le=400_000)
+
+
+class EmergencyContactIn(BaseModel):
+    category: str = Field(min_length=1, max_length=40)
+    name: str = Field(min_length=1, max_length=120)
+    phone: str = Field(min_length=1, max_length=60)
+    email: str = Field(default="", max_length=254)
+    available: str = Field(default="24x7", max_length=60)
+    notes: str = Field(default="", max_length=300)
+    verified: bool = False
+    sort_order: int = Field(default=100, ge=0, le=1000)
+
+
+class EmergencyContact(EmergencyContactIn):
+    model_config = ORM
+
+    id: int
 
 
 class RecommendationBase(BaseModel):

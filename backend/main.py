@@ -7,14 +7,14 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, Response
 from fastapi.staticfiles import StaticFiles
 
 import models
 import seed_data
 from database import engine, ensure_columns
-from routers import (auth, cargo, copilot, decision, ml, ports, system, vessels,
-                     waterways)
+from routers import (auth, cargo, copilot, decision, market, ml, ops, planning, ports,
+                     system, vessels, waterways)
 
 logging.basicConfig(
     level=os.environ.get("LOHA_LOG_LEVEL", "INFO"),
@@ -79,6 +79,9 @@ app.include_router(decision.router, prefix="/api/decision", tags=["decision"])
 app.include_router(system.router, prefix="/api/system", tags=["system"])
 app.include_router(copilot.router, prefix="/api/copilot", tags=["copilot"])
 app.include_router(waterways.router, prefix="/api/waterways", tags=["waterways"])
+app.include_router(planning.router, prefix="/api/planning", tags=["planning"])
+app.include_router(market.router, prefix="/api/market", tags=["market"])
+app.include_router(ops.router, prefix="/api/ops", tags=["operations"])
 
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
@@ -162,6 +165,16 @@ def _page(filename: str) -> HTMLResponse:
             "Pragma": "no-cache",
         },
     )
+
+
+@app.get("/sw.js", include_in_schema=False)
+def service_worker():
+    """Served from the root so its scope covers the whole app. no-store, so a
+    new worker version is picked up on the next load."""
+    with open(os.path.join(STATIC_DIR, "sw.js"), "r", encoding="utf-8") as handle:
+        body = handle.read()
+    return Response(content=body, media_type="application/javascript",
+                    headers={"Cache-Control": "no-store", "Service-Worker-Allowed": "/"})
 
 
 @app.get("/healthz", tags=["system"])

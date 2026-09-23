@@ -113,16 +113,21 @@ def seed_database():
                     setattr(port, field, value)
             db.flush()
 
-        # Vessel classes, matching the dashboard's fleet definitions.
+        # Vessel classes, matching the dashboard's fleet definitions. LOA and
+        # beam are typical principal dimensions for each class.
         vessels_data = [
             {"name": "MV Bengal Pioneer", "class_type": "Handysize", "capacity_mt": 40000,
-             "draft_m": 10.0, "speed_knots": 13.0, "daily_cost_usd": 9500},
+             "draft_m": 10.0, "speed_knots": 13.0, "daily_cost_usd": 9500,
+             "loa_m": 180.0, "beam_m": 28.0},
             {"name": "MV Coastal Star", "class_type": "Supramax", "capacity_mt": 60000,
-             "draft_m": 12.6, "speed_knots": 14.5, "daily_cost_usd": 12000},
+             "draft_m": 12.6, "speed_knots": 14.5, "daily_cost_usd": 12000,
+             "loa_m": 199.9, "beam_m": 32.3},
             {"name": "MV Bulk Trader", "class_type": "Panamax", "capacity_mt": 80000,
-             "draft_m": 14.2, "speed_knots": 14.0, "daily_cost_usd": 15000},
+             "draft_m": 14.2, "speed_knots": 14.0, "daily_cost_usd": 15000,
+             "loa_m": 225.0, "beam_m": 32.3},
             {"name": "MV Ocean Giant", "class_type": "Capesize", "capacity_mt": 180000,
-             "draft_m": 18.0, "speed_knots": 13.5, "daily_cost_usd": 22000},
+             "draft_m": 18.0, "speed_knots": 13.5, "daily_cost_usd": 22000,
+             "loa_m": 292.0, "beam_m": 45.0},
         ]
         for row in vessels_data:
             vessel = db.query(models.Vessel).filter(
@@ -133,6 +138,28 @@ def seed_database():
             else:
                 for field, value in row.items():
                     setattr(vessel, field, value)
+
+        # Emergency contacts. Only the two national numbers are seeded as
+        # verified; the organisation lines are placeholders for an Admin to
+        # complete, and are shown as unconfigured until they are.
+        if db.query(models.EmergencyContact).count() == 0:
+            for order, row in enumerate([
+                {"category": "National", "name": "Emergency Response Support System (ERSS)",
+                 "phone": "112", "notes": "Police, fire and medical, all-India.", "verified": True},
+                {"category": "Maritime", "name": "Indian Coast Guard - Maritime Search & Rescue",
+                 "phone": "1554", "notes": "Toll-free distress line for incidents at sea.",
+                 "verified": True},
+                {"category": "Port", "name": "Discharge port control room",
+                 "phone": "Not configured",
+                 "notes": "Admin: add the port control / harbour master line for each berth in use."},
+                {"category": "SAIL", "name": "SAIL chartering desk (duty officer)",
+                 "phone": "Not configured",
+                 "notes": "Admin: add the internal escalation number."},
+                {"category": "SAIL", "name": "Ship agent / P&I correspondent",
+                 "phone": "Not configured",
+                 "notes": "Admin: add the agent appointed for the current fixture."},
+            ]):
+                db.add(models.EmergencyContact(sort_order=order * 10, **row))
 
         # Seed initial audit log
         if db.query(models.AuditLog).count() == 0:

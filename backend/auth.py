@@ -227,7 +227,8 @@ def require_roles(*roles: str):
 #
 #   Admin (Chief Logistics Officer)  every section and action
 #   Analyst                          market analysis, fleet fit, scenarios, model
-#   Procurement Officer              the approved plan and the berths, read-only
+#   Procurement Officer              the approved plan, the charter programme and
+#                                    the berths, read-only
 # ---------------------------------------------------------------------------
 ROLE_ADMIN = "Admin"
 ROLE_ANALYST = "Analyst"
@@ -241,8 +242,8 @@ ROLE_ACCESS = {
     ROLE_ADMIN: {
         "label": "Chief Logistics Officer",
         "home": "command",
-        "sections": ["command", "intelligence", "approved", "scenarios", "ports", "vessels",
-                     "international-waterways", "about"],
+        "sections": ["command", "intelligence", "approved", "planner", "scenarios", "ports", "vessels",
+                     "market", "international-waterways", "alignment", "about"],
         "pages": ["ml-training", "verification"],
         "can": {"edit_cargo": True, "run_engine": True, "simulate": True,
                 "retrain_model": True, "run_tests": True},
@@ -250,7 +251,7 @@ ROLE_ACCESS = {
     ROLE_ANALYST: {
         "label": "Analyst",
         "home": "intelligence",
-        "sections": ["intelligence", "scenarios", "vessels", "about"],
+        "sections": ["intelligence", "planner", "scenarios", "vessels", "market", "alignment", "about"],
         "pages": ["ml-training"],
         "can": {"edit_cargo": True, "run_engine": True, "simulate": True,
                 "retrain_model": True, "run_tests": False},
@@ -258,7 +259,7 @@ ROLE_ACCESS = {
     ROLE_OFFICER: {
         "label": "Procurement Officer",
         "home": "approved",
-        "sections": ["approved", "ports", "about"],
+        "sections": ["approved", "planner", "ports", "alignment", "about"],
         "pages": [],
         "can": {"edit_cargo": False, "run_engine": False, "simulate": False,
                 "retrain_model": False, "run_tests": False},

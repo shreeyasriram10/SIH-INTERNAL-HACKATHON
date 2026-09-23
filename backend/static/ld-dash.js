@@ -73,8 +73,12 @@
     if(gap > MAX_LIGHTER_GAP_M){
       return `${p.name} carries ${p.draft.toFixed(1)} m; a laden ${v.name} draws ${v.draft.toFixed(1)} m plus ${UKC_M} m under-keel - beyond what lightering can bridge.`;
     }
-    if(v.dwtMax > 150000 && p.loa < 300){
-      return `${p.name} accepts ${p.loa} m LOA; a ${v.name} needs ${v.loa} m.`;
+    // Same order as the engine's berth_checks: draft, then LOA, then beam.
+    if(p.loa && v.loa && v.loa > p.loa){
+      return `${p.name} accepts ${p.loa} m LOA; a ${v.name} is ${v.loa} m long.`;
+    }
+    if(p.beam && v.beam && v.beam > p.beam){
+      return `${p.name} accepts ${p.beam} m beam; a ${v.name} is ${v.beam} m wide.`;
     }
     return `The engine returned no ${v.name} option at ${p.name} for this parcel.`;
   }

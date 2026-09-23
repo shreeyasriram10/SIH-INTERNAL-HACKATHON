@@ -2140,7 +2140,9 @@ class TestRoleSeparation:
         officer = db_user_factory("roles.officer@sail.gov.in", "Procurement Officer")["client"]
         data = officer.get("/api/auth/access").json()
         assert data["home"] == "approved"
-        assert set(data["sections"]) == {"approved", "ports", "about"}
+        # The officer reads the charter plan they execute and the alignment
+        # check; nothing that runs a scenario or edits cargo.
+        assert set(data["sections"]) == {"approved", "planner", "ports", "alignment", "about"}
         assert data["can"]["edit_cargo"] is False and data["can"]["run_engine"] is False
 
     def test_access_needs_a_session(self, client):
@@ -2195,3 +2197,163 @@ class TestRoleSeparation:
     def test_hidden_legacy_chart_does_not_call_the_model(self, client):
         js = client.get("/static/ld-dash.js").text
         assert "if(chart && chart.closest('.ld-legacy')) return Promise.resolve();" in js
+
+
+# =============================================================================
+# Procurement planning, market view, operations and assurance
+# =============================================================================
+class TestVesselAndPortConstraints:
+    def _vessels_ports(self):
+        from database import SessionLocal
+        import models as _m
+        with SessionLocal() as s:
+            return s.query(_m.Vessel).all(), s.query(_m.Port).all()
+
+    def test_vessels_carry_principal_dimensions(self, auth_client):
+        rows = auth_client.get("/api/vessels/").json()
+        assert all(v["loa_m"] and v["beam_m"] for v in rows)
+
+    def test_beam_limit_excludes_a_berth(self):
+        vessels, ports = self._vessels_ports()
+        _, ctx = decision_engine.evaluate(
+            vessels=vessels, ports=ports, parcel_size=55000, cargo_type="coking_coal",
+            origin="Australia", plant="rourkela", window_days=30, month=2,
+            bunker_price=697, pressure_index=52.5, top_n=25)
+        beam = [e for e in ctx["excluded"] if "beam limit" in e["reason"]]
+        assert beam, "a 32.3 m Supramax should not fit Sagar's 32 m beam limit"
+
+    def test_loa_is_checked_against_real_length_not_capacity(self):
+        vessels, ports = self._vessels_ports()
+        _, ctx = decision_engine.evaluate(
+            vessels=vessels, ports=ports, parcel_size=80000, cargo_type="coking_coal",
+            origin="Australia", plant="rourkela", window_days=30, month=2,
+            bunker_price=697, pressure_index=52.5, top_n=25)
+        assert any("Panamax (225 m)" in e["reason"] for e in ctx["excluded"])
+
+    def test_shallow_load_port_part_loads_a_capesize(self, auth_client):
+        body = auth_client.post("/api/planning/constraints", json={
+            "cargo_type": "coking_coal", "origin": "USA", "parcel_size": 80000}).json()
+        cape = next(v for v in body["vessels"] if v["vessel_class"] == "Capesize")
+        assert cape["load_port"]["part_loaded"] and cape["lift_mt"] < 180000
+        assert body["load_port"]["name"].startswith("Hampton Roads")
+
+    def test_load_port_time_is_in_the_cycle(self, auth_client):
+        best = auth_client.post("/api/decision/optimize", json={
+            "parcel_size": 80000, "cargo_type": "Coking Coal", "origin": "Australia",
+            "plant": "Rourkela", "window_days": 30, "persist": False}).json()["recommended"]
+        assert best["load_port"] and best["load_port_days"] > 0
+        assert best["total_cycle_days"] > best["sea_days"] + best["load_port_days"]
+        assert {c["check"] for c in best["constraint_checks"]} >= {
+            "Draft at load port", "LOA at berth", "Beam at berth", "Discharge rate"}
+
+    def test_monsoon_month_lengthens_the_berth_queue(self):
+        from services import network
+        _, ports = self._vessels_ports()
+        paradip = next(p for p in ports if p.code == "INPRT")
+        assert network.forecast_wait_days(paradip, 7) > network.forecast_wait_days(paradip, 5)
+
+
+class TestCharterPlanner:
+    PLAN = {"cargo_type": "coking_coal", "origin": "Australia", "plant": "rourkela",
+            "parcel_size": 75000, "horizon_months": 6}
+
+    def test_requires_a_session(self, client):
+        assert client.post("/api/planning/charter-plan", json=self.PLAN).status_code == 401
+
+    def test_plan_has_every_section(self, auth_client):
+        body = auth_client.post("/api/planning/charter-plan", json=self.PLAN).json()
+        assert body["status"] == "SUCCESS"
+        assert {"months", "optimizer", "contracts", "short_term", "timing", "recommendation"} <= set(body)
+        assert len(body["months"]) == 6 and len(body["short_term"]["months"]) == 3
+
+    def test_schedule_never_runs_the_plant_short(self, auth_client):
+        body = auth_client.post("/api/planning/charter-plan",
+                                json={**self.PLAN, "total_requirement_mt": 400000}).json()
+        schedule = body["optimizer"]["schedule"]
+        assert sum(r["voyages"] for r in schedule) == body["optimizer"]["voyages"]
+        assert all(r["stock_end_mt"] >= -1 for r in schedule)
+        assert body["optimizer"]["objective_usd"] <= body["optimizer"]["even_spread_usd"] + 1
+
+    def test_contracts_trade_premium_for_certainty(self, auth_client):
+        options = auth_client.post("/api/planning/charter-plan", json=self.PLAN).json()["contracts"]
+        spot = next(o for o in options if o["key"] == "spot")
+        medium = next(o for o in options if o["key"] == "medium")
+        assert spot["cost_at_risk_usd"] > medium["cost_at_risk_usd"]
+        assert medium["contract_rate_usd_mt"] > 0
+        assert sum(o["recommended"] for o in options) == 1
+
+    def test_short_term_band_brackets_the_expectation(self, auth_client):
+        st = auth_client.post("/api/planning/charter-plan", json=self.PLAN).json()["short_term"]
+        assert st["p10_usd"] <= st["expected_usd"] <= st["p90_usd"]
+
+    def test_timing_signal_follows_its_rule(self):
+        from services import planning
+        runs = [{"feasible": True, "freight_rate_usd_mt": r, "month": i + 1}
+                for i, r in enumerate([20, 25, 25, 25])]
+        assert planning.timing_signal(runs)["signal"] == "FIX"
+        runs[0]["freight_rate_usd_mt"] = 30
+        assert planning.timing_signal(runs)["signal"] == "DEFER"
+
+    def test_officer_can_read_the_final_recommendation(self, db_user_factory):
+        officer = db_user_factory("plan.officer@sail.gov.in", "Procurement Officer")["client"]
+        body = officer.post("/api/planning/charter-plan", json=self.PLAN).json()
+        assert body["recommendation"]["charter_label"]
+
+
+class TestMarketView:
+    def test_congestion_forecast_covers_twelve_months(self, auth_client):
+        body = auth_client.get("/api/market/congestion").json()
+        assert len(body["months"]) == 12
+        assert all(len(p["months"]) == 12 for p in body["ports"])
+
+    def test_demand_supply_is_labelled_as_modelled(self, auth_client):
+        body = auth_client.get("/api/market/demand-supply?plant=bhilai").json()
+        assert body["plant"] == "Bhilai Steel Plant" and len(body["months"]) == 12
+        assert "Modelled" in body["demand_basis"]
+
+    def test_seasonal_calendar_ranks_every_month(self, auth_client):
+        body = auth_client.get("/api/market/seasonal?origin=Australia").json()
+        assert sorted(r["rank"] for r in body["months"]) == list(range(1, 13))
+
+
+class TestExplainability:
+    ROW = {"origin": "Australia", "distance_nm": 4500, "month": 7, "bunker_price": 697, "pressure_index": 52.5}
+
+    def test_shapley_values_add_up_to_the_prediction(self, auth_client):
+        body = auth_client.post("/api/ml/explain", json=self.ROW).json()
+        total = body["baseline_usd_mt"] + sum(d["contribution_usd_mt"] for d in body["drivers"])
+        assert abs(total - body["prediction_usd_mt"]) < 0.02
+        assert len(body["drivers"]) == 4
+
+    def test_importance_ranks_the_lane_first(self, auth_client):
+        body = auth_client.get("/api/ml/importance").json()
+        assert body["drivers"][0]["driver"].startswith("Lane")
+
+
+class TestOperations:
+    def test_alert_feed_has_stable_ids(self, auth_client):
+        a = auth_client.get("/api/ops/alerts").json()["alerts"]
+        b = auth_client.get("/api/ops/alerts").json()["alerts"]
+        assert [x["id"] for x in a] == [x["id"] for x in b]
+
+    def test_emergency_contacts_seeded_with_national_numbers(self, auth_client):
+        rows = auth_client.get("/api/ops/emergency").json()
+        assert {"112", "1554"} <= {r["phone"] for r in rows if r["verified"]}
+
+    def test_only_admin_edits_contacts(self, db_user_factory):
+        analyst = db_user_factory("contacts.analyst@sail.gov.in", "Analyst")["client"]
+        payload = {"category": "Port", "name": "x", "phone": "1"}
+        assert analyst.post("/api/ops/emergency", json=payload).status_code == 403
+
+
+class TestAlignment:
+    def test_every_requirement_is_probed(self, auth_client):
+        body = auth_client.get("/api/system/alignment").json()
+        assert body["total"] == 30
+        assert body["counts"]["NOT MET"] == 0, [r for r in body["requirements"] if r["status"] == "NOT MET"]
+        assert all(r["evidence"] for r in body["requirements"])
+
+    def test_status_reports_the_real_model_metrics(self, auth_client):
+        meta = model_registry.get_payload()["metadata"]
+        engine = auth_client.get("/api/system/status").json()["ml_engine"]
+        assert engine["r2_score"] == meta["r2_score"]
