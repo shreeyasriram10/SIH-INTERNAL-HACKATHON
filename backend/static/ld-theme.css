@@ -15,9 +15,9 @@
 html:not([data-ldmode="light"]){
   color-scheme:dark;
   /* design tokens */
-  --ld-font-body:"Inter",system-ui,-apple-system,sans-serif;
-  --ld-font-head:"Inter",system-ui,-apple-system,sans-serif;
-  --ld-h-weight:700; --ld-h-track:-.028em;
+  --ld-font-body:"Nunito Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --ld-font-head:"Nunito Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --ld-h-weight:700; --ld-h-track:-.012em;
   --ld-page:radial-gradient(1200px 680px at 76% -12%,rgba(30,107,120,.42),transparent 62%),
             radial-gradient(900px 620px at 6% 108%,rgba(7,34,48,.85),transparent 66%),
             linear-gradient(168deg,#0A3140 0%,#0B2A3A 34%,#071C28 70%,#05131C 100%);
@@ -58,13 +58,13 @@ html:not([data-ldmode="light"]){
 }
 
 /* Light mode: "Sea Glass" - white paper, ocean-blue actions, lagoon-cyan
-   accents, frosted chrome and glossy surfaces. Sora sets headings and
-   figures; Manrope sets running text. */
+   accents, frosted chrome and glossy surfaces. Type is Nunito Sans in both
+   modes: formal, humanist, softly rounded terminals. */
 html[data-ldmode="light"]{
   color-scheme:light;
-  --ld-font-body:"Manrope",system-ui,-apple-system,sans-serif;
-  --ld-font-head:"Sora","Manrope",system-ui,sans-serif;
-  --ld-h-weight:600; --ld-h-track:-.022em;
+  --ld-font-body:"Nunito Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --ld-font-head:"Nunito Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --ld-h-weight:700; --ld-h-track:-.012em;
   --ld-page:radial-gradient(1100px 620px at 88% -8%,rgba(56,189,248,.16),transparent 62%),
             radial-gradient(900px 560px at -4% 104%,rgba(8,145,178,.12),transparent 64%),
             linear-gradient(180deg,#FFFFFF 0%,#F4FAFD 48%,#EAF5FB 100%);
@@ -460,11 +460,11 @@ html[data-ldmode="light"] .leaflet-popup-content-wrapper{border-radius:12px;box-
 /* ---- light-mode type: the legacy page styles name Space Grotesk and IBM
    Plex on individual classes; map them onto the Sea Glass pair. Two-class
    component rules (ld-dash) already use the tokens and outrank this. ---- */
-html[data-ldmode="light"] body *{font-family:var(--ld-font-body);}
-html[data-ldmode="light"] [style*="IBM Plex"]{font-family:var(--ld-font-body) !important;}
-html[data-ldmode="light"] body :is(h1,h2,h3,h4,h5,.display,.page-title,.brand-text,.metric-value,.kpi-value,.pressure-label,
+body *{font-family:var(--ld-font-body);}
+[style*="IBM Plex"]{font-family:var(--ld-font-body) !important;}
+body :is(h1,h2,h3,h4,h5,.display,.page-title,.brand-text,.metric-value,.kpi-value,.pressure-label,
   .vessel-fit-score,.loading-text,.scenario-phase-route,.waterfall-val,.risk-factor-val,.port-specs dd,.confidence-badge){
   font-family:var(--ld-font-head);}
-html[data-ldmode="light"] .lifecycle-card .step-detail{font-family:var(--ld-font-body);}
+.lifecycle-card .step-detail{font-family:var(--ld-font-body);}
 html[data-ldmode="light"] body{font-variant-numeric:tabular-nums;}
-html[data-ldmode="light"] :is(.console-box,.console-box *,code,pre,kbd){font-family:"IBM Plex Mono",ui-monospace,monospace !important;}
+:is(.console-box,.console-box *,code,pre,kbd){font-family:"IBM Plex Mono",ui-monospace,monospace !important;}

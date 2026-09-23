@@ -683,6 +683,67 @@
       <p class="lp-foot">${esc(a.vessel_class)} via ${esc(a.port_name)} · $${a.landed_cost_usd_mt.toFixed(2)}/MT landed, before the cargo's FOB price.</p>`;
   }
 
+  /* ============================================ WHAT-IF: IMPACT VIEW */
+  /* The simulator used to drop the full 950px decision card (KPIs, gauges,
+     waterfall, regret matrix, rationale) under every scenario. What a
+     disruption needs to show is the change: before vs after on each headline
+     figure, and which cost lines moved. The full card stays, folded. */
+  const COST_LINES = [
+    ['Ocean freight', 'ocean_freight_usd'], ['Vessel hire', 'vessel_hire_usd'], ['Deadfreight', 'deadfreight_usd'],
+    ['Port dues', 'port_dues_usd'], ['Demurrage', 'demurrage_usd'], ['Lightering', 'lightering_usd'],
+    ['Inland rail', 'inland_rail_usd'],
+  ];
+  function impactView(b, a){
+    const perMt = (x, k) => (x[k] || 0) / (x.parcel_mt || 1);
+    const metric = (label, before, after, fmtv, lowerIsBetter, dp) => {
+      // Difference of the figures as displayed, so "8 -> 5" reads as 3.
+      const r = v => Number((v || 0).toFixed(dp));
+      before = r(before); after = r(after);
+      const d = after - before, worse = lowerIsBetter ? d > 0.005 : d < -0.005, better = lowerIsBetter ? d < -0.005 : d > 0.005;
+      return `<div class="lv-imp-m"><span class="ld-label">${label}</span>
+        <div class="lv-imp-v"><s>${fmtv(before)}</s><i aria-hidden="true">→</i><b>${fmtv(after)}</b></div>
+        <em class="${worse ? 'up' : better ? 'down' : 'flat'}">${Math.abs(d) < 0.005 ? 'no change' : (d > 0 ? '▲ ' : '▼ ') + fmtv(Math.abs(d)).replace(/^[^\d$₹]*/, '')}</em></div>`;
+    };
+    const deltas = COST_LINES.map(([n, k]) => [n, perMt(a, k) - perMt(b, k)]).filter(x => Math.abs(x[1]) >= 0.01);
+    const max = Math.max(0.01, ...deltas.map(x => Math.abs(x[1])));
+    const sameRoute = b.port_name === a.port_name && b.vessel_class === a.vessel_class;
+    return `<section class="ld-card lv-impact">
+      <div class="lv-imp-route">
+        <div><span class="ld-label">Baseline</span><b>${esc(b.vessel_class)} → ${esc(b.port_name)}</b></div>
+        <i class="lv-imp-arrow" aria-hidden="true"></i>
+        <div class="${sameRoute ? '' : 'moved'}"><span class="ld-label">Under disruption</span><b>${esc(a.vessel_class)} → ${esc(a.port_name)}</b>
+          <small>${sameRoute ? 'Same route holds' : 'Route switches'}</small></div>
+      </div>
+      <div class="lv-imp-grid">
+        ${metric('Delivered cost', b.delivered_cost_usd_mt, a.delivered_cost_usd_mt, v => '$' + v.toFixed(2) + '/MT', true, 2)}
+        ${metric('Parcel cost', b.landed_cost_inr_cr, a.landed_cost_inr_cr, v => '₹' + v.toFixed(1) + ' Cr', true, 1)}
+        ${metric('Risk index', b.risk_index, a.risk_index, v => v.toFixed(0) + '/100', true, 0)}
+        ${metric('Supply continuity', b.supply_continuity, a.supply_continuity, v => v.toFixed(0) + '/100', false, 0)}
+        ${metric('Voyage cycle', b.total_cycle_days, a.total_cycle_days, v => v.toFixed(1) + ' d', true, 1)}
+      </div>
+      <div class="lv-imp-costs"><h4>What moved the cost <small>$/MT change, landed</small></h4>
+        ${deltas.length ? deltas.map(([n, d]) => `<div class="lv-imp-row"><span>${n}</span>
+          <div class="lv-imp-track"><i class="${d > 0 ? 'up' : 'down'}" style="width:${Math.abs(d) / max * 50}%"></i></div>
+          <b class="${d > 0 ? 'up' : 'down'}">${d > 0 ? '+' : '−'}$${Math.abs(d).toFixed(2)}</b></div>`).join('')
+          : '<p class="lp-foot">No cost line moved by more than $0.01/MT.</p>'}
+      </div>
+    </section>`;
+  }
+
+  const _renderDecisionCard = renderDecisionCard;
+  renderDecisionCard = function(result, inputs, targetId){
+    const out = _renderDecisionCard.apply(this, arguments);
+    if(targetId !== 'scenarioDecisionHost') return out;
+    const host = $('scenarioDecisionHost');
+    const base = typeof baselineResult === 'object' && baselineResult && baselineResult.winner && baselineResult.winner.api;
+    const now = result && result.winner && result.winner.api;
+    if(!host || !base || !now || host.querySelector('.lv-impact')) return out;
+    const card = host.innerHTML;
+    host.innerHTML = impactView(base, now)
+      + `<details class="lv-fold lv-imp-more"><summary>Show full decision detail (cost waterfall, gauges, rationale)</summary>${card}</details>`;
+    return out;
+  };
+
   /* ============================================ COMMAND CENTRE CTA */
   function injectCta(){
     const cta = document.querySelector('#ldCommand .ldc-cta');
