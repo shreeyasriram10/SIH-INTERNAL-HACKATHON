@@ -4016,7 +4016,9 @@ function initWaterwaysMap(){
   const esriTiles = style => `https://static-map-tiles-api.arcgis.com/arcgis/rest/services/static-basemap-tiles-service/v1/${style}/static/tile/{z}/{y}/{x}?token=${encodeURIComponent(esriKey)}`;
   let base;
   if(esriKey){
-    base = L.tileLayer(esriTiles('arcgis/oceans'), {maxZoom:16, attribution:'Powered by <a href="https://www.esri.com">Esri</a> | Esri, GEBCO, NOAA, Garmin, HERE and other contributors'}).addTo(waterwaysMap);
+    // The static-tiles service only carries the ocean *labels*; the ocean base
+    // (bathymetry and relief) is the keyed World Ocean Base raster service.
+    base = L.tileLayer(`https://ibasemaps-api.arcgis.com/arcgis/rest/services/Ocean/World_Ocean_Base/MapServer/tile/{z}/{y}/{x}?token=${encodeURIComponent(esriKey)}`, {maxZoom:13, attribution:'Powered by <a href="https://www.esri.com">Esri</a> | Esri, GEBCO, NOAA, Garmin, HERE and other contributors'}).addTo(waterwaysMap);
     const labels = L.tileLayer(esriTiles('arcgis/oceans/labels'), {maxZoom:16, pane:'overlayPane'}).addTo(waterwaysMap);
     let failures = 0;
     base.on('tileerror', () => {
