@@ -351,6 +351,22 @@ html[data-ldmode="light"] .about-hero h2{color:#FFFFFF;}
   .masthead-inner,.topbar-actions{flex-wrap:wrap;}
   .masthead-inner{height:auto;padding:8px 14px;}
 }
+/* Shorter screens: 13 links at 40px no longer fit the rail, and it used to
+   spill below its own box. Tighten the icons first, scroll only as a last
+   resort (scrolling clips the hover labels). */
+@media(min-width:641px) and (max-height:760px){
+  .sidenav{padding:6px 0;}
+  .sidenav a{height:34px;}
+  .sidenav-group{gap:2px;}
+  .sidenav-group + .sidenav-group{margin-top:5px;padding-top:5px;}
+}
+@media(min-width:641px) and (max-height:640px){
+  .sidenav a{height:30px;}
+  .sidenav a svg{width:16px;height:16px;flex-basis:16px;}
+}
+@media(min-width:641px) and (max-height:540px){
+  .sidenav{overflow-y:auto;scrollbar-width:none;}
+}
 /* Phones: the bar docks along the bottom edge, still icons only. */
 @media(max-width:640px){
   html{--rail-gutter:0px;}

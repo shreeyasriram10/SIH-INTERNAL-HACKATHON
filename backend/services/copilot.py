@@ -760,9 +760,9 @@ def _answer_navigation(ports, vessels, context, question):
         "&bull; <b>System Verification</b> - the in-process test battery<br>"
         "&bull; <b>About &amp; Data Governance</b> - methodology and the data register<br><br>"
         "Change the parcel with <b>Edit Cargo</b> in the bar at the top, then <b>Find Best "
-        "Strategy</b> to re-run. <b>Report</b> produces a printable summary. The badge beside "
-        "the masthead reads LIVE MODEL when figures came from the service, or OFFLINE ESTIMATE "
-        "if it fell back to a local approximation.",
+        "Strategy</b> to re-run. <b>Report</b> produces a printable summary. If the service is "
+        "unreachable, an OFFLINE ESTIMATE badge appears beside the masthead to show the figures "
+        "are a local approximation.",
         "Using the platform", [],
         ["How are options ranked?", "What do the scenarios do?"])
 
