@@ -1093,14 +1093,62 @@ footer .data-disclaimer{font-size:10.5px;color:var(--steel-light);margin-top:6px
       <span class="section-tag">Methodology</span>
     </div>
 
+    <div class="lv-pipeline" role="list" aria-label="How a recommendation is produced">
+      <div class="lv-node" role="listitem"><div class="lv-node-ic"><svg viewBox="0 0 24 24"><path d="M3 15l2 5h14l2-5z"/><path d="M6 15V9h8v6"/><path d="M2 12h20" stroke-dasharray="2 2"/></svg></div>
+        <b>01 · Feasibility</b><span>Draft, LOA &amp; beam at the load port and every berth</span></div>
+      <i class="lv-arrow" aria-hidden="true"></i>
+      <div class="lv-node" role="listitem"><div class="lv-node-ic"><svg viewBox="0 0 24 24"><rect x="4" y="13" width="4" height="7"/><rect x="10" y="9" width="4" height="11"/><rect x="16" y="5" width="4" height="15"/></svg></div>
+        <b>02 · Landed cost</b><span>7 cost lines, freight from the trained model</span></div>
+      <i class="lv-arrow" aria-hidden="true"></i>
+      <div class="lv-node" role="listitem"><div class="lv-node-ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 12V4M12 12l6 4"/></svg></div>
+        <b>03 · Risk index</b><span>4 weighted factors, 0–100</span></div>
+      <i class="lv-arrow" aria-hidden="true"></i>
+      <div class="lv-node" role="listitem"><div class="lv-node-ic"><svg viewBox="0 0 24 24"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg></div>
+        <b>04 · Stress test</b><span>7 disruptions re-priced against baseline</span></div>
+      <i class="lv-arrow" aria-hidden="true"></i>
+      <div class="lv-node win" role="listitem"><div class="lv-node-ic"><svg viewBox="0 0 24 24"><path d="M5 12l5 5 9-10"/></svg></div>
+        <b>Ranked plan</b><span>lowest risk-adjusted delivered cost</span></div>
+    </div>
+
+    <div class="lv-about-row">
+      <div class="ld-card lv-about-viz">
+        <h4>Risk index weights</h4>
+        <div class="lv-donut-wrap">
+          <svg viewBox="0 0 120 120" class="lv-donut" role="img" aria-label="Congestion 30%, seasonal 25%, freight volatility 25%, under-keel 20%">
+            <circle cx="60" cy="60" r="40" fill="none" stroke="var(--ld-track)" stroke-width="16"/>
+            <circle cx="60" cy="60" r="40" fill="none" stroke="var(--ld-crit)" stroke-width="16" stroke-dasharray="75.4 251.3" stroke-dashoffset="0" transform="rotate(-90 60 60)"/>
+            <circle cx="60" cy="60" r="40" fill="none" stroke="var(--ld-warn)" stroke-width="16" stroke-dasharray="62.8 251.3" stroke-dashoffset="-75.4" transform="rotate(-90 60 60)"/>
+            <circle cx="60" cy="60" r="40" fill="none" stroke="var(--ld-accent)" stroke-width="16" stroke-dasharray="62.8 251.3" stroke-dashoffset="-138.2" transform="rotate(-90 60 60)"/>
+            <circle cx="60" cy="60" r="40" fill="none" stroke="var(--ld-pos)" stroke-width="16" stroke-dasharray="50.3 251.3" stroke-dashoffset="-201" transform="rotate(-90 60 60)"/>
+            <text x="60" y="57" text-anchor="middle" class="lv-ax strong">0–100</text><text x="60" y="71" text-anchor="middle" class="lv-ax">risk index</text>
+          </svg>
+          <ul class="lv-key">
+            <li><i style="background:var(--ld-crit)"></i>Berth congestion <b>30%</b></li>
+            <li><i style="background:var(--ld-warn)"></i>Monsoon &amp; cyclone <b>25%</b></li>
+            <li><i style="background:var(--ld-accent)"></i>Freight volatility <b>25%</b></li>
+            <li><i style="background:var(--ld-pos)"></i>Under-keel margin <b>20%</b></li>
+          </ul>
+        </div>
+        <p class="lp-foot">Ranking = cargo price + landed cost × (1 + 0.35 × risk / 100).</p>
+      </div>
+      <div class="ld-card lv-about-viz">
+        <h4>Landed cost build-up · current recommendation</h4>
+        <div id="lvAboutCost"><p class="lp-foot">Run <b>Find Best Strategy</b> to see the live build-up.</p></div>
+      </div>
+    </div>
+
+    <details class="lv-fold">
+      <summary>Read the full method</summary>
     <div class="about-grid">
       <div class="about-card">
         <div class="about-kicker">Stage 01</div>
         <h4>Feasibility Screening</h4>
-        <p>Every vessel class is tested against every discharge berth. A pairing is rejected where
-        the laden draft exceeds the berth's usable draft beyond the lighterable margin, or where the
-        length-overall limit cannot accept the class. Part-loaded vessels float higher, so sailing
-        draft is scaled by utilisation rather than assumed at scantling.</p>
+        <p>Every vessel class is tested against its origin load port and every discharge berth. A
+        shallow load port part-loads a deep ship; a terminal that cannot berth the class rules it
+        out. At the discharge berth a pairing is rejected where the laden draft exceeds the usable
+        draft beyond the lighterable margin, or where the vessel's length overall or beam exceeds
+        the berth's limit. Part-loaded vessels float higher, so sailing draft is scaled by
+        utilisation rather than assumed at scantling.</p>
       </div>
       <div class="about-card">
         <div class="about-kicker">Stage 02</div>
@@ -1131,6 +1179,7 @@ footer .data-disclaimer{font-size:10.5px;color:var(--steel-light);margin-top:6px
         delta against baseline together with a mitigation.</p>
       </div>
     </div>
+    </details>
 
     <div class="section-header">
       <div>
@@ -1140,6 +1189,13 @@ footer .data-disclaimer{font-size:10.5px;color:var(--steel-light);margin-top:6px
       <span class="section-tag">Transparency</span>
     </div>
 
+    <div class="lv-prov">
+      <div class="lv-prov-item"><span class="tag tag-public">Public / Regulatory</span><b>Port limits &amp; tariffs</b><small>Ministry of Ports, Shipping &amp; Waterways · IPA · dry-bulk indices</small></div>
+      <div class="lv-prov-item"><span class="tag tag-calib">Calibrated</span><b>Bunker, rail, demurrage, laytime</b><small>held as service constants, not in the interface</small></div>
+      <div class="lv-prov-item"><span class="tag tag-synth">Synthetic</span><b>Model training data</b><small>1,500 benchmark-calibrated voyages · every prediction says so</small></div>
+    </div>
+    <details class="lv-fold">
+      <summary>Read the provenance detail</summary>
     <div class="about-grid">
       <div class="about-card">
         <div class="about-kicker"><span class="tag tag-public">Public / Regulatory</span></div>
@@ -1164,6 +1220,7 @@ footer .data-disclaimer{font-size:10.5px;color:var(--steel-light);margin-top:6px
         field.</p>
       </div>
     </div>
+    </details>
 
     <div class="about-card" style="margin-bottom:20px;">
       <h4>Statement on Data Limitations</h4>
@@ -4206,5 +4263,6 @@ document.querySelectorAll('.sidenav a').forEach(function(a){
 </script>
 <script src="/static/ld-dash.js"></script>
 <script src="/static/ld-plan.js"></script>
+<script src="/static/ld-visual.js"></script>
 </body>
 </html>

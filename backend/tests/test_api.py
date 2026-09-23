@@ -2294,6 +2294,12 @@ class TestCharterPlanner:
         runs[0]["freight_rate_usd_mt"] = 30
         assert planning.timing_signal(runs)["signal"] == "DEFER"
 
+    def test_sailings_count_every_ship_not_just_parcels(self, auth_client):
+        body = auth_client.post("/api/planning/charter-plan", json=self.PLAN).json()
+        rec, schedule = body["recommendation"], body["optimizer"]["schedule"]
+        assert rec["sailings"] == sum(r["voyages"] * r["shipments"] for r in schedule if r["voyages"])
+        assert rec["sailings"] >= rec["voyages"]
+
     def test_officer_can_read_the_final_recommendation(self, db_user_factory):
         officer = db_user_factory("plan.officer@sail.gov.in", "Procurement Officer")["client"]
         body = officer.post("/api/planning/charter-plan", json=self.PLAN).json()

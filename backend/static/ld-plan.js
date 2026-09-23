@@ -120,18 +120,24 @@
         <div class="lp-final-main">
           <div class="ld-kicker">Final charter recommendation</div>
           <div class="lp-final-title">${esc(r.charter_label)}</div>
-          <div class="lp-final-sub">${esc(r.vessel_class)} · ${esc(r.load_port || r.origin)} → ${esc(r.discharge_port)} → ${esc(PLANTS.find(x => x[0] === r.plant)?.[1] || r.plant)}</div>
+          <div class="lp-route">
+            <span><svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="2"/><path d="M12 7v14M5 13a7 7 0 0014 0M8 11h8"/></svg>${esc(r.load_port || r.origin)}</span><i></i>
+            <span class="ship"><svg viewBox="0 0 24 24"><path d="M3 15l2 5h14l2-5z"/><path d="M6 15V9h8v6M9 9V5h3"/></svg>${esc(r.vessel_class)} × ${r.sailings || r.voyages} sailings</span><i></i>
+            <span><svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="2"/><path d="M12 7v14M5 13a7 7 0 0014 0M8 11h8"/></svg>${esc(r.discharge_port)}</span><i class="rail"></i>
+            <span><svg viewBox="0 0 24 24"><path d="M3 21V11l5 3V11l5 3V7l8 4v10z"/></svg>${esc(PLANTS.find(x => x[0] === r.plant)?.[1] || r.plant)}</span>
+          </div>
           <ul class="lp-reasons">${r.reasons.map(x => `<li>${esc(x)}</li>`).join('')}</ul>
         </div>
         <div class="lp-final-side">
           <div class="lp-kv"><span class="ld-label">Expected programme cost</span><b class="ld-num">${usd0(r.expected_cost_usd)}</b><small>₹${r.expected_cost_inr_cr.toLocaleString('en-IN')} Cr · P90 ${usd0(r.p90_cost_usd)}</small></div>
-          <div class="lp-kv"><span class="ld-label">Voyages</span><b class="ld-num">${r.voyages}</b><small>first sailing ${MN[r.first_sailing_month]}</small></div>
+          <div class="lp-kv"><span class="ld-label">Parcels · sailings</span><b class="ld-num">${r.voyages}<span class="lp-unit"> · ${r.sailings || r.voyages}</span></b><small>first sailing ${MN[r.first_sailing_month]}</small></div>
           <div class="lp-kv"><span class="ld-label">Market timing</span><b class="ld-num lp-sig ${t.signal.toLowerCase()}">${t.signal}</b><small>${esc(t.rule)}</small></div>
           <div class="lp-kv"><span class="ld-label">Confidence</span><b class="ld-num">${r.confidence}<span class="lp-unit">/100</span></b><small>${esc(r.confidence_basis)}</small></div>
         </div>
       </section>
 
       <h3 class="lp-h">Spot vs short- and medium-term contract</h3>
+      ${contractChart(p.contracts)}
       <div class="lp-grid3">${p.contracts.map(contractCard).join('')}</div>
       <p class="lp-foot">Contract rate = mean forward rate over the term + term premium (${Object.entries(p.assumptions.term_premiums_pct).map(([k, v]) => `${k} ${v}%`).join(', ')}).
         Score = expected cost + ${p.assumptions.risk_aversion} × cost-at-risk (P90 − expected). Spot volatility ${p.assumptions.monthly_volatility_pct}% a month.</p>
@@ -141,7 +147,8 @@
           <div class="lp-cardhead"><div><h4>Multi-voyage schedule</h4>
             <p class="ld-card-sub">${esc(p.optimizer.method)}</p></div>
             <span class="ld-tag pos">${p.optimizer.saving_vs_even_usd > 0 ? 'saves ' + usd0(p.optimizer.saving_vs_even_usd) + ' vs even spread' : 'even spread is optimal'}</span></div>
-          ${scheduleTable(p)}
+          ${scheduleChart(p)}
+          <details class="lv-fold"><summary>Show the monthly detail</summary>${scheduleTable(p)}</details>
         </section>
         <section class="ld-card lp-pad">
           <div class="lp-cardhead"><div><h4>Short-term cost · next 3 months</h4>
@@ -165,24 +172,65 @@
     }));
   }
 
+  /* Expected cost as a bar, the P90 tail as a whisker, the ranking score as a
+     tick. The axis starts near the cheapest expectation, not at zero, so the
+     differences between structures are visible; every value is labelled. */
+  function contractChart(options){
+    const lo = Math.min(...options.map(o => o.expected_cost_usd)) * 0.985;
+    const hi = Math.max(...options.map(o => o.p90_cost_usd)) * 1.005;
+    const x = v => ((v - lo) / (hi - lo) * 100).toFixed(2) + '%';
+    return `<section class="ld-card lp-pad lp-range">
+      ${options.map(o => `<div class="lp-range-row${o.recommended ? ' on' : ''}">
+        <span class="lp-range-name">${esc(o.label.replace(/ \(.*\)/, ''))}${o.recommended ? ' <span class="winner-badge">BEST</span>' : ''}</span>
+        <div class="lp-range-track">
+          <i class="exp" style="width:${x(o.expected_cost_usd)}"></i>
+          <i class="tail" style="left:${x(o.expected_cost_usd)};width:calc(${x(o.p90_cost_usd)} - ${x(o.expected_cost_usd)})"></i>
+          <em style="left:${x(o.score_usd)}" title="score"></em>
+        </div>
+        <span class="lp-range-val">${usd0(o.expected_cost_usd)}<small>P90 ${usd0(o.p90_cost_usd)}</small></span>
+      </div>`).join('')}
+      <div class="ldc-legend lp-legend"><span><i style="width:14px;height:8px;background:var(--ld-ink)"></i>Expected cost</span>
+        <span><i style="width:14px;height:8px;background:repeating-linear-gradient(45deg,var(--ld-warn) 0 3px,transparent 3px 6px)"></i>Cost-at-risk to P90</span>
+        <span><i style="width:2px;height:12px;background:var(--ld-text)"></i>Score (lower wins)</span>
+        <span>Axis starts at ${usd0(lo)}</span></div>
+    </section>`;
+  }
+
   function contractCard(o){
     return `<div class="ld-card lp-contract${o.recommended ? ' on' : ''}">
       <div class="lp-cardhead"><h4>${esc(o.label)}</h4>${o.recommended ? '<span class="winner-badge">RECOMMENDED</span>' : ''}</div>
+      <div class="lp-fixed"><div class="lp-fixed-bar"><i style="width:${o.fixed_share_pct}%"></i></div><span>${o.fixed_share_pct}% of freight fixed</span></div>
       <div class="lp-kvs">
-        <div><span>Freight</span><b>${o.contract_rate_usd_mt != null ? usd2(o.contract_rate_usd_mt) + '/MT fixed' : 'Spot each voyage'}</b></div>
-        <div><span>Fixed share</span><b>${o.fixed_share_pct}%</b></div>
-        <div><span>Expected cost</span><b>${usd0(o.expected_cost_usd)}</b></div>
-        <div><span>P90 cost</span><b>${usd0(o.p90_cost_usd)}</b></div>
-        <div><span>Cost-at-risk</span><b>${usd0(o.cost_at_risk_usd)}</b></div>
-        <div><span>vs spot</span><b>${o.key === 'spot' ? '—' : (o.premium_vs_spot_usd >= 0 ? '+' : '−') + usd0(Math.abs(o.premium_vs_spot_usd)).slice(0)}</b></div>
+        <div><span>Freight</span><b>${o.contract_rate_usd_mt != null ? usd2(o.contract_rate_usd_mt) + '/MT' : 'Spot'}</b></div>
+        <div><span>vs spot</span><b>${o.key === 'spot' ? '—' : (o.premium_vs_spot_usd >= 0 ? '+' : '−') + usd0(Math.abs(o.premium_vs_spot_usd))}</b></div>
         <div><span>Risk removed</span><b>${o.key === 'spot' ? '—' : usd0(o.risk_removed_usd)}</b></div>
-        <div><span>Score</span><b>${usd0(o.score_usd)}</b></div>
+        <div><span>Cost-at-risk</span><b>${usd0(o.cost_at_risk_usd)}</b></div>
       </div></div>`;
+  }
+
+  function scheduleChart(p){
+    const rows = p.optimizer.schedule, n = rows.length, W = 560, H = 150, pad = 30;
+    const bw = (W - pad * 2) / n;
+    const maxStock = Math.max(1, ...rows.map(r => Math.abs(r.stock_end_mt)));
+    const maxV = Math.max(1, ...rows.map(r => r.voyages));
+    const sy = v => 108 - (v / maxStock) * 40;
+    return `<svg class="lp-sched" viewBox="0 0 ${W} ${H}" role="img" aria-label="Parcels per month and plant stock">
+      ${rows.map((r, i) => {
+        const cx = pad + i * bw + bw / 2;
+        const ships = Array.from({length:r.voyages}, (_, k) =>
+          `<g transform="translate(${cx - 13} ${96 - (k + 1) * (60 / maxV)})"><path d="M0 8 L26 8 L22 14 L3 14 Z" fill="var(--ld-ink)"/><rect x="3" y="3" width="5" height="5" fill="var(--ld-ink)"/></g>`).join('');
+        return `${ships}<text x="${cx}" y="${H - 22}" text-anchor="middle" class="ldi-axis">${MN[r.month]}</text>
+          <text x="${cx}" y="${H - 8}" text-anchor="middle" class="ldi-axis" fill="${r.risk_index >= 40 ? 'var(--ld-warn)' : 'var(--ld-mute)'}">risk ${Math.round(r.risk_index)}</text>`;
+      }).join('')}
+      <line x1="${pad}" x2="${W - pad}" y1="108" y2="108" stroke="var(--ld-hair-strong)"/>
+      <path d="${rows.map((r, i) => `${i ? 'L' : 'M'}${pad + i * bw + bw / 2},${sy(r.stock_end_mt)}`).join('')}" fill="none" stroke="var(--ld-pos)" stroke-width="2"/>
+      <text x="${W - pad}" y="12" text-anchor="end" class="ldi-axis">ship icons = parcels sailing · green line = plant stock at month end</text>
+    </svg>`;
   }
 
   function scheduleTable(p){
     return `<div class="lp-scroll"><table class="lp-table"><thead><tr>
-      <th>Month</th><th>Voyages</th><th>Vessel · berth</th><th>Freight $/MT (P10–P90)</th><th>Landed $/MT</th><th>Risk</th><th>Queue</th><th>Stock end</th></tr></thead><tbody>
+      <th>Month</th><th>Parcels</th><th>Vessel · berth</th><th>Freight $/MT (P10–P90)</th><th>Landed $/MT</th><th>Risk</th><th>Queue</th><th>Stock end</th></tr></thead><tbody>
       ${p.optimizer.schedule.map(r => r.feasible ? `<tr class="${r.voyages ? 'on' : 'dim'}">
         <td><b>${MN[r.month]}</b></td><td>${r.voyages || '—'}</td>
         <td>${esc(r.vessel_class)} · ${esc(r.port_name)}</td>
@@ -360,17 +408,33 @@
     try{
       const a = await api('/api/system/alignment');
       const chip = s => `<span class="lp-chip ${s === 'MET' ? 'pass' : s === 'PARTIAL' ? 'part' : 'fail'}">${s}</span>`;
-      body.innerHTML = `<div class="ldi-tiles">
-          <div class="ld-card ldi-tile"><div class="ld-label">Coverage</div><div class="ld-num accent">${a.coverage_pct}%</div><div class="ld-note">MET + half of PARTIAL</div></div>
-          <div class="ld-card ldi-tile"><div class="ld-label">Met</div><div class="ld-num pos">${a.counts.MET}</div><div class="ld-note">of ${a.total} requirements</div></div>
-          <div class="ld-card ldi-tile"><div class="ld-label">Partial</div><div class="ld-num">${a.counts.PARTIAL}</div><div class="ld-note">works, with a stated limitation</div></div>
-          <div class="ld-card ldi-tile"><div class="ld-label">Not met</div><div class="ld-num">${a.counts['NOT MET']}</div><div class="ld-note">probes ran in ${a.duration_ms} ms</div></div>
-        </div>
+      const cls = s => s === 'MET' ? 'pass' : s === 'PARTIAL' ? 'part' : 'fail';
+      const C = 2 * Math.PI * 46, seg = n => n / a.total * C;
+      const met = seg(a.counts.MET), part = seg(a.counts.PARTIAL), fail = seg(a.counts['NOT MET']);
+      body.innerHTML = `<section class="ld-card lp-pad la-top">
+          <svg viewBox="0 0 120 120" class="la-donut" role="img" aria-label="${a.counts.MET} met, ${a.counts.PARTIAL} partial, ${a.counts['NOT MET']} not met">
+            <circle cx="60" cy="60" r="46" fill="none" stroke="var(--ld-track)" stroke-width="14"/>
+            <circle cx="60" cy="60" r="46" fill="none" stroke="var(--ld-pos)" stroke-width="14" stroke-dasharray="${met} ${C}" transform="rotate(-90 60 60)"/>
+            <circle cx="60" cy="60" r="46" fill="none" stroke="var(--ld-warn)" stroke-width="14" stroke-dasharray="${part} ${C}" stroke-dashoffset="${-met}" transform="rotate(-90 60 60)"/>
+            <circle cx="60" cy="60" r="46" fill="none" stroke="var(--ld-crit)" stroke-width="14" stroke-dasharray="${fail} ${C}" stroke-dashoffset="${-(met + part)}" transform="rotate(-90 60 60)"/>
+            <text x="60" y="60" text-anchor="middle" class="la-big">${a.coverage_pct}%</text>
+            <text x="60" y="76" text-anchor="middle" class="ldi-axis">coverage</text>
+          </svg>
+          <div class="la-counts">
+            <div><b class="pos">${a.counts.MET}</b><span>met</span></div>
+            <div><b class="warn">${a.counts.PARTIAL}</b><span>partial</span></div>
+            <div><b class="crit">${a.counts['NOT MET']}</b><span>not met</span></div>
+            <p class="lp-foot">${a.total} requirements probed live in ${a.duration_ms} ms. Hover a tile for its evidence.</p>
+          </div>
+        </section>
+        <div class="la-grid">${a.requirements.map(r => `<div class="la-tile ${cls(r.status)}" title="${esc(r.evidence)}">
+            <span class="la-id">${r.id}</span><i></i><b>${esc(r.requirement)}</b><small>${esc(r.feature.split(';')[0])}</small></div>`).join('')}</div>
+        <details class="lv-fold"><summary>Show the evidence table</summary>
         <section class="ld-card lp-pad"><div class="lp-scroll"><table class="lp-table lp-align"><thead><tr>
           <th>#</th><th>Requirement</th><th>Status</th><th>Where</th><th>Live evidence</th></tr></thead><tbody>
           ${a.requirements.map(r => `<tr><td>${r.id}</td><td><b>${esc(r.requirement)}</b></td><td>${chip(r.status)}</td>
             <td><small>${esc(r.feature)}</small></td><td>${esc(r.evidence)}</td></tr>`).join('')}
-        </tbody></table></div><p class="lp-foot">${esc(a.problem_statement)}. ${esc(a.note)}</p></section>`;
+        </tbody></table></div><p class="lp-foot">${esc(a.problem_statement)}. ${esc(a.note)}</p></section></details>`;
     }catch(err){ failed(body, err, runAlignment); }
   }
 

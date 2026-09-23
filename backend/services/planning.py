@@ -352,10 +352,10 @@ def final_recommendation(*, request, schedule, contracts, timing, optimised) -> 
          f"${chosen['risk_removed_usd']:,.0f} of P90 exposure."
          if chosen["key"] != "spot" else
          f"Contract premiums outweigh the ${spot['cost_at_risk_usd']:,.0f} of spot exposure they would remove."),
-        (f"Voyages sail {months}; the optimiser saves ${optimised['saving_vs_even_usd']:,.0f} "
+        (f"Parcels sail {months}; the optimiser saves ${optimised['saving_vs_even_usd']:,.0f} "
          f"against an even monthly spread."
          if optimised["saving_vs_even_usd"] > 0 else
-         f"Voyages sail {months}. An even spread is already optimal: no month is cheap enough "
+         f"Parcels sail {months}. An even spread is already optimal: no month is cheap enough "
          f"to justify carrying cargo ahead of need."),
         timing["reason"],
         f"{vessel_class} via {port_name}, loading at {first.get('load_port') or 'the origin terminal'}.",
@@ -369,6 +369,9 @@ def final_recommendation(*, request, schedule, contracts, timing, optimised) -> 
         "origin": request.origin,
         "plant": request.plant,
         "voyages": optimised["voyages"],
+        # A parcel can need more than one ship (a Supramax lifts ~58k MT of
+        # coal), so parcels and sailings are reported separately.
+        "sailings": sum(r["voyages"] * r.get("shipments", 1) for r in sailing),
         "first_sailing_month": first["month"],
         "timing_signal": timing["signal"],
         "expected_cost_usd": chosen["expected_cost_usd"],
