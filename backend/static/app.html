@@ -4005,7 +4005,7 @@ const waterwayPortCoordinates = {
 function initWaterwaysMap(){
   if(waterwaysMap) { setTimeout(()=>waterwaysMap.invalidateSize(),100); return; }
   if(typeof L === 'undefined') return;
-  waterwaysMap = L.map('internationalMap', {worldCopyJump:true, minZoom:2, zoomControl:true}).setView([18, 35], 2.4);
+  waterwaysMap = L.map('internationalMap', {worldCopyJump:true, minZoom:2, maxZoom:12, zoomControl:true}).setView([18, 35], 2.4);
   /* Base map: Esri Ocean (bathymetry, sea-floor relief, marine names) when the
      server supplied a key, else OpenStreetMap. The key is referrer-restricted
      to this site and injected by the server, never committed. If Esri rejects
@@ -4018,16 +4018,21 @@ function initWaterwaysMap(){
   if(esriKey){
     // The static-tiles service only carries the ocean *labels*; the ocean base
     // (bathymetry and relief) is the keyed World Ocean Base raster service.
-    base = L.tileLayer(`https://ibasemaps-api.arcgis.com/arcgis/rest/services/Ocean/World_Ocean_Base/MapServer/tile/{z}/{y}/{x}?token=${encodeURIComponent(esriKey)}`, {maxZoom:13, attribution:'Powered by <a href="https://www.esri.com">Esri</a> | Esri, GEBCO, NOAA, Garmin, HERE and other contributors'}).addTo(waterwaysMap);
-    const labels = L.tileLayer(esriTiles('arcgis/oceans/labels'), {maxZoom:16, pane:'overlayPane'}).addTo(waterwaysMap);
-    let failures = 0;
-    base.on('tileerror', () => {
-      if(++failures < 4 || !base) return;
-      waterwaysMap.removeLayer(base); waterwaysMap.removeLayer(labels);
-      base = null;
-      osm().addTo(waterwaysMap).bringToBack();
-      console.warn('Esri basemap unavailable (key expired or referrer not allowed); using OpenStreetMap.');
-    });
+    // Ocean base tiles stop at z10 over deep water; past that Leaflet scales
+    // the z10 tile instead of requesting tiles that do not exist.
+    const blank = 'data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==';
+    base = L.tileLayer(`https://ibasemaps-api.arcgis.com/arcgis/rest/services/Ocean/World_Ocean_Base/MapServer/tile/{z}/{y}/{x}?token=${encodeURIComponent(esriKey)}`, {maxZoom:12, maxNativeZoom:10, errorTileUrl:blank, attribution:'Powered by <a href="https://www.esri.com">Esri</a> | Esri, GEBCO, NOAA, Garmin, HERE and other contributors'}).addTo(waterwaysMap);
+    const labels = L.tileLayer(esriTiles('arcgis/oceans/labels'), {maxZoom:12, maxNativeZoom:10, errorTileUrl:blank, pane:'overlayPane'}).addTo(waterwaysMap);
+    // Decide once whether the key works. Counting tile errors confused a
+    // missing deep-zoom tile with a rejected key and swapped the map to
+    // OpenStreetMap mid-zoom.
+    fetch(`https://ibasemaps-api.arcgis.com/arcgis/rest/services/Ocean/World_Ocean_Base/MapServer/tile/1/0/0?token=${encodeURIComponent(esriKey)}`)
+      .then(r => { if(!r.ok || !(r.headers.get('content-type') || '').startsWith('image')) throw new Error('HTTP ' + r.status); })
+      .catch(err => {
+        waterwaysMap.removeLayer(base); waterwaysMap.removeLayer(labels);
+        osm().addTo(waterwaysMap).bringToBack();
+        console.warn('Esri basemap unavailable (key expired or referrer not allowed); using OpenStreetMap.', err);
+      });
   } else {
     base = osm().addTo(waterwaysMap);
   }
