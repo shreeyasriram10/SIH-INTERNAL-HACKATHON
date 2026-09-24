@@ -699,3 +699,10 @@ html[data-ldmode="light"] .ldc-hero{border-bottom-color:rgba(10,111,181,.16);}
 .lv-imp-row b.up{color:var(--ld-crit-ink);} .lv-imp-row b.down{color:var(--ld-pos-ink);}
 .lv-imp-more{margin-bottom:14px;}
 @media(max-width:700px){.lv-imp-row{grid-template-columns:90px 1fr 64px;}.lv-imp-arrow{display:none;}}
+/* ---- SOS hooks in the dashboard shell ---- */
+.lp-sos-raise{width:100%;margin-bottom:12px;padding:12px 14px;border:0;border-radius:10px;cursor:pointer;
+  font:800 14px var(--ld-font-body);letter-spacing:.04em;color:#fff;background:linear-gradient(180deg,#e0263a,#b00d20);
+  box-shadow:0 10px 22px -12px rgba(200,16,46,.8);}
+.lp-sos-raise:hover{filter:brightness(1.08);}
+.icon-btn.ld-sos.sos-on{background:#c8102e !important;color:#fff !important;border-color:#c8102e !important;animation:sosPulseBtn 1.2s ease-in-out infinite;}
+@keyframes sosPulseBtn{50%{box-shadow:0 0 0 6px rgba(200,16,46,.25);}}

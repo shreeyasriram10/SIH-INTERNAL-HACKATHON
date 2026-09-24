@@ -492,7 +492,8 @@
       if(!rows){ body.innerHTML = `<p class="lp-foot">Contacts unavailable offline. In an emergency at sea call <b>1554</b> (Indian Coast Guard) or <b>112</b>.</p>`; return; }
     }
     const admin = role() === 'Admin';
-    body.innerHTML = (stale ? '<div class="lp-note warn">Offline — showing contacts saved on this device.</div>' : '')
+    body.innerHTML = '<button type="button" class="lp-sos-raise" onclick="window.ldOpenSos && ldOpenSos()">Raise SOS to all dashboards</button>'
+      + (stale ? '<div class="lp-note warn">Offline — showing contacts saved on this device.</div>' : '')
       + rows.map(c => {
         const dial = /^[+\d][\d\s-]*$/.test(c.phone);
         return `<div class="lp-contact${c.verified ? '' : ' pending'}" data-id="${c.id}">

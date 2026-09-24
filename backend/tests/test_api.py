@@ -2375,3 +2375,50 @@ class TestMapKeyInjection:
         monkeypatch.setenv("LOHA_ESRI_KEY", 'AAPK"<test>')
         body = client.get("/app").text
         assert 'content="AAPK&quot;&lt;test&gt;"' in body
+
+class TestSOS:
+    def test_requires_a_session(self, client):
+        assert client.get("/api/ops/sos").status_code == 401
+        assert client.post("/api/ops/sos", json={"category": "Medical", "message": "x" * 5}).status_code == 401
+
+    def test_raised_on_one_dashboard_is_seen_on_the_other_two(self, auth_client, db_user_factory):
+        officer = db_user_factory("sos.officer@sail.gov.in", "Procurement Officer")["client"]
+        analyst = db_user_factory("sos.analyst@sail.gov.in", "Analyst")["client"]
+        raised = officer.post("/api/ops/sos", json={"category": "Vessel incident",
+                                                    "message": "Lost propulsion off Paradip",
+                                                    "location": "Paradip anchorage"})
+        assert raised.status_code == 201, raised.text
+        sos_id = raised.json()["id"]
+        for viewer in (auth_client, analyst, officer):
+            active = viewer.get("/api/ops/sos").json()["active"]
+            mine = next(a for a in active if a["id"] == sos_id)
+            assert mine["raised_by"]["role"] == "Procurement Officer"
+
+        # An acknowledgement from one dashboard shows on the others.
+        assert analyst.post(f"/api/ops/sos/{sos_id}/ack").status_code == 200
+        seen = next(a for a in auth_client.get("/api/ops/sos").json()["active"] if a["id"] == sos_id)
+        assert [k["role"] for k in seen["acks"]] == ["Analyst"]
+
+        # Only an Admin or the raiser can stand it down.
+        assert analyst.post(f"/api/ops/sos/{sos_id}/resolve", json={"note": "no"}).status_code == 403
+        assert auth_client.post(f"/api/ops/sos/{sos_id}/resolve", json={"note": "Tug attached"}).status_code == 200
+        body = officer.get("/api/ops/sos").json()
+        assert all(a["id"] != sos_id for a in body["active"])
+        done = next(a for a in body["recent"] if a["id"] == sos_id)
+        assert done["resolution"] == "Tug attached" and done["resolved_by"]["role"] == "Admin"
+
+    def test_acknowledging_twice_counts_once(self, auth_client, db_user_factory):
+        analyst = db_user_factory("sos.analyst2@sail.gov.in", "Analyst")["client"]
+        sos_id = auth_client.post("/api/ops/sos", json={"category": "Weather", "message": "Cyclone warning"}).json()["id"]
+        analyst.post(f"/api/ops/sos/{sos_id}/ack"); analyst.post(f"/api/ops/sos/{sos_id}/ack")
+        item = next(a for a in auth_client.get("/api/ops/sos").json()["active"] if a["id"] == sos_id)
+        assert len(item["acks"]) == 1
+        auth_client.post(f"/api/ops/sos/{sos_id}/resolve", json={"note": "test"})
+
+    def test_unknown_category_is_rejected(self, auth_client):
+        r = auth_client.post("/api/ops/sos", json={"category": "Party", "message": "not an emergency"})
+        assert r.status_code == 422
+
+    def test_every_dashboard_page_loads_the_sos_client(self, client):
+        for path in ("/app", "/ml-training", "/verification"):
+            assert "/static/ld-sos.js" in client.get(path).text, path

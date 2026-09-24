@@ -48,6 +48,26 @@ class Vessel(Base):
     beam_m = Column(Float)
 
 
+class SosAlert(Base):
+    """An SOS raised from any dashboard. Times are ISO-8601 UTC strings so the
+    database and Redis stores return identical shapes."""
+    __tablename__ = "sos_alerts"
+    id = Column(Integer, primary_key=True, index=True)
+    uid = Column(String, unique=True, index=True)
+    category = Column(String)
+    message = Column(String)
+    location = Column(String, default="")
+    status = Column(String, default="ACTIVE", index=True)   # ACTIVE | RESOLVED
+    raised_by_email = Column(String)
+    raised_by_name = Column(String)
+    raised_by_role = Column(String)
+    raised_at = Column(String)
+    acks = Column(Text, default="[]")
+    resolved_by = Column(Text, default="")
+    resolved_at = Column(String, default="")
+    resolution = Column(String, default="")
+
+
 class EmergencyContact(Base):
     """Who to call when a voyage or a berth goes wrong. National numbers are
     seeded as verified; organisation-specific lines are placeholders an Admin
